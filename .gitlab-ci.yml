@@ -54,7 +54,12 @@ variables:
           libfreetype6-dev \
           libharfbuzz-dev \
           libfribidi-dev \
-          pkg-config
+          pkg-config \
+          libpng-dev \
+          libtiff5-dev \
+          libjpeg-dev \
+          cmake \
+          build-essential
       fi
     # Install dependencies efficiently
     - R -e "install.packages(c('Amelia', 'dplyr', 'lme4', 'broom.mixed', 'mice', 'rms', 'testthat', 'rcmdcheck'), repos = 'https://cloud.r-project.org/', Ncpus = 2)"
@@ -281,7 +286,9 @@ coverage:
         libpng-dev \
         libtiff5-dev \
         libjpeg-dev \
-        pkg-config
+        pkg-config \
+        cmake \
+        build-essential
     # Install package dependencies first
     - R -e "install.packages(c('Amelia', 'dplyr', 'lme4', 'broom.mixed', 'mice', 'rms'), repos = 'https://cloud.r-project.org/', Ncpus = 2)"
     - R -e "remotes::install_deps(dependencies = TRUE)"
@@ -393,7 +400,9 @@ docs:
         libpng-dev \
         libtiff5-dev \
         libjpeg-dev \
-        pkg-config
+        pkg-config \
+        cmake \
+        build-essential
     # Install package dependencies
     - R -e "install.packages(c('Amelia', 'dplyr', 'lme4', 'broom.mixed', 'mice', 'rms'), repos = 'https://cloud.r-project.org/', Ncpus = 2)"
     - R -e "remotes::install_deps(dependencies = TRUE, upgrade = 'always')"
@@ -449,7 +458,9 @@ pages:
         libpng-dev \
         libtiff5-dev \
         libjpeg-dev \
-        pkg-config
+        pkg-config \
+        cmake \
+        build-essential
     # Install package dependencies
     - R -e "install.packages(c('Amelia', 'dplyr', 'lme4', 'broom.mixed', 'mice', 'rms'), repos = 'https://cloud.r-project.org/', Ncpus = 2)"
     - R -e "remotes::install_deps(dependencies = TRUE, upgrade = 'always')"
