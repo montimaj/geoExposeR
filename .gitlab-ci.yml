@@ -55,6 +55,8 @@ variables:
           libpng-dev \
           libtiff5-dev \
           libjpeg-dev \
+          libharfbuzz-dev \
+          libfribidi-dev \
           pkg-config
       fi
     # Install package dependencies
@@ -338,6 +340,8 @@ coverage:
         libpng-dev \
         libtiff5-dev \
         libjpeg-dev \
+        libharfbuzz-dev \
+        libfribidi-dev \
         pkg-config
     # Install dependencies
     - R -e "remotes::install_deps(dependencies = TRUE, upgrade = 'always')"
