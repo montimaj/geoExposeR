@@ -1,0 +1,41 @@
+[
+  {
+    "name": "gwArsenicR",
+    "organization": "U.S. Geological Survey",
+    "description": "gwArsenicR is a package for analyzing groundwater arsenic data in the United States. It provides tools for data cleaning, analysis, and visualization, specifically tailored for arsenic concentration data in groundwater samples.",
+    "version": "0.1.0",
+    "status": "production",
+    "permissions": {
+      "usageType": "openSource",
+      "licenses": [
+        {
+          "name": "Public Domain, CC0-1.0",
+          "URL": "https://code.usgs.gov/envirohealth/gwArsenicR/-/raw/0.1.0/LICENSE.md"
+        }
+      ]
+    },
+    "homepageURL": "https://code.usgs.gov/envirohealth/gwArsenicR/",
+    "downloadURL": "https://code.usgs.gov/envirohealth/gwArsenicR/-/archive/0.1.0/gwArsenicR-0.1.0.zip",
+    "disclaimerURL": "https://code.usgs.gov/envirohealth/gwArsenicR/-/raw/0.1.0/DISCLAIMER.md",
+    "repositoryURL": "https://code.usgs.gov/envirohealth/gwArsenicR.git",
+    "vcs": "git",
+    "laborHours": 0,
+    "tags": [
+        "groundwater",
+        "arsenic",
+        "data analysis",
+        "R package",
+        "environmental health"
+    ],
+    "languages": [
+      "R"
+    ],
+    "contact": {
+      "name": "Melissa A. Lombard",
+      "email": "mlombard@usgs.gov"
+    },
+    "date": {
+      "metadataLastUpdated": "2025-07-15"
+    }
+  }
+]

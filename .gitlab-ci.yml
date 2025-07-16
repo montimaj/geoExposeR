@@ -50,6 +50,8 @@ variables:
     # Install package dependencies
     - R -e "remotes::install_deps(dependencies = TRUE, upgrade = 'always')"
     - R -e "install.packages(c('testthat', 'rcmdcheck', 'covr', 'spelling'))"
+    # Ensure devtools is available (redundant check for safety)
+    - R -e "if (!requireNamespace('devtools', quietly = TRUE)) install.packages('devtools')"
     # Check package build
     - mkdir -p check
     - R -e "result <- rcmdcheck::rcmdcheck(args = '--no-manual', error_on = 'error'); if (length(result\$errors) > 0 || length(result\$warnings) > 0) { dir.create('check', showWarnings = FALSE); writeLines(c(result\$errors, result\$warnings), 'check/rcmdcheck_output.txt') }"
@@ -57,6 +59,13 @@ variables:
     - |
       R -e "
       options(warn = 2, error = traceback)
+      
+      # Ensure devtools is loaded
+      if (!requireNamespace('devtools', quietly = TRUE)) {
+        install.packages('devtools')
+      }
+      library(devtools)
+      
       devtools::load_all()
       
       tryCatch({

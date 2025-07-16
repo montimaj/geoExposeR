@@ -50,10 +50,10 @@ install.packages(c("data.table", "dplyr", "lme4", "mice", "broom.mixed"))
 
 ## Development Setup
 
-1. **Fork the repository** on GitHub
+1. **Fork the repository** on GitLab
 2. **Clone your fork** locally:
    ```bash
-   git clone https://github.com/YOUR_USERNAME/gwArsenicR.git
+   git clone https://gitlab.com/YOUR_USERNAME/gwArsenicR.git
    cd gwArsenicR
    ```
 
@@ -156,7 +156,7 @@ When reporting issues, please include:
    git push origin feature/your-feature-name
    ```
 
-3. **Create a pull request** on GitHub with:
+3. **Create a pull request** on GitLab with:
    - Clear title describing the change
    - Detailed description of what was changed and why
    - Reference to any related issues
@@ -322,13 +322,13 @@ We use [Semantic Versioning](https://semver.org/):
 3. Run comprehensive tests: `devtools::check()`
 4. Update documentation: `devtools::document()`
 5. Build and test package
-6. Create GitHub release with release notes
+6. Create GitLab release with release notes
 
 ## Getting Help
 
 ### Questions and Discussions
-- **GitHub Discussions**: For questions about usage or development
-- **GitHub Issues**: For bug reports and feature requests
+- **GitLab Discussions**: For questions about usage or development
+- **GitLab Issues**: For bug reports and feature requests
 - **Email**: Contact maintainers for sensitive issues
 
 ### Resources

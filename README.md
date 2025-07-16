@@ -4,7 +4,7 @@ An R package for modeling and estimating arsenic exposure from groundwater, base
 <!-- Package Info -->
 [![Version](https://img.shields.io/badge/version-0.1.0-blue.svg)](https://gitlab.com/s.majumdar_mst.edu/gwArsenicR)
 [![R](https://img.shields.io/badge/R-%E2%89%A5%204.4.0-blue.svg)](https://www.r-project.org/)
-[![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
+[![License](https://img.shields.io/badge/License-CC0%201.0-blue.svg)](https://creativecommons.org/publicdomain/zero/1.0/)
 
 <!-- Build Status -->
 [![Pipeline Status](https://code.usgs.gov/envirohealth/gwArsenicR/badges/main/pipeline.svg)](https://code.usgs.gov/envirohealth/gwArsenicR/-/pipelines)
@@ -188,7 +188,7 @@ gwArsenicR/
 ├── CONTRIBUTING.md                     # Contribution guidelines
 ├── DESCRIPTION                         # Package metadata and dependencies
 ├── NAMESPACE                           # Package exports and imports
-├── LICENSE                             # Apache 2.0 license file
+├── LICENSE.md                          # CC0 1.0 Universal License
 ├── NEWS.md                             # Change log and version history
 ├── README.md                           # README file
 └── .gitignore                          # Git ignore rules
@@ -619,7 +619,7 @@ This work was supported by the National Heart, Lung, and Blood Institute (R21HL1
 
 ## License
 
-This project is licensed under the Apache 2.0 License - see the [LICENSE](https://code.usgs.gov/envirohealth/gwArsenicR/-/blob/main/LICENSE) file for details.
+This project is licensed under the CC0 1.0 Universal License - see the [LICENSE](https://code.usgs.gov/envirohealth/gwArsenicR/-/blob/main/LICENSE.md) file for details.
 
 **Version:** 0.1.0 | **Status:** Under active development
 
