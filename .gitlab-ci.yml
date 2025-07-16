@@ -59,7 +59,8 @@ variables:
           libfribidi-dev \
           pkg-config
       fi
-    # Install package dependencies
+    # Install package dependencies explicitly
+    - R -e "install.packages(c('Amelia', 'dplyr', 'lme4', 'broom.mixed', 'mice', 'rms'), repos = 'https://cloud.r-project.org/')"
     - R -e "remotes::install_deps(dependencies = TRUE, upgrade = 'always')"
     - R -e "install.packages(c('testthat', 'rcmdcheck', 'covr', 'spelling'))"
     # Ensure devtools is available (redundant check for safety)
@@ -343,7 +344,8 @@ coverage:
         libharfbuzz-dev \
         libfribidi-dev \
         pkg-config
-    # Install dependencies
+    # Install package dependencies explicitly
+    - R -e "install.packages(c('Amelia', 'dplyr', 'lme4', 'broom.mixed', 'mice', 'rms'), repos = 'https://cloud.r-project.org/')"
     - R -e "remotes::install_deps(dependencies = TRUE, upgrade = 'always')"
     - R -e "install.packages(c('covr', 'testthat', 'devtools', 'DT', 'htmltools'))"
     # Generate coverage report
