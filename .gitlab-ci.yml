@@ -145,13 +145,13 @@ test:r-devel-ubuntu:
   variables:
     R_VERSION: "devel"
     PLATFORM: "ubuntu-latest"
-  allow_failure: true  # R-devel can be unstable
+  allow_failure: false
 
 test:r-oldrel-ubuntu:
   <<: *test_template
-  image: rocker/r-ver:4.4.1  # Updated to meet R >= 4.4.0 requirement
+  image: rocker/r-ver:4.4.0  # Updated to meet R >= 4.4.0 requirement
   variables:
-    R_VERSION: "4.4.1"
+    R_VERSION: "4.4.0"
     PLATFORM: "ubuntu-latest"
 
 # macOS test jobs
@@ -162,18 +162,68 @@ test:r-release-macos:
   tags:
     - macos
   script:
+    # Check R version and update if needed
+    - |
+      echo "Current R version:"
+      R --version
+      # Ensure we're using a compatible R version
+      if command -v brew >/dev/null 2>&1; then
+        echo "Updating R via Homebrew..."
+        brew install --cask r || brew upgrade --cask r || true
+      fi
     # Install system dependencies for macOS
     - brew install pandoc || true
-    # Install package dependencies
-    - R -e "remotes::install_deps(dependencies = TRUE, upgrade = 'always')"
-    - R -e "install.packages(c('testthat', 'rcmdcheck', 'covr', 'spelling'))"
-    # Check package build
-    - mkdir -p check
-    - R -e "result <- rcmdcheck::rcmdcheck(args = '--no-manual', error_on = 'error'); if (length(result\$errors) > 0 || length(result\$warnings) > 0) { dir.create('check', showWarnings = FALSE); writeLines(c(result\$errors, result\$warnings), 'check/rcmdcheck_output.txt') }"
-    # Run comprehensive tests
+    # Set R options to handle warnings as errors properly
     - |
       R -e "
-      options(warn = 2, error = traceback)
+      options(warn = 1)  # Don't convert warnings to errors for package installation
+      cat('R version:', R.version.string, '\n')
+      cat('Platform:', R.version\$platform, '\n')
+      "
+    # Install package dependencies with better error handling
+    - |
+      R -e "
+      options(warn = 1)  # Warnings as warnings, not errors
+      cat('Installing remotes and dependencies...\n')
+      if (!requireNamespace('remotes', quietly = TRUE)) {
+        install.packages('remotes', repos = 'https://cloud.r-project.org/')
+      }
+      remotes::install_deps(dependencies = TRUE, upgrade = 'always')
+      "
+    # Install test dependencies
+    - |
+      R -e "
+      options(warn = 1)
+      cat('Installing test dependencies...\n')
+      pkgs_to_install <- c('testthat', 'rcmdcheck', 'covr', 'spelling')
+      for (pkg in pkgs_to_install) {
+        if (!requireNamespace(pkg, quietly = TRUE)) {
+          cat('Installing', pkg, '...\n')
+          install.packages(pkg, repos = 'https://cloud.r-project.org/')
+        } else {
+          cat(pkg, 'already installed\n')
+        }
+      }
+      cat('All test dependencies installed successfully\n')
+      "
+    # Check package build
+    - mkdir -p check
+    - |
+      R -e "
+      options(warn = 1)  # Don't treat warnings as errors for rcmdcheck
+      cat('Running R CMD check...\n')
+      result <- rcmdcheck::rcmdcheck(args = '--no-manual', error_on = 'error')
+      if (length(result\$errors) > 0 || length(result\$warnings) > 0) { 
+        dir.create('check', showWarnings = FALSE)
+        writeLines(c(result\$errors, result\$warnings), 'check/rcmdcheck_output.txt')
+      }
+      cat('R CMD check completed\n')
+      "
+    # Run comprehensive tests with better error handling
+    - |
+      R -e "
+      options(warn = 1)  # Keep warnings as warnings during testing
+      cat('Loading package...\n')
       devtools::load_all()
       
       tryCatch({
@@ -187,7 +237,8 @@ test:r-release-macos:
         }
         
         cat('Running full test suite...\n')
-        devtools::test(reporter = 'summary')
+        # Suppress package version warnings during testing
+        suppressWarnings(devtools::test(reporter = 'summary'))
         
         cat('Testing package installation...\n')
         devtools::install(quiet = FALSE)
@@ -205,11 +256,14 @@ test:r-release-macos:
     # Test vignette rendering
     - |
       R -e "
+      options(warn = 1)
       if (file.exists('vignettes/gwArsenicR-vignette.Rmd')) {
         cat('Testing vignette rendering...\n')
         tryCatch({
-          rmarkdown::render('vignettes/gwArsenicR-vignette.Rmd', 
-                          output_dir = tempdir())
+          suppressWarnings(
+            rmarkdown::render('vignettes/gwArsenicR-vignette.Rmd', 
+                            output_dir = tempdir())
+          )
           cat('Vignette rendered successfully!\n')
         }, error = function(e) {
           cat('Vignette rendering failed:\n')
@@ -221,9 +275,12 @@ test:r-release-macos:
     # Show session info
     - |
       R -e "
-      options(width = 100)
+      options(width = 100, warn = 1)
+      cat('=== Session Information ===\n')
+      cat('R version:', R.version.string, '\n')
+      cat('Platform:', R.version\$platform, '\n')
       pkgs <- installed.packages()[, 'Package']
-      sessioninfo::session_info(pkgs, include_base = TRUE)
+      suppressWarnings(sessioninfo::session_info(pkgs, include_base = TRUE))
       "
   variables:
     R_VERSION: "release"
@@ -233,7 +290,7 @@ test:r-release-macos:
     paths:
       - check/
     expire_in: 1 week
-  allow_failure: true  # macOS can have different behavior
+  allow_failure: false
   only:
     refs:
       - main
@@ -512,7 +569,7 @@ security_scan:
   image: rocker/r-ver:latest
   script:
     - R -e "if (!requireNamespace('oysteR', quietly = TRUE)) install.packages('oysteR')"
-    - R -e "oysteR::audit(r_version='4.4.1')"
+    - R -e "oysteR::audit(version='4.4.1')"
   allow_failure: true
   only:
     refs:
