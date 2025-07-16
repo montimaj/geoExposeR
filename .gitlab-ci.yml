@@ -342,7 +342,7 @@ pages:
     - apt-get update && apt-get install -y libcurl4-openssl-dev libssl-dev libxml2-dev build-essential pandoc
     - R -e "install.packages(c('pkgdown', 'devtools', 'rmarkdown', 'knitr'), Ncpus = 4)"
     - R -e "remotes::install_deps(dependencies = TRUE)"
-    - R -e "pkgdown::build_site(dest_dir = 'public', new_process = FALSE)"
+    - R -e "pkgdown::build_site()"
   timeout: 15m
   artifacts:
     paths:
