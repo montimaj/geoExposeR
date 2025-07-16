@@ -311,7 +311,10 @@ docs:
   stage: docs
   image: rocker/r-ver:latest
   script:
-    - apt-get update && apt-get install -y libcurl4-openssl-dev libssl-dev
+    - apt-get update && apt-get install curl -y
+    - curl -O http://security.ubuntu.com/ubuntu/pool/main/i/icu/libicu70_70.1-2_amd64.deb
+    - dpkg -i libicu70_70.1-2_amd64.deb
+    - apt-get update && apt-get install -y libcurl4-openssl-dev libssl-dev build-essential pandoc
     - R -e "install.packages(c('roxygen2', 'devtools'), Ncpus = 4)"
     - R -e "remotes::install_deps(dependencies = TRUE)"
     - R -e "devtools::document()"
@@ -333,6 +336,9 @@ pages:
   stage: deploy
   image: rocker/r-ver:latest
   script:
+    - apt-get update && apt-get install curl -y
+    - curl -O http://security.ubuntu.com/ubuntu/pool/main/i/icu/libicu70_70.1-2_amd64.deb
+    - dpkg -i libicu70_70.1-2_amd64.deb
     - apt-get update && apt-get install -y libcurl4-openssl-dev libssl-dev libxml2-dev build-essential pandoc
     - R -e "install.packages(c('pkgdown', 'devtools', 'rmarkdown', 'knitr'), Ncpus = 4)"
     - R -e "remotes::install_deps(dependencies = TRUE)"
