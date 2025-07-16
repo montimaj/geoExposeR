@@ -26,9 +26,6 @@ variables:
     - echo 'options(repos = c(CRAN = "https://packagemanager.rstudio.com/cran/__linux__/jammy/latest"))' > ~/.Rprofile
     - echo 'options(HTTPUserAgent = sprintf("R/%s R (%s)", getRversion(), paste(getRversion(), R.version$platform, R.version$arch, R.version$os)))' >> ~/.Rprofile
     - echo 'options(warn = 1, error = traceback)' >> ~/.Rprofile
-    - apt-get update && apt-get install curl -y
-    - curl -O http://security.ubuntu.com/ubuntu/pool/main/i/icu/libicu70_70.1-2_amd64.deb
-    - dpkg -i libicu70_70.1-2_amd64.deb
     # Install basic dependencies quickly
     - R -e "install.packages(c('remotes', 'devtools'), Ncpus = 4)"
 
@@ -93,6 +90,10 @@ test:r-release-ubuntu:
   variables:
     R_VERSION: "release"
     PLATFORM: "ubuntu-latest"
+  script:
+    - apt-get update && apt-get install curl -y
+    - curl -O http://security.ubuntu.com/ubuntu/pool/main/i/icu/libicu70_70.1-2_amd64.deb
+    - dpkg -i libicu70_70.1-2_amd64.deb
 
 # Enhanced coverage job based on local coverage script
 coverage:
@@ -371,15 +372,23 @@ test:r-release-macos:
 
 # Optional: Keep only one Ubuntu test job to save resources
 # Remove or comment out these if you want to save more time:
-# test:r-devel-ubuntu:
-#   <<: *test_template
-#   image: rocker/r-devel:latest
-#   allow_failure: true
+test:r-devel-ubuntu:
+  <<: *test_template
+  image: rocker/r-devel:latest
+  allow_failure: true
+  script:
+    - apt-get update && apt-get install curl -y
+    - curl -O http://security.ubuntu.com/ubuntu/pool/main/i/icu/libicu70_70.1-2_amd64.deb
+    - dpkg -i libicu70_70.1-2_amd64.deb
 
-# test:r-oldrel-ubuntu:
-#   <<: *test_template  
-#   image: rocker/r-ver:4.4.0
-#   allow_failure: true
+test:r-oldrel-ubuntu:
+  <<: *test_template  
+  image: rocker/r-ver:4.4.0
+  allow_failure: true
+  script:
+    - apt-get update && apt-get install curl -y
+    - curl -O http://security.ubuntu.com/ubuntu/pool/main/i/icu/libicu70_70.1-2_amd64.deb
+    - dpkg -i libicu70_70.1-2_amd64.deb
 
 # Fast release job
 release:
