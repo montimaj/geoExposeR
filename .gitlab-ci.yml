@@ -57,7 +57,9 @@ variables:
       cat('✅ All packages available\n')
       
       # Load and test
-      devtools::load_all()
+      devtools::document()
+      devtools::build()
+      devtools::install()
       
       # Run focused test
       if (file.exists('tests/testthat/test-gwArsenic.R')) {
@@ -107,7 +109,9 @@ coverage:
     # Quick coverage
     - |
       R -e "
-      devtools::load_all()
+      devtools::document()
+      devtools::build()
+      devtools::install()
       
       # Generate coverage
       cov <- covr::package_coverage(
