@@ -40,53 +40,23 @@ variables:
         libcurl4-openssl-dev \
         libssl-dev \
         libxml2-dev \
-        pandoc \
-        gfortran
-    # Install rms dependencies first (rms has complex dependencies)
-    - R -e "install.packages(c('Hmisc', 'survival', 'lattice', 'Formula', 'ggplot2'), Ncpus = 4, dependencies = TRUE)"
-    # Install core statistical packages
-    - R -e "install.packages(c('Amelia', 'dplyr', 'lme4', 'broom.mixed', 'mice'), Ncpus = 4, dependencies = TRUE)"
-    # Install rms separately to ensure it's properly installed
-    - R -e "install.packages('rms', Ncpus = 4, dependencies = TRUE)"
-    # Install testing packages
-    - R -e "install.packages(c('testthat', 'rcmdcheck', 'rmarkdown', 'knitr'), Ncpus = 4, dependencies = TRUE)"
-    # Install package dependencies
+        pandoc
+    # Install all R dependencies quickly using binary packages
+    - R -e "install.packages(c('Amelia', 'dplyr', 'lme4', 'broom.mixed', 'mice', 'rms', 'testthat', 'rcmdcheck', 'rmarkdown', 'knitr'))"
     - R -e "remotes::install_deps(dependencies = TRUE)"
-    # Verify all packages with better error reporting
+    # Quick verification and test
     - |
       R -e "
-      # Check packages one by one for better debugging
+      # Quick package check
       required_pkgs <- c('Amelia', 'dplyr', 'lme4', 'broom.mixed', 'mice', 'rms', 'testthat', 'devtools')
-      
-      for (pkg in required_pkgs) {
-        if (!requireNamespace(pkg, quietly = TRUE)) {
-          cat('❌ Missing package:', pkg, '\n')
-          
-          # Try to install missing package
-          cat('Attempting to install', pkg, '...\n')
-          tryCatch({
-            install.packages(pkg, repos = c('https://cloud.r-project.org/', 'https://packagemanager.rstudio.com/cran/__linux__/jammy/latest'), dependencies = TRUE)
-            if (requireNamespace(pkg, quietly = TRUE)) {
-              cat('✅ Successfully installed', pkg, '\n')
-            } else {
-              cat('❌ Failed to install', pkg, '\n')
-              quit(status = 1)
-            }
-          }, error = function(e) {
-            cat('❌ Error installing', pkg, ':', e\$message, '\n')
-            quit(status = 1)
-          })
-        } else {
-          cat('✅', pkg, 'available\n')
-        }
+      missing <- sapply(required_pkgs, function(x) !requireNamespace(x, quietly = TRUE))
+      if (any(missing)) {
+        cat('Missing packages:', names(missing)[missing], '\n')
+        install.packages(names(missing)[missing])
       }
+      cat('✅ All packages available\n')
       
-      cat('✅ All packages verified\n')
-      "
-    # Load and test
-    - |
-      R -e "
-      # Load package
+      # Load and test
       devtools::load_all()
       
       # Run focused test
@@ -98,7 +68,7 @@ variables:
       
       cat('✅ Tests completed!\n')
       "
-  timeout: 20m  # Increased timeout for rms installation
+  timeout: 15m  # Much shorter timeout
   artifacts:
     when: on_failure
     paths:
@@ -124,35 +94,16 @@ test:r-release-ubuntu:
     PLATFORM: "ubuntu-latest"
 
 # Simplified coverage job
-# Simplified coverage job
 coverage:
   <<: *r_base
   stage: coverage
   image: rocker/r-ver:latest
   script:
-    # Minimal system dependencies including Fortran for rms
-    - apt-get update && apt-get install -y libcurl4-openssl-dev libssl-dev libxml2-dev gfortran
-    # Install rms dependencies first
-    - R -e "install.packages(c('Hmisc', 'survival', 'lattice', 'Formula', 'ggplot2'), Ncpus = 4, dependencies = TRUE)"
-    # Install core packages
-    - R -e "install.packages(c('Amelia', 'dplyr', 'lme4', 'broom.mixed', 'mice'), Ncpus = 4, dependencies = TRUE)"
-    # Install rms separately
-    - R -e "install.packages('rms', Ncpus = 4, dependencies = TRUE)"
-    # Install coverage packages
-    - R -e "install.packages(c('covr', 'testthat', 'devtools'), Ncpus = 4, dependencies = TRUE)"
+    # Minimal system dependencies
+    - apt-get update && apt-get install -y libcurl4-openssl-dev libssl-dev libxml2-dev
+    # Fast binary package installation
+    - R -e "install.packages(c('Amelia', 'dplyr', 'lme4', 'broom.mixed', 'mice', 'rms', 'covr', 'testthat', 'devtools'))"
     - R -e "remotes::install_deps(dependencies = TRUE)"
-    # Verify rms is available
-    - |
-      R -e "
-      if (!requireNamespace('rms', quietly = TRUE)) {
-        cat('❌ rms package not found, attempting fallback installation\n')
-        install.packages('rms', repos = 'https://cloud.r-project.org/', dependencies = TRUE)
-        if (!requireNamespace('rms', quietly = TRUE)) {
-          quit(status = 1)
-        }
-      }
-      cat('✅ rms package verified\n')
-      "
     # Quick coverage
     - |
       R -e "
@@ -180,7 +131,7 @@ coverage:
         quit(status = 1)
       }
       "
-  timeout: 15m
+  timeout: 10m
   artifacts:
     paths:
       - coverage/
