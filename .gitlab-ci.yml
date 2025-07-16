@@ -27,7 +27,7 @@ variables:
     - echo 'options(HTTPUserAgent = sprintf("R/%s R (%s)", getRversion(), paste(getRversion(), R.version$platform, R.version$arch, R.version$os)))' >> ~/.Rprofile
     - echo 'options(warn = 1, error = traceback)' >> ~/.Rprofile
     # Install basic dependencies quickly
-    - R -e "install.packages(c('remotes', 'devtools'), Ncpus = 4)"
+    - R -e "install.packages(c('remotes', 'devtools', 'stringi'), Ncpus = 4)"
 
 # Fast test job template
 .test_template: &test_template
@@ -104,7 +104,7 @@ coverage:
     # Minimal system dependencies
     - apt-get update && apt-get install -y libcurl4-openssl-dev libssl-dev libxml2-dev
     # Fast binary package installation
-    - R -e "install.packages(c('Amelia', 'dplyr', 'lme4', 'broom.mixed', 'mice', 'rms', 'covr', 'testthat', 'devtools'))"
+    - R -e "install.packages(c('Amelia', 'dplyr', 'lme4', 'broom.mixed', 'mice', 'rms', 'covr', 'testthat', 'devtools', 'stringi'), Ncpus = 4)"
     - R -e "remotes::install_deps(dependencies = TRUE)"
     # Quick coverage
     - |
