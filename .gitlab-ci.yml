@@ -45,7 +45,17 @@ variables:
     # Install system dependencies for Linux
     - |
       if [ "$CI_RUNNER_EXECUTABLE_ARCH" = "linux/amd64" ] || [ "$CI_RUNNER_EXECUTABLE_ARCH" = "linux/arm64" ]; then
-        apt-get update && apt-get install -y libcurl4-openssl-dev libssl-dev libxml2-dev pandoc
+        apt-get update && apt-get install -y \
+          libcurl4-openssl-dev \
+          libssl-dev \
+          libxml2-dev \
+          pandoc \
+          libfontconfig1-dev \
+          libfreetype6-dev \
+          libpng-dev \
+          libtiff5-dev \
+          libjpeg-dev \
+          pkg-config
       fi
     # Install package dependencies
     - R -e "remotes::install_deps(dependencies = TRUE, upgrade = 'always')"
@@ -320,6 +330,15 @@ coverage:
   stage: coverage
   image: rocker/r-ver:latest
   script:
+    # Install system dependencies for fonts and graphics
+    - |
+      apt-get update && apt-get install -y \
+        libfontconfig1-dev \
+        libfreetype6-dev \
+        libpng-dev \
+        libtiff5-dev \
+        libjpeg-dev \
+        pkg-config
     # Install dependencies
     - R -e "remotes::install_deps(dependencies = TRUE, upgrade = 'always')"
     - R -e "install.packages(c('covr', 'testthat', 'devtools', 'DT', 'htmltools'))"
