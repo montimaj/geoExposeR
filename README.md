@@ -2,20 +2,20 @@
 An R package for modeling and estimating arsenic exposure from groundwater, based on epidemiological studies and existing concentration models.
 
 <!-- Package Info -->
-[![Version](https://img.shields.io/badge/version-0.1.0-blue.svg)](https://github.com/montimaj/gwArsenicR)
+[![Version](https://img.shields.io/badge/version-0.1.0-blue.svg)](https://gitlab.com/s.majumdar_mst.edu/gwArsenicR)
 [![R](https://img.shields.io/badge/R-%E2%89%A5%204.4.0-blue.svg)](https://www.r-project.org/)
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 
 <!-- Build Status -->
-[![Build and Test](https://github.com/montimaj/gwArsenicR/actions/workflows/r.yml/badge.svg)](https://github.com/montimaj/gwArsenicR/actions/workflows/r.yml)
+[![Pipeline Status](https://code.usgs.gov/envirohealth/gwArsenicR/badges/main/pipeline.svg)](https://code.usgs.gov/envirohealth/gwArsenicR/-/pipelines)
 
 <!-- Quality Metrics -->
-[![Test Coverage](https://img.shields.io/badge/coverage-100.0%25-brightgreen.svg)
+[![Test Coverage](https://code.usgs.gov/envirohealth/gwArsenicR/badges/main/coverage.svg)](https://code.usgs.gov/envirohealth/gwArsenicR/-/graphs/main/charts)
 
 <!-- Documentation and Usage -->
-[![Documentation](https://img.shields.io/badge/docs-pkgdown-blue.svg)](https://montimaj.github.io/gwArsenicR)
-[![Vignettes](https://img.shields.io/badge/vignettes-available-blue.svg)](https://montimaj.github.io/gwArsenicR/articles/)
-[![Downloads](https://img.shields.io/github/downloads/montimaj/gwArsenicR/total.svg)](https://github.com/montimaj/gwArsenicR/releases)
+[![Documentation](https://img.shields.io/badge/docs-pkgdown-blue.svg)](https://s.majumdar_mst.edu.gitlab.io/gwArsenicR)
+[![Vignettes](https://img.shields.io/badge/vignettes-available-blue.svg)](https://s.majumdar_mst.edu.gitlab.io/gwArsenicR/articles/)
+[![GitLab](https://img.shields.io/badge/GitLab-repository-blue.svg)](https://code.usgs.gov/envirohealth/gwArsenicR/)
 
 <!-- Development Status -->
 [![Project Status: Active](https://www.repostatus.org/badges/latest/active.svg)](https://www.repostatus.org/#active)
@@ -23,10 +23,10 @@ An R package for modeling and estimating arsenic exposure from groundwater, base
 
 <!-- Code Quality -->
 [![Code style: tidyverse](https://img.shields.io/badge/code%20style-tidyverse-blue.svg)](https://style.tidyverse.org)
-[![Dependencies](https://img.shields.io/badge/dependencies-5-blue.svg)](https://github.com/montimaj/gwArsenicR/blob/main/DESCRIPTION)
+[![Dependencies](https://img.shields.io/badge/dependencies-5-blue.svg)](https://code.usgs.gov/envirohealth/gwArsenicR/-/blob/main/DESCRIPTION)
 
 <!-- Academic -->
-[![DOI](https://img.shields.io/badge/DOI-pending-orange.svg)](https://github.com/montimaj/gwArsenicR)
+[![DOI](https://img.shields.io/badge/DOI-pending-orange.svg)](https://gitlab.com/s.majumdar_mst.edu/gwArsenicR)
 <!-- [![JOSS](https://joss.theoj.org/papers/10.21105/joss.XXXXX/status.svg)](https://joss.theoj.org/papers/10.21105/joss.XXXXX) -->
 
 **Principal Investigator**: [Dr. Matthew O. Gribble](https://profiles.ucsf.edu/matthew.gribble) [matt.gribble@ucsf.edu]
@@ -78,13 +78,13 @@ If you do not have Pandoc, you can download and install it from the official web
 
 **Prerequisites:** R (≥ 4.1.0) and [Pandoc](https://pandoc.org/installing.html) for building vignettes.
 
-**Install from GitHub:**
+**Install from GitLab:**
 ```r
 # Install devtools if not already installed
 if (!require("devtools")) install.packages("devtools")
 
 # Install gwArsenicR
-devtools::install_github("montimaj/gwArsenicR", build_vignettes = TRUE)
+devtools::install_git("https://code.usgs.gov/envirohealth/gwArsenicR.git", build_vignettes = TRUE)
 
 # Load the package
 library(gwArsenicR)
@@ -96,7 +96,7 @@ library(gwArsenicR)
 install.packages(c("devtools", "testthat", "covr", "DT", "htmltools"))
 
 # Install gwArsenicR
-devtools::install_github("montimaj/gwArsenicR", build_vignettes = TRUE)
+devtools::install_git("https://code.usgs.gov/envirohealth/gwArsenicR.git", build_vignettes = TRUE)
 ```
 
 **Verify installation:**
@@ -110,7 +110,7 @@ packageVersion("gwArsenicR")
 
 **Package Documentation Website:**
 
-The complete package documentation, including detailed function references, vignettes, and examples, is available at: **https://montimaj.github.io/gwArsenicR**
+The complete package documentation, including detailed function references, vignettes, and examples, is available at: **https://s.majumdar_mst.edu.gitlab.io/gwArsenicR**
 
 This website is automatically generated and updated whenever changes are made to the main branch, ensuring you always have access to the latest documentation.
 
@@ -156,11 +156,15 @@ print(results)
 For detailed examples with dummy data, see the [vignette](vignettes/gwArsenicR-vignette.Rmd).
 
 ## Package Structure
-The gwArsenicR package follows the standard structure for R packages:
+The gwArsenicR package follows the standard structure for R packages with GitLab CI/CD integration:
 ```
 gwArsenicR/
 ├── R/
-│   └── gwArsenic.R           # Main exported function and all package code
+│   ├── data-loading.R                  # Data loading and processing functions
+│   ├── gwArsenic.R                     # Main exported function
+│   ├── imputation.R                    # Multiple imputation functions
+│   ├── regression.R                    # Mixed-effects regression analysis
+│   └── utils.R                         # Utility and validation functions
 ├── man/
 │   ├── perform_sensitivity_analysis.Rd
 │   └── [other function documentation]
@@ -173,17 +177,18 @@ gwArsenicR/
 │   └── test_coverage_local.R           # Local coverage testing script
 ├── vignettes/
 │   └── gwArsenicR-vignette.Rmd         # Package tutorial and examples
-├── .github/
-│   └── workflows/
-│       └── r.yml                       # CI/CD pipeline with coverage
 ├── docs/                               # Generated by pkgdown (auto-created)
 ├── coverage/                           # Coverage reports (auto-created)
+├── paper/                              # JOSS paper files
+│   ├── paper.md                        # Main paper manuscript
+│   ├── paper.bib                       # Bibliography
+│   └── paper.html                      # Generated HTML version
+├── .gitlab-ci.yml                      # GitLab CI/CD pipeline configuration
 ├── _pkgdown.yml                        # Website configuration
 ├── CONTRIBUTING.md                     # Contribution guidelines
 ├── DESCRIPTION                         # Package metadata and dependencies
 ├── NAMESPACE                           # Package exports and imports
 ├── LICENSE                             # Apache 2.0 license file
-├── LICENSE.md                          # License details
 ├── NEWS.md                             # Change log and version history
 ├── README.md                           # README file
 └── .gitignore                          # Git ignore rules
@@ -191,34 +196,75 @@ gwArsenicR/
 
 ### R/ Directory Structure
 
-The package uses a **monolithic architecture** where all functionality is contained in a single, well-organized R file:
+The package uses a **modular architecture** where functionality is organized across multiple well-structured R files:
 
-- **`gwArsenic.R`**: Contains all package functions including:
-  - `perform_sensitivity_analysis()` - Main exported function
-  - Data loading and processing functions
-  - Multiple imputation functions using MICE
-  - Mixed-effects regression analysis functions
-  - Utility and validation functions
+- **`gwArsenic.R`**: Main exported function `perform_sensitivity_analysis()`
+- **`data-loading.R`**: Data loading and processing functions
+  - `load_and_process_arsenic_data()` - Orchestrates USGS and EPA data loading
+  - `load_usgs_data()` - Loads USGS probability data
+  - `convert_epa_to_multinomial()` - Converts EPA lognormal to multinomial probabilities
+  - `create_weighted_prob_matrix()` - Creates weighted combined probability matrix
+  - `load_and_process_birth_data()` - Loads and processes birth/health outcome data
+- **`imputation.R`**: Multiple imputation functions using MICE
+  - `impute_arsenic_exposure()` - Creates multiple imputed datasets with arsenic exposure
+  - `impute_additional_variables()` - Imputes missing covariates using MICE
+  - `validate_imputed_datasets()` - Validates imputation results
+- **`regression.R`**: Mixed-effects regression analysis functions
+  - `regression_analysis()` - Performs mixed-effects regression on imputed data
+  - `pool_estimates_by_term()` - Pools regression estimates using Rubin's Rules
+  - `pool_single_estimate()` - Applies Rubin's Rules to individual parameters
+- **`utils.R`**: Utility and validation functions
+  - `validate_all_inputs()` - Input validation and error checking
+  - `format_geographic_ids()` - Formats FIPS codes and geographic identifiers
+  - Additional helper functions for data validation and formatting
 
-This approach provides several advantages:
-- **Simplified maintenance**: All related code in one location
-- **Easier debugging**: Complete workflow visible in single file
-- **Reduced complexity**: No cross-file dependencies
-- **Better performance**: Reduced package loading overhead
+This modular approach provides several advantages:
+- **Clear separation of concerns**: Each file handles a specific aspect of the workflow
+- **Easier maintenance**: Functions are logically grouped by purpose
+- **Better code organization**: Related functions are kept together
+- **Improved testability**: Each module can be tested independently
+- **Enhanced readability**: Developers can focus on specific functionality
 
 ### Testing Infrastructure
 
-The package includes comprehensive testing and coverage tools:
+The package includes comprehensive testing and coverage tools with GitLab CI/CD integration:
 
 - **`tests/testthat/test-gwArsenic.R`**: Main test suite with >95% code coverage
 - **`tests/testthat/helper-create_dummy_data.R`**: Creates synthetic data for testing
 - **`tests/testthat.R`**: Standard R package test runner
 - **`scripts/test_coverage_local.R`**: Local coverage analysis script
-- **`.github/workflows/r.yml`**: Automated CI/CD with coverage reporting
+- **`.gitlab-ci.yml`**: GitLab CI/CD pipeline with automated testing
+  - Multi-platform testing (Ubuntu with multiple R versions)
+  - Automated coverage reporting and quality gates
+  - Documentation validation
+  - Security scanning
+  - Automated pkgdown site deployment
+
+### GitLab CI/CD Pipeline
+
+The package uses GitLab CI/CD for continuous integration with the following stages:
+
+1. **test**: Run R package tests on multiple versions/platforms
+   - R release (Ubuntu latest)
+   - R development version (Ubuntu latest)  
+   - R oldrel-1 (Ubuntu with R 4.3.0)
+
+2. **coverage**: Generate and analyze test coverage
+   - Minimum threshold: 65% (fails pipeline if below)
+   - Recommended threshold: 75% (warning if below)
+   - Target threshold: 85% (optimal)
+
+3. **docs**: Validate documentation is up to date
+   - Checks that roxygen2 documentation is current
+   - Validates package structure
+
+4. **deploy**: Deploy to GitLab Pages and create releases
+   - Automatic pkgdown site deployment
+   - Release artifact creation on git tags
 
 ### Key Internal Functions
 
-While users primarily interact with `perform_sensitivity_analysis()`, the package includes several internal functions organized by functionality:
+While users primarily interact with `perform_sensitivity_analysis()`, the package includes several internal functions organized by module:
 
 **Data Loading (`data-loading.R`):**
 - `load_and_process_arsenic_data()`: Orchestrates USGS and EPA data loading
@@ -271,7 +317,7 @@ The function is designed to handle the complex statistical methodology while pro
 ## Documentation
 
 ### Online Documentation
-📖 **Complete documentation website**: https://montimaj.github.io/gwArsenicR
+📖 **Complete documentation website**: https://s.majumdar_mst.edu.gitlab.io/gwArsenicR
 
 The documentation website includes:
 - **Function Reference**: Detailed documentation for all package functions
@@ -393,13 +439,21 @@ Duration: 5.6 s
 
 ### Continuous Integration
 
-The package includes automated testing via GitHub Actions:
+The package includes automated testing via GitLab CI/CD pipeline:
 - **R CMD check**: Validates package structure and dependencies
-- **Multiple R versions**: Tests on R 4.1+ across different operating systems
-- **Dependency validation**: Ensures all required packages are properly declared
+- **Multiple R versions**: Tests on R release, devel, and oldrel-1
+- **Coverage reporting**: Tracks test coverage with quality gates
 - **Documentation checks**: Validates roxygen2 documentation completeness
+- **Security scanning**: Optional vulnerability scanning with oysteR
+- **Automated deployment**: pkgdown site deployment to GitLab Pages
 
-[![Build and Test](https://github.com/montimaj/gwArsenicR/actions/workflows/r.yml/badge.svg)](https://github.com/montimaj/gwArsenicR/actions/workflows/r.yml)
+The pipeline runs on:
+- Pushes to main/develop branches
+- Merge requests
+- Git tags (for releases)
+- Changes to R files, tests, DESCRIPTION, or CI configuration
+
+[![Pipeline Status](https://code.usgs.gov/envirohealth/gwArsenicR/badges/main/pipeline.svg)](https://code.usgs.gov/envirohealth/gwArsenicR/-/pipelines)
 
 ### Troubleshooting Tests
 
@@ -454,7 +508,7 @@ When developing or modifying the package:
 We welcome contributions! Please see our [contribution guidelines](CONTRIBUTING.md) for details.
 
 **Ways to contribute:**
-- 🐛 Report bugs via [GitHub issues](https://github.com/montimaj/gwArsenicR/issues)
+- 🐛 Report bugs via [GitLab issues](https://code.usgs.gov/envirohealth/gwArsenicR/-/issues)
 - 💡 Suggest features or improvements
 - 📖 Improve documentation
 - 🧪 Add tests or examples
@@ -462,7 +516,7 @@ We welcome contributions! Please see our [contribution guidelines](CONTRIBUTING.
 
 **Development setup:**
 ```bash
-git clone https://github.com/montimaj/gwArsenicR.git
+git clone https://code.usgs.gov/envirohealth/gwArsenicR.git
 cd gwArsenicR
 Rscript -e "devtools::load_all(); devtools::test()"
 ```
@@ -493,7 +547,7 @@ Install these core dependencies manually before installing gwArsenicR:
 install.packages(c("R6", "digest", "purrr", "vctrs", "glue"))
 
 # Then install gwArsenicR
-devtools::install_github("montimaj/gwArsenicR")
+devtools::install_git("https://code.usgs.gov/envirohealth/gwArsenicR.git")
 ```
 
 **Why this happens:**
@@ -526,7 +580,7 @@ This issue typically occurs when:
    
    # Reinstall dependencies and package
    install.packages(c("devtools", "R6", "digest", "purrr", "vctrs", "glue"))
-   devtools::install_github("montimaj/gwArsenicR")
+   devtools::install_git("https://code.usgs.gov/envirohealth/gwArsenicR.git")
    ```
 
 4. **Check R version compatibility:**
@@ -535,7 +589,7 @@ This issue typically occurs when:
    R.version.string
    ```
 
-If issues persist, please [report them](https://github.com/montimaj/gwArsenicR/issues) with your R version and sessionInfo().
+If issues persist, please [report them](https://code.usgs.gov/envirohealth/gwArsenicR/-/issues) with your R version and sessionInfo().
 
 ## Citation
 
@@ -553,7 +607,7 @@ If you use gwArsenicR in your research, please cite:
   journal={Journal of Open Source Software},
   year={2025},
   note={Under review},
-  url={https://github.com/montimaj/gwArsenicR}
+  url={https://code.usgs.gov/envirohealth/gwArsenicR}
 }
 ```
 
@@ -565,7 +619,7 @@ This work was supported by the National Heart, Lung, and Blood Institute (R21HL1
 
 ## License
 
-This project is licensed under the Apache 2.0 License - see the [LICENSE](https://github.com/montimaj/gwArsenicR/blob/main/LICENSE) file for details.
+This project is licensed under the Apache 2.0 License - see the [LICENSE](https://code.usgs.gov/envirohealth/gwArsenicR/-/blob/main/LICENSE) file for details.
 
 **Version:** 0.1.0 | **Status:** Under active development
 

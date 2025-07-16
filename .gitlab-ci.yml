@@ -1,0 +1,422 @@
+# GitLab CI/CD pipeline for testing gwArsenicR package
+# This pipeline tests the package on multiple R versions and operating systems
+# to ensure compatibility and reliability across different environments
+
+stages:
+  - test
+  - coverage
+  - docs
+  - deploy
+
+variables:
+  DOCKER_DRIVER: overlay2
+  R_KEEP_PKG_SOURCE: "yes"
+  CRAN_REPO: "https://cloud.r-project.org/"
+
+# Cache definition for R packages
+.r_cache: &r_cache
+  cache:
+    key: "r-packages-$CI_COMMIT_REF_SLUG"
+    paths:
+      - .cache/R/
+      - renv/
+    policy: pull-push
+
+# Base R setup template
+.r_base: &r_base
+  before_script:
+    # Set up R library cache directory
+    - mkdir -p .cache/R
+    - export R_LIBS_USER="$(pwd)/.cache/R"
+    - echo "R_LIBS_USER=$R_LIBS_USER" >> $CI_ENV
+    # Update package repositories
+    - echo 'options(repos = c(CRAN = Sys.getenv("CRAN_REPO", "https://cloud.r-project.org/")))' > ~/.Rprofile
+    - echo 'options(warn = 2, error = traceback)' >> ~/.Rprofile
+    # Install basic dependencies
+    - R -e "if (!requireNamespace('remotes', quietly = TRUE)) install.packages('remotes')"
+    - R -e "if (!requireNamespace('devtools', quietly = TRUE)) install.packages('devtools')"
+
+# Test job template
+.test_template: &test_template
+  <<: *r_base
+  <<: *r_cache
+  stage: test
+  script:
+    # Install system dependencies for Linux
+    - |
+      if [ "$CI_RUNNER_EXECUTABLE_ARCH" = "linux/amd64" ] || [ "$CI_RUNNER_EXECUTABLE_ARCH" = "linux/arm64" ]; then
+        apt-get update && apt-get install -y libcurl4-openssl-dev libssl-dev libxml2-dev pandoc
+      fi
+    # Install package dependencies
+    - R -e "remotes::install_deps(dependencies = TRUE, upgrade = 'always')"
+    - R -e "install.packages(c('testthat', 'rcmdcheck', 'covr', 'spelling'))"
+    # Check package build
+    - R -e "rcmdcheck::rcmdcheck(args = '--no-manual', error_on = 'error')"
+    # Run comprehensive tests
+    - |
+      R -e "
+      options(warn = 2, error = traceback)
+      devtools::load_all()
+      
+      tryCatch({
+        cat('Running test-gwArsenic.R specifically...\n')
+        if (file.exists('tests/testthat/test-gwArsenic.R')) {
+          testthat::test_file('tests/testthat/test-gwArsenic.R', reporter = 'summary')
+          cat('test-gwArsenic.R completed successfully!\n')
+        } else {
+          cat('Warning: test-gwArsenic.R not found, trying filter approach...\n')
+          devtools::test(filter = 'gwArsenic', reporter = 'summary')
+        }
+        
+        cat('Running full test suite...\n')
+        devtools::test(reporter = 'summary')
+        
+        cat('Testing package installation...\n')
+        devtools::install(quiet = FALSE)
+        library(gwArsenicR)
+        
+        # Test main function exists
+        stopifnot(exists('perform_sensitivity_analysis'))
+        cat('All tests completed successfully!\n')
+      }, error = function(e) {
+        cat('Test failed with error:\n')
+        print(e)
+        quit(status = 1)
+      })
+      "
+    # Test vignette rendering
+    - |
+      R -e "
+      if (file.exists('vignettes/gwArsenicR-vignette.Rmd')) {
+        cat('Testing vignette rendering...\n')
+        tryCatch({
+          rmarkdown::render('vignettes/gwArsenicR-vignette.Rmd', 
+                          output_dir = tempdir())
+          cat('Vignette rendered successfully!\n')
+        }, error = function(e) {
+          cat('Vignette rendering failed:\n')
+          print(e)
+          quit(status = 1)
+        })
+      }
+      "
+    # Show session info
+    - |
+      R -e "
+      options(width = 100)
+      pkgs <- installed.packages()[, 'Package']
+      sessioninfo::session_info(pkgs, include_base = TRUE)
+      "
+  artifacts:
+    when: on_failure
+    paths:
+      - check/
+    expire_in: 1 week
+  only:
+    refs:
+      - main
+      - develop
+      - merge_requests
+    changes:
+      - "**/*.R"
+      - "**/*.Rmd"
+      - "DESCRIPTION"
+      - "NAMESPACE"
+      - "tests/**/*"
+      - ".gitlab-ci.yml"
+
+# Test jobs for different R versions and platforms
+test:r-release-ubuntu:
+  <<: *test_template
+  image: rocker/r-ver:latest
+  variables:
+    R_VERSION: "release"
+    PLATFORM: "ubuntu-latest"
+
+test:r-devel-ubuntu:
+  <<: *test_template
+  image: rocker/r-devel:latest
+  variables:
+    R_VERSION: "devel"
+    PLATFORM: "ubuntu-latest"
+  allow_failure: true  # R-devel can be unstable
+
+test:r-oldrel-ubuntu:
+  <<: *test_template
+  image: rocker/r-ver:4.3.0  # Adjust to appropriate oldrel version
+  variables:
+    R_VERSION: "oldrel-1"
+    PLATFORM: "ubuntu-latest"
+
+# Coverage job
+coverage:
+  <<: *r_base
+  <<: *r_cache
+  stage: coverage
+  image: rocker/r-ver:latest
+  script:
+    # Install dependencies
+    - R -e "remotes::install_deps(dependencies = TRUE, upgrade = 'always')"
+    - R -e "install.packages(c('covr', 'testthat', 'devtools', 'DT', 'htmltools'))"
+    # Generate coverage report
+    - |
+      R -e "
+      options(repos = c(CRAN = 'https://cloud.r-project.org/'))
+      
+      devtools::load_all('.', quiet = FALSE)
+      
+      cat('Generating coverage for gwArsenic.R...\n')
+      start_time <- Sys.time()
+      
+      # Generate coverage specifically for gwArsenic.R
+      full_cov <- covr::package_coverage(
+        path = 'R/gwArsenic.R',
+        test_files = 'tests/testthat/test-gwArsenic.R',
+        quiet = FALSE,
+        clean = FALSE,
+        type = 'tests'
+      )
+      
+      end_time <- Sys.time()
+      cat('✅ Coverage generation completed in',
+          round(as.numeric(end_time - start_time, units = 'secs'), 2),
+          'seconds\n\n')
+      
+      # Create coverage directory
+      dir.create('coverage', showWarnings = FALSE)
+      
+      # Generate HTML report for gwArsenic.R only
+      cat('\n=== Generating gwArsenic.R Coverage Report ===\n')
+      tryCatch({
+        # Filter coverage to show only gwArsenic.R
+        gwarsenic_only_cov <- Filter(function(x) {
+          if (is.list(x) && !is.null(x\$srcref)) {
+            srcfile_name <- attr(x\$srcref, 'srcfile')\$filename
+            grepl('gwArsenic\\\\.R', basename(srcfile_name), ignore.case = TRUE)
+          } else {
+            FALSE
+          }
+        }, full_cov)
+        
+        # Recreate coverage object with proper class and attributes
+        if (length(gwarsenic_only_cov) > 0) {
+          class(gwarsenic_only_cov) <- class(full_cov)
+          attr(gwarsenic_only_cov, 'package') <- attr(full_cov, 'package')
+          attr(gwarsenic_only_cov, 'relative') <- attr(full_cov, 'relative')
+          
+          # Generate report with filtered coverage
+          covr::report(gwarsenic_only_cov, file = 'coverage/gwArsenic-coverage.html')
+          cat('✅ HTML coverage report generated for gwArsenic.R only\n')
+        } else {
+          cat('⚠️ No gwArsenic.R coverage found, generating full report\n')
+          covr::report(full_cov, file = 'coverage/gwArsenic-coverage.html')
+        }
+      }, error = function(e) {
+        cat('⚠️ Warning: Could not generate HTML report:\n')
+        print(e)
+        cat('Trying fallback approach...\n')
+        tryCatch({
+          covr::report(full_cov, file = 'coverage/gwArsenic-coverage.html')
+          cat('✅ Fallback HTML report generated\n')
+        }, error = function(e2) {
+          cat('❌ Could not generate any HTML report\n')
+        })
+      })
+      
+      # Create a focused summary file
+      coverage_pct <- covr::percent_coverage(gwarsenic_only_cov)
+      cat(sprintf('📊 gwArsenic.R Coverage: %.1f%%\n\n', coverage_pct))
+      total_lines <- length(full_cov)
+      uncovered_lines <- ceiling(
+        total_lines - coverage_pct / 100 * total_lines
+      )
+      coverage_summary <- data.frame(
+        File = 'gwArsenic.R',
+        Coverage = sprintf('%.1f%%', coverage_pct),
+        Status = if (coverage_pct >= 85) {
+          '✅ EXCELLENT'
+        } else if (coverage_pct >= 75) {
+          '✅ GOOD'
+        } else if (coverage_pct >= 65) {
+          '⚠️ NEEDS IMPROVEMENT'
+        } else {
+          '❌ INSUFFICIENT'
+        },
+        Target = '≥85%',
+        Uncovered_Lines = uncovered_lines,
+        Total_Lines = total_lines,
+        stringsAsFactors = FALSE
+      )
+      cat('\n=== gwArsenic.R Coverage Summary ===\n')
+      print(coverage_summary)
+      write.csv(coverage_summary, 'coverage/gwArsenic-coverage-summary.csv', row.names = FALSE)
+
+      # Set quality gates
+      cat('\n=== Quality Gate Assessment ===\n')
+      if (coverage_pct < 65) {
+        cat(sprintf('❌ FAIL: gwArsenic.R coverage %.1f%% is below minimum threshold (65%%)\n', coverage_pct))
+        cat('🔧 Recommendation: Add more comprehensive tests\n')
+        quit(status = 1)
+      } else if (coverage_pct < 75) {
+        cat(sprintf('⚠️ WARNING: gwArsenic.R coverage %.1f%% is below recommended threshold (75%%)\n', coverage_pct))
+        cat('🔧 Recommendation: Consider adding tests for edge cases\n')
+      } else {
+        cat(sprintf('✅ SUCCESS: gwArsenic.R coverage %.1f%% meets quality standards\n', coverage_pct))
+      }
+      
+      # Additional recommendations
+      if (coverage_pct < 85) {
+        cat('\n📝 Suggestions to improve coverage:\n')
+        cat('1. Add tests for error conditions and edge cases\n')
+        cat('2. Test all branches of conditional statements\n')
+        cat('3. Ensure all validation functions are tested\n')
+        cat('4. Test both success and failure scenarios\n')
+      }
+      
+      # Generate coverage badge data
+      if (coverage_pct >= 90) {
+        color <- 'brightgreen'
+      } else if (coverage_pct >= 80) {
+        color <- 'green' 
+      } else if (coverage_pct >= 70) {
+        color <- 'yellow'
+      } else if (coverage_pct >= 60) {
+        color <- 'orange'
+      } else {
+        color <- 'red'
+      }
+      
+      badge_url <- sprintf('https://img.shields.io/badge/coverage-%.1f%%%%25-%s.svg', 
+                          coverage_pct, color)
+      
+      # Write badge info to file for potential README updates
+      writeLines(c(
+        paste('COVERAGE_PCT=', coverage_pct, sep=''),
+        paste('COVERAGE_BADGE=', badge_url, sep='')
+      ), 'coverage/badge-info.txt')
+      
+      cat(sprintf('Generated coverage badge: %s\n', badge_url))
+      "
+  artifacts:
+    paths:
+      - coverage/
+    reports:
+      coverage_report:
+        coverage_format: cobertura
+        path: coverage/coverage.xml
+    expire_in: 1 week
+  coverage: '/Coverage: \d+\.\d+%/'
+  only:
+    refs:
+      - main
+    changes:
+      - "**/*.R"
+      - "tests/**/*"
+      - ".gitlab-ci.yml"
+
+# Documentation validation
+docs:
+  <<: *r_base
+  <<: *r_cache
+  stage: docs
+  image: rocker/r-ver:latest
+  script:
+    # Install dependencies
+    - R -e "remotes::install_deps(dependencies = TRUE, upgrade = 'always')"
+    - R -e "install.packages(c('roxygen2', 'devtools', 'pkgdown'))"
+    # Check documentation
+    - |
+      R -e "
+      cat('Generating documentation...\n')
+      devtools::document()
+      
+      # Verify no uncommitted changes to documentation
+      status_output <- system('git status --porcelain', intern = TRUE)
+      if (length(status_output) > 0) {
+        cat('Documentation is out of date. Please run devtools::document()\n')
+        cat('Changed files:\n')
+        system('git status')
+        system('git diff')
+        quit(status = 1)
+      }
+      
+      cat('Documentation is up to date!\n')
+      "
+  only:
+    refs:
+      - main
+      - develop
+      - merge_requests
+    changes:
+      - "R/**/*"
+      - "man/**/*"
+      - "DESCRIPTION"
+      - "NAMESPACE"
+      - ".gitlab-ci.yml"
+
+# pkgdown site generation and deployment
+pages:
+  <<: *r_base
+  <<: *r_cache
+  stage: deploy
+  image: rocker/r-ver:latest
+  script:
+    # Install dependencies
+    - R -e "remotes::install_deps(dependencies = TRUE, upgrade = 'always')"
+    - R -e "install.packages(c('pkgdown', 'devtools'))"
+    # Clean and build pkgdown site
+    - |
+      R -e "
+      # Force clean any existing pkgdown artifacts
+      pkgdown::clean_site(force = TRUE)
+      # Build site for GitLab Pages
+      pkgdown::build_site(dest_dir = 'public', new_process = FALSE, install = FALSE)
+      "
+  artifacts:
+    paths:
+      - public
+    expire_in: 30 days
+  only:
+    refs:
+      - main
+  needs:
+    - test:r-release-ubuntu
+    - docs
+
+# Release job (optional - runs on tags)
+release:
+  <<: *r_base
+  stage: deploy
+  image: rocker/r-ver:latest
+  script:
+    # Install dependencies
+    - R -e "remotes::install_deps(dependencies = TRUE, upgrade = 'always')"
+    - R -e "install.packages(c('devtools', 'pkgbuild'))"
+    # Build package
+    - R -e "devtools::build()"
+    # Create source package
+    - R -e "pkgbuild::build(dest_path = '.', binary = FALSE)"
+  artifacts:
+    paths:
+      - "*.tar.gz"
+    expire_in: 1 year
+  only:
+    - tags
+  except:
+    - branches
+
+# Security scan (optional)
+security_scan:
+  stage: test
+  image: rocker/r-ver:latest
+  script:
+    - R -e "if (!requireNamespace('oysteR', quietly = TRUE)) install.packages('oysteR')"
+    - R -e "oysteR::audit_deps('.')"
+  allow_failure: true
+  only:
+    refs:
+      - main
+      - develop
+    changes:
+      - "DESCRIPTION"
+      - ".gitlab-ci.yml"
