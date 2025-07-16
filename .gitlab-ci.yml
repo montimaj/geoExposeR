@@ -380,8 +380,10 @@ pages:
     refs:
       - main
   needs:
-    - test:r-release-ubuntu
-    - docs
+    - job: test:r-release-ubuntu
+      optional: true
+    - job: docs
+      optional: true
 
 # Release job (optional - runs on tags)
 release:
