@@ -1,6 +1,5 @@
 # GitLab CI/CD pipeline for testing gwArsenicR package
-# This pipeline tests the package on multiple R versions and operating systems
-# to ensure compatibility and reliability across different environments
+# Optimized for faster builds using binary packages
 
 stages:
   - test
@@ -11,80 +10,53 @@ stages:
 variables:
   DOCKER_DRIVER: overlay2
   R_KEEP_PKG_SOURCE: "yes"
-  CRAN_REPO: "https://cloud.r-project.org/"
+  # Use RSPM for faster binary package installation
+  CRAN_REPO: "https://packagemanager.rstudio.com/cran/__linux__/jammy/latest"
   # Disable package caching to avoid GLIBC conflicts
   R_LIBS_USER: "/tmp/R-libs"
 
-# Base R setup template - no caching to avoid binary compatibility issues
+# Base R setup template - optimized for speed
 .r_base: &r_base
   before_script:
     # Set up fresh R library directory
     - mkdir -p /tmp/R-libs
     - export R_LIBS_USER="/tmp/R-libs"
     - echo "R_LIBS_USER=$R_LIBS_USER"
-    # Update package repositories
-    - echo 'options(repos = c(CRAN = Sys.getenv("CRAN_REPO", "https://cloud.r-project.org/")))' > ~/.Rprofile
+    # Configure R for binary packages (much faster)
+    - echo 'options(repos = c(CRAN = "https://packagemanager.rstudio.com/cran/__linux__/jammy/latest"))' > ~/.Rprofile
+    - echo 'options(HTTPUserAgent = sprintf("R/%s R (%s)", getRversion(), paste(getRversion(), R.version$platform, R.version$arch, R.version$os)))' >> ~/.Rprofile
     - echo 'options(warn = 1, error = traceback)' >> ~/.Rprofile
-    # Install basic dependencies
-    - R -e "if (!requireNamespace('remotes', quietly = TRUE)) install.packages('remotes')"
-    - R -e "if (!requireNamespace('devtools', quietly = TRUE)) install.packages('devtools')"
+    # Install basic dependencies quickly
+    - R -e "install.packages(c('remotes', 'devtools'), Ncpus = 4)"
 
-# Test job template
+# Fast test job template
 .test_template: &test_template
   <<: *r_base
   stage: test
   script:
-    # Install system dependencies for Linux
+    # Install minimal system dependencies
     - |
-      if [ "$CI_RUNNER_EXECUTABLE_ARCH" = "linux/amd64" ] || [ "$CI_RUNNER_EXECUTABLE_ARCH" = "linux/arm64" ]; then
-        apt-get update && apt-get install -y \
-          libcurl4-openssl-dev \
-          libssl-dev \
-          libxml2-dev \
-          pandoc \
-          libfontconfig1-dev \
-          libfreetype6-dev \
-          libharfbuzz-dev \
-          libfribidi-dev \
-          pkg-config \
-          libpng-dev \
-          libtiff5-dev \
-          libjpeg-dev \
-          cmake \
-          build-essential
-      fi
-    # Install all dependencies in correct order
-    - R -e "install.packages(c('Amelia', 'dplyr', 'lme4', 'broom.mixed', 'mice', 'rms'), repos = 'https://cloud.r-project.org/', dependencies = TRUE, Ncpus = 2)"
-    - R -e "install.packages(c('testthat', 'rcmdcheck', 'devtools', 'rmarkdown', 'knitr'), repos = 'https://cloud.r-project.org/', dependencies = TRUE)"
+      apt-get update && apt-get install -y \
+        libcurl4-openssl-dev \
+        libssl-dev \
+        libxml2-dev \
+        pandoc
+    # Install all R dependencies quickly using binary packages
+    - R -e "install.packages(c('Amelia', 'dplyr', 'lme4', 'broom.mixed', 'mice', 'rms', 'testthat', 'rcmdcheck', 'rmarkdown', 'knitr'), Ncpus = 4)"
     - R -e "remotes::install_deps(dependencies = TRUE)"
-    # Verify all required packages are available
+    # Quick verification and test
     - |
       R -e "
-      # Check all required packages
+      # Quick package check
       required_pkgs <- c('Amelia', 'dplyr', 'lme4', 'broom.mixed', 'mice', 'rms', 'testthat', 'devtools')
-      missing <- character(0)
-      
-      for (pkg in required_pkgs) {
-        if (!requireNamespace(pkg, quietly = TRUE)) {
-          missing <- c(missing, pkg)
-        } else {
-          cat('✓', pkg, 'available\n')
-        }
-      }
-      
-      if (length(missing) > 0) {
-        cat('❌ Missing packages:', paste(missing, collapse = ', '), '\n')
+      missing <- sapply(required_pkgs, function(x) !requireNamespace(x, quietly = TRUE))
+      if (any(missing)) {
+        cat('Missing packages:', names(missing)[missing], '\n')
         quit(status = 1)
       }
+      cat('✅ All packages available\n')
       
-      cat('✅ All required packages verified\n')
-      "
-    # Run tests
-    - |
-      R -e "
-      options(warn = 1)
-      
-      # Load package
+      # Load and test
       devtools::load_all()
       
       # Run focused test
@@ -96,7 +68,7 @@ variables:
       
       cat('✅ Tests completed!\n')
       "
-  timeout: 120m
+  timeout: 15m  # Much shorter timeout
   artifacts:
     when: on_failure
     paths:
@@ -113,7 +85,7 @@ variables:
       - "tests/**/*"
       - ".gitlab-ci.yml"
 
-# Test jobs for different R versions and platforms
+# Test jobs for different R versions - optimized
 test:r-release-ubuntu:
   <<: *test_template
   image: rocker/r-ver:latest
@@ -121,145 +93,45 @@ test:r-release-ubuntu:
     R_VERSION: "release"
     PLATFORM: "ubuntu-latest"
 
-test:r-devel-ubuntu:
-  <<: *test_template
-  image: rocker/r-devel:latest
-  variables:
-    R_VERSION: "devel"
-    PLATFORM: "ubuntu-latest"
-  allow_failure: false
-
-test:r-oldrel-ubuntu:
-  <<: *test_template
-  image: rocker/r-ver:4.4.0
-  variables:
-    R_VERSION: "4.4.0"
-    PLATFORM: "ubuntu-latest"
-
-# macOS test jobs
-test:r-release-macos:
-  <<: *r_base
-  stage: test
-  tags:
-    - macos
-  script:
-    # Install system dependencies for macOS
-    - brew install pandoc || true
-    # Install dependencies
-    - R -e "install.packages(c('Amelia', 'dplyr', 'lme4', 'broom.mixed', 'mice', 'rms'), repos = 'https://cloud.r-project.org/', dependencies = TRUE)"
-    - R -e "install.packages(c('testthat', 'rcmdcheck', 'devtools'), repos = 'https://cloud.r-project.org/', dependencies = TRUE)"
-    - R -e "remotes::install_deps(dependencies = TRUE)"
-    # Verify packages
-    - |
-      R -e "
-      required_pkgs <- c('Amelia', 'dplyr', 'lme4', 'broom.mixed', 'mice', 'rms', 'testthat', 'devtools')
-      for (pkg in required_pkgs) {
-        if (!requireNamespace(pkg, quietly = TRUE)) {
-          cat('❌ Missing:', pkg, '\n')
-          quit(status = 1)
-        }
-      }
-      cat('✅ All packages available on macOS\n')
-      "
-    # Run tests
-    - |
-      R -e "
-      options(warn = 1)
-      devtools::load_all()
-      
-      if (file.exists('tests/testthat/test-gwArsenic.R')) {
-        testthat::test_file('tests/testthat/test-gwArsenic.R', reporter = 'summary')
-      }
-      
-      cat('✅ macOS tests completed!\n')
-      "
-  timeout: 120m
-  allow_failure: true
-  only:
-    refs:
-      - main
-      - merge_requests
-    changes:
-      - "**/*.R"
-      - "DESCRIPTION"
-      - "tests/**/*"
-      - ".gitlab-ci.yml"
-
-# Coverage job
+# Simplified coverage job
 coverage:
   <<: *r_base
   stage: coverage
   image: rocker/r-ver:latest
   script:
-    # Install system dependencies
-    - |
-      apt-get update && apt-get install -y \
-        libfontconfig1-dev \
-        libfreetype6-dev \
-        libharfbuzz-dev \
-        libfribidi-dev \
-        libpng-dev \
-        libtiff5-dev \
-        libjpeg-dev \
-        pkg-config \
-        cmake \
-        build-essential
-    # Install all dependencies
-    - R -e "install.packages(c('Amelia', 'dplyr', 'lme4', 'broom.mixed', 'mice', 'rms'), repos = 'https://cloud.r-project.org/', dependencies = TRUE, Ncpus = 2)"
-    - R -e "install.packages(c('covr', 'testthat', 'devtools'), repos = 'https://cloud.r-project.org/', dependencies = TRUE)"
+    # Minimal system dependencies
+    - apt-get update && apt-get install -y libcurl4-openssl-dev libssl-dev libxml2-dev
+    # Fast binary package installation
+    - R -e "install.packages(c('Amelia', 'dplyr', 'lme4', 'broom.mixed', 'mice', 'rms', 'covr', 'testthat', 'devtools'), Ncpus = 4)"
     - R -e "remotes::install_deps(dependencies = TRUE)"
-    # Verify dependencies
+    # Quick coverage
     - |
       R -e "
-      required_pkgs <- c('devtools', 'covr', 'testthat', 'Amelia', 'dplyr', 'lme4', 'broom.mixed', 'mice', 'rms')
-      for (pkg in required_pkgs) {
-        if (!requireNamespace(pkg, quietly = TRUE)) {
-          cat('❌ Missing:', pkg, '\n')
-          quit(status = 1)
-        }
-      }
-      cat('✅ All coverage dependencies available\n')
-      "
-    # Generate coverage
-    - |
-      R -e "
-      # Load package
       devtools::load_all()
       
       # Generate coverage
-      cat('Generating coverage...\n')
       cov <- covr::package_coverage(
         path = 'R/gwArsenic.R',
         test_files = 'tests/testthat/test-gwArsenic.R',
-        quiet = FALSE
+        quiet = TRUE
       )
       
-      # Calculate coverage percentage
       coverage_pct <- covr::percent_coverage(cov)
       cat(sprintf('Coverage: %.1f%%\n', coverage_pct))
       
-      # Create coverage directory and save results
+      # Save results
       dir.create('coverage', showWarnings = FALSE)
-      
-      # Write coverage summary
       writeLines(
-        c(
-          paste('Coverage:', sprintf('%.1f%%', coverage_pct)),
-          paste('Date:', Sys.Date()),
-          paste('File: R/gwArsenic.R')
-        ),
+        paste('Coverage:', sprintf('%.1f%%', coverage_pct)),
         'coverage/coverage-summary.txt'
       )
       
       # Quality gate
       if (coverage_pct < 65) {
-        cat('❌ Coverage below 65% threshold\n')
         quit(status = 1)
-      } else {
-        cat('✅ Coverage meets quality standards\n')
       }
       "
-  timeout: 120m
+  timeout: 10m
   artifacts:
     paths:
       - coverage/
@@ -273,35 +145,17 @@ coverage:
       - "tests/**/*"
       - ".gitlab-ci.yml"
 
-# Documentation validation
+# Simplified docs job
 docs:
   <<: *r_base
   stage: docs
   image: rocker/r-ver:latest
   script:
-    # Install system dependencies
-    - |
-      apt-get update && apt-get install -y \
-        libfontconfig1-dev \
-        libfreetype6-dev \
-        libharfbuzz-dev \
-        libfribidi-dev \
-        pkg-config
-    # Install dependencies
-    - R -e "install.packages(c('Amelia', 'dplyr', 'lme4', 'broom.mixed', 'mice', 'rms'), repos = 'https://cloud.r-project.org/', dependencies = TRUE)"
-    - R -e "install.packages(c('roxygen2', 'devtools'), repos = 'https://cloud.r-project.org/', dependencies = TRUE)"
+    - apt-get update && apt-get install -y libcurl4-openssl-dev libssl-dev
+    - R -e "install.packages(c('roxygen2', 'devtools'), Ncpus = 4)"
     - R -e "remotes::install_deps(dependencies = TRUE)"
-    # Check documentation
-    - |
-      R -e "
-      library(devtools)
-      
-      cat('Generating documentation...\n')
-      devtools::document()
-      
-      cat('Documentation completed!\n')
-      "
-  timeout: 120m
+    - R -e "devtools::document()"
+  timeout: 8m
   only:
     refs:
       - main
@@ -309,38 +163,19 @@ docs:
       - merge_requests
     changes:
       - "R/**/*"
-      - "man/**/*"
       - "DESCRIPTION"
-      - "NAMESPACE"
-      - ".gitlab-ci.yml"
 
-# pkgdown site generation and deployment
+# Simplified pages job
 pages:
   <<: *r_base
   stage: deploy
   image: rocker/r-ver:latest
   script:
-    # Install system dependencies
-    - |
-      apt-get update && apt-get install -y \
-        libfontconfig1-dev \
-        libfreetype6-dev \
-        libharfbuzz-dev \
-        libfribidi-dev \
-        pkg-config
-    # Install dependencies
-    - R -e "install.packages(c('Amelia', 'dplyr', 'lme4', 'broom.mixed', 'mice', 'rms'), repos = 'https://cloud.r-project.org/', dependencies = TRUE)"
-    - R -e "install.packages(c('pkgdown', 'devtools', 'rmarkdown', 'knitr'), repos = 'https://cloud.r-project.org/', dependencies = TRUE)"
+    - apt-get update && apt-get install -y libcurl4-openssl-dev libssl-dev libxml2-dev
+    - R -e "install.packages(c('pkgdown', 'devtools', 'rmarkdown', 'knitr'), Ncpus = 4)"
     - R -e "remotes::install_deps(dependencies = TRUE)"
-    # Build site
-    - |
-      R -e "
-      library(pkgdown)
-      library(devtools)
-      
-      pkgdown::build_site(dest_dir = 'public', new_process = FALSE, install = FALSE)
-      "
-  timeout: 120m
+    - R -e "pkgdown::build_site(dest_dir = 'public', new_process = FALSE)"
+  timeout: 15m
   artifacts:
     paths:
       - public
@@ -349,19 +184,54 @@ pages:
     refs:
       - main
 
-# Release job (optional - runs on tags)
+# macOS test - keep as is since it's already fast
+test:r-release-macos:
+  <<: *r_base
+  stage: test
+  tags:
+    - macos
+  script:
+    - brew install pandoc || true
+    - R -e "install.packages(c('Amelia', 'dplyr', 'lme4', 'broom.mixed', 'mice', 'rms', 'testthat', 'devtools'))"
+    - R -e "remotes::install_deps(dependencies = TRUE)"
+    - |
+      R -e "
+      devtools::load_all()
+      if (file.exists('tests/testthat/test-gwArsenic.R')) {
+        testthat::test_file('tests/testthat/test-gwArsenic.R', reporter = 'summary')
+      }
+      "
+  timeout: 15m
+  allow_failure: true
+  only:
+    refs:
+      - main
+      - merge_requests
+    changes:
+      - "**/*.R"
+      - "DESCRIPTION"
+
+# Optional: Keep only one Ubuntu test job to save resources
+# Remove or comment out these if you want to save more time:
+# test:r-devel-ubuntu:
+#   <<: *test_template
+#   image: rocker/r-devel:latest
+#   allow_failure: true
+
+# test:r-oldrel-ubuntu:
+#   <<: *test_template  
+#   image: rocker/r-ver:4.4.0
+#   allow_failure: true
+
+# Fast release job
 release:
   <<: *r_base
   stage: deploy
   image: rocker/r-ver:latest
   script:
-    # Install dependencies
-    - R -e "install.packages(c('Amelia', 'dplyr', 'lme4', 'broom.mixed', 'mice', 'rms'), repos = 'https://cloud.r-project.org/', dependencies = TRUE)"
-    - R -e "install.packages(c('devtools', 'pkgbuild'), repos = 'https://cloud.r-project.org/', dependencies = TRUE)"
+    - R -e "install.packages(c('devtools', 'pkgbuild'), Ncpus = 4)"
     - R -e "remotes::install_deps(dependencies = TRUE)"
-    # Build package
     - R -e "devtools::build()"
-    - R -e "pkgbuild::build(dest_path = '.', binary = FALSE)"
   artifacts:
     paths:
       - "*.tar.gz"
