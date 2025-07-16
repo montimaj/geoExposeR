@@ -38,7 +38,8 @@ variables:
     - apt-get update && apt-get install curl -y
     - curl -O http://security.ubuntu.com/ubuntu/pool/main/i/icu/libicu70_70.1-2_amd64.deb
     - dpkg -i libicu70_70.1-2_amd64.deb
-    - apt-get update && apt-get install -y \
+    - |
+      apt-get update && apt-get install -y \
         libcurl4-openssl-dev \
         libssl-dev \
         libxml2-dev \
