@@ -182,6 +182,8 @@ test:r-release-macos:
     changes:
       - "**/*.R"
       - "DESCRIPTION"
+      - "tests/**/*"
+      - ".gitlab-ci.yml"
 
 # Coverage job
 coverage:
@@ -368,19 +370,3 @@ release:
     - tags
   except:
     - branches
-
-# Security scan (optional)
-security_scan:
-  stage: test
-  image: rocker/r-ver:latest
-  script:
-    - R -e "if (!requireNamespace('oysteR', quietly = TRUE)) install.packages('oysteR')"
-    - R -e "oysteR::audit_installed_r_pkgs()"
-  allow_failure: true
-  only:
-    refs:
-      - main
-      - develop
-    changes:
-      - "DESCRIPTION"
-      - ".gitlab-ci.yml"
