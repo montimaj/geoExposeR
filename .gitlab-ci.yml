@@ -348,7 +348,6 @@ pages:
         gfortran \
         build-essential \
         pandoc \
-        pandoc-citeproc \
         texlive-latex-base \
         texlive-fonts-recommended \
         texlive-fonts-extra \
