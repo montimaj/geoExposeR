@@ -62,7 +62,7 @@ variables:
           build-essential
       fi
     # Install dependencies efficiently
-    - R -e "install.packages(c('Amelia', 'dplyr', 'lme4', 'broom.mixed', 'mice', 'rms', 'testthat', 'rcmdcheck'), repos = 'https://cloud.r-project.org/', Ncpus = 2)"
+    - R -e "install.packages(c('Amelia', 'dplyr', 'lme4', 'broom.mixed', 'mice', 'rms', 'testthat', 'rcmdcheck', 'devtools', 'rmarkdown', 'knitr'), repos = 'https://cloud.r-project.org/', Ncpus = 2)"
     - R -e "remotes::install_deps(dependencies = TRUE)"
     # Run tests
     - |
@@ -293,7 +293,7 @@ coverage:
     - R -e "install.packages(c('Amelia', 'dplyr', 'lme4', 'broom.mixed', 'mice', 'rms'), repos = 'https://cloud.r-project.org/', Ncpus = 2)"
     - R -e "remotes::install_deps(dependencies = TRUE)"
     # Install coverage dependencies explicitly
-    - R -e "install.packages(c('covr', 'testthat', 'devtools'), repos = 'https://cloud.r-project.org/')"
+    - R -e "install.packages(c('covr', 'testthat', 'devtools', 'rmarkdown', 'knitr'), repos = 'https://cloud.r-project.org/')"
     # Verify dependencies are available
     - |
       R -e "
