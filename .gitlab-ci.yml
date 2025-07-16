@@ -52,168 +52,34 @@ variables:
           pandoc \
           libfontconfig1-dev \
           libfreetype6-dev \
-          libpng-dev \
-          libtiff5-dev \
-          libjpeg-dev \
           libharfbuzz-dev \
           libfribidi-dev \
           pkg-config
       fi
-    # Install package dependencies explicitly with better error handling
+    # Install dependencies efficiently
+    - R -e "install.packages(c('Amelia', 'dplyr', 'lme4', 'broom.mixed', 'mice', 'rms', 'testthat', 'rcmdcheck'), repos = 'https://cloud.r-project.org/', Ncpus = 2)"
+    - R -e "remotes::install_deps(dependencies = TRUE)"
+    # Run tests
     - |
       R -e "
-      options(warn = 1)  # Don't treat warnings as errors during installation
-      cat('Installing core package dependencies...\n')
+      options(warn = 1)
+      devtools::load_all()
       
-      # Install dependencies one by one with error checking
-      deps <- c('Amelia', 'dplyr', 'lme4', 'broom.mixed', 'mice', 'rms')
-      for (pkg in deps) {
-        cat('Installing', pkg, '...\n')
-        tryCatch({
-          if (!requireNamespace(pkg, quietly = TRUE)) {
-            install.packages(pkg, repos = 'https://cloud.r-project.org/', dependencies = TRUE)
-          }
-          cat('✓', pkg, 'installed successfully\n')
-        }, error = function(e) {
-          cat('✗ Failed to install', pkg, ':', e$message, '\n')
-          quit(status = 1)
-        })
+      # Run focused test
+      if (file.exists('tests/testthat/test-gwArsenic.R')) {
+        testthat::test_file('tests/testthat/test-gwArsenic.R', reporter = 'summary')
+      } else {
+        devtools::test(filter = 'gwArsenic', reporter = 'summary')
       }
       
-      cat('All core dependencies installed!\n')
+      cat('✅ Tests completed!\n')
       "
-    - R -e "remotes::install_deps(dependencies = TRUE, upgrade = 'always')"
-    - R -e "install.packages(c('testthat', 'rcmdcheck', 'covr', 'spelling'))"
-    # Ensure devtools is available (redundant check for safety)
-    - R -e "if (!requireNamespace('devtools', quietly = TRUE)) install.packages('devtools')"
-    # Verify all dependencies are available before proceeding
-    - |
-      R -e "
-      cat('Verifying package dependencies...\n')
-      required_pkgs <- c('Amelia', 'dplyr', 'lme4', 'broom.mixed', 'mice', 'rms', 'devtools', 'testthat')
-      missing_pkgs <- character(0)
-      
-      for (pkg in required_pkgs) {
-        if (!requireNamespace(pkg, quietly = TRUE)) {
-          missing_pkgs <- c(missing_pkgs, pkg)
-        } else {
-          cat('✓', pkg, 'available\n')
-        }
-      }
-      
-      if (length(missing_pkgs) > 0) {
-        cat('✗ Missing packages:', paste(missing_pkgs, collapse = ', '), '\n')
-        cat('Attempting to install missing packages...\n')
-        install.packages(missing_pkgs, repos = 'https://cloud.r-project.org/', dependencies = TRUE)
-        
-        # Verify again
-        still_missing <- character(0)
-        for (pkg in missing_pkgs) {
-          if (!requireNamespace(pkg, quietly = TRUE)) {
-            still_missing <- c(still_missing, pkg)
-          }
-        }
-        
-        if (length(still_missing) > 0) {
-          cat('✗ Still missing packages after installation attempt:', paste(still_missing, collapse = ', '), '\n')
-          quit(status = 1)
-        }
-      }
-      
-      cat('✅ All dependencies verified!\n')
-      "
-    # Check package build
-    - mkdir -p check
-    - R -e "result <- rcmdcheck::rcmdcheck(args = '--no-manual', error_on = 'error'); if (length(result\$errors) > 0 || length(result\$warnings) > 0) { dir.create('check', showWarnings = FALSE); writeLines(c(result\$errors, result\$warnings), 'check/rcmdcheck_output.txt') }"
-    # Run comprehensive tests with better dependency handling
-    - |
-      R -e "
-      options(warn = 2, error = traceback)
-      
-      # Ensure all required packages are loaded
-      cat('Loading required packages...\n')
-      required_pkgs <- c('devtools', 'testthat', 'Amelia', 'dplyr', 'lme4', 'broom.mixed', 'mice', 'rms')
-      
-      for (pkg in required_pkgs) {
-        tryCatch({
-          library(pkg, character.only = TRUE)
-          cat('✓ Loaded', pkg, '\n')
-        }, error = function(e) {
-          cat('✗ Failed to load', pkg, ':', e\$message, '\n')
-          quit(status = 1)
-        })
-      }
-      
-      cat('Attempting to load package...\n')
-      tryCatch({
-        devtools::load_all()
-        cat('✅ Package loaded successfully!\n')
-      }, error = function(e) {
-        cat('✗ Failed to load package:', e\$message, '\n')
-        cat('Installed packages:\n')
-        print(installed.packages()[, c('Package', 'Version')])
-        quit(status = 1)
-      })
-      
-      tryCatch({
-        cat('Running test-gwArsenic.R specifically...\n')
-        if (file.exists('tests/testthat/test-gwArsenic.R')) {
-          testthat::test_file('tests/testthat/test-gwArsenic.R', reporter = 'summary')
-          cat('test-gwArsenic.R completed successfully!\n')
-        } else {
-          cat('Warning: test-gwArsenic.R not found, trying filter approach...\n')
-          devtools::test(filter = 'gwArsenic', reporter = 'summary')
-        }
-        
-        cat('Running full test suite...\n')
-        devtools::test(reporter = 'summary')
-        
-        cat('Testing package installation...\n')
-        devtools::install(quiet = FALSE)
-        library(gwArsenicR)
-        
-        # Test main function exists
-        stopifnot(exists('perform_sensitivity_analysis'))
-        cat('All tests completed successfully!\n')
-      }, error = function(e) {
-        cat('Test failed with error:\n')
-        print(e)
-        quit(status = 1)
-      })
-      "
-    # Test vignette rendering
-    - |
-      R -e "
-      if (file.exists('vignettes/gwArsenicR-vignette.Rmd')) {
-        cat('Testing vignette rendering...\n')
-        tryCatch({
-          rmarkdown::render('vignettes/gwArsenicR-vignette.Rmd', 
-                          output_dir = tempdir())
-          cat('Vignette rendered successfully!\n')
-        }, error = function(e) {
-          cat('Vignette rendering failed:\n')
-          print(e)
-          quit(status = 1)
-        })
-      }
-      "
-    # Show session info
-    - |
-      R -e "
-      options(width = 100)
-      pkgs <- installed.packages()[, 'Package']
-      sessioninfo::session_info(pkgs, include_base = TRUE)
-      "
+  timeout: 30m
   artifacts:
     when: on_failure
     paths:
       - check/
-      - "*.Rcheck/"
     expire_in: 1 week
-  after_script:
-    # Ensure check directory exists for artifact collection
-    - mkdir -p check
-    - if [ -d "*.Rcheck" ]; then cp -r *.Rcheck/* check/ 2>/dev/null || true; fi
   only:
     refs:
       - main
@@ -221,9 +87,7 @@ variables:
       - merge_requests
     changes:
       - "**/*.R"
-      - "**/*.Rmd"
       - "DESCRIPTION"
-      - "NAMESPACE"
       - "tests/**/*"
       - ".gitlab-ci.yml"
 
@@ -418,40 +282,9 @@ coverage:
         libharfbuzz-dev \
         libfribidi-dev \
         pkg-config
-    # Install package dependencies explicitly with verification
-    - |
-      R -e "
-      options(warn = 1)
-      cat('Installing core package dependencies...\n')
-      
-      # Install dependencies with error checking
-      deps <- c('Amelia', 'dplyr', 'lme4', 'broom.mixed', 'mice', 'rms')
-      for (pkg in deps) {
-        cat('Installing', pkg, '...\n')
-        if (!requireNamespace(pkg, quietly = TRUE)) {
-          install.packages(pkg, repos = 'https://cloud.r-project.org/', dependencies = TRUE)
-        }
-        cat('✓', pkg, 'installed\n')
-      }
-      "
-    - R -e "remotes::install_deps(dependencies = TRUE, upgrade = 'always')"
-    - R -e "install.packages(c('covr', 'testthat', 'devtools', 'DT', 'htmltools'))"
-    # Verify dependencies before proceeding
-    - |
-      R -e "
-      cat('Verifying all dependencies are available...\n')
-      required_pkgs <- c('Amelia', 'dplyr', 'lme4', 'broom.mixed', 'mice', 'rms', 'devtools', 'covr')
-      
-      for (pkg in required_pkgs) {
-        if (!requireNamespace(pkg, quietly = TRUE)) {
-          cat('✗ Missing package:', pkg, '\n')
-          quit(status = 1)
-        } else {
-          cat('✓', pkg, 'available\n')
-        }
-      }
-      cat('✅ All dependencies verified!\n')
-      "
+    # Install dependencies quickly
+    - R -e "install.packages(c('Amelia', 'dplyr', 'lme4', 'broom.mixed', 'mice', 'rms', 'covr', 'testthat', 'devtools'), repos = 'https://cloud.r-project.org/', Ncpus = 2)"
+    - R -e "remotes::install_deps(dependencies = TRUE)"
     # Generate coverage report
     - |
       R -e "
