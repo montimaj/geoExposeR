@@ -35,8 +35,10 @@ variables:
   stage: test
   script:
     # Install minimal system dependencies
-    - |
-      apt-get update && apt-get install -y \
+    - apt-get update && apt-get install curl -y
+    - curl -O http://security.ubuntu.com/ubuntu/pool/main/i/icu/libicu70_70.1-2_amd64.deb
+    - dpkg -i libicu70_70.1-2_amd64.deb
+    - apt-get update && apt-get install -y \
         libcurl4-openssl-dev \
         libssl-dev \
         libxml2-dev \
@@ -90,10 +92,7 @@ test:r-release-ubuntu:
   variables:
     R_VERSION: "release"
     PLATFORM: "ubuntu-latest"
-  script:
-    - apt-get update && apt-get install curl -y
-    - curl -O http://security.ubuntu.com/ubuntu/pool/main/i/icu/libicu70_70.1-2_amd64.deb
-    - dpkg -i libicu70_70.1-2_amd64.deb
+    
 
 # Enhanced coverage job based on local coverage script
 coverage:
@@ -359,7 +358,6 @@ test:r-release-macos:
       devtools::test()
       "
   timeout: 15m
-  allow_failure: true
   only:
     refs:
       - main
@@ -375,20 +373,10 @@ test:r-release-macos:
 test:r-devel-ubuntu:
   <<: *test_template
   image: rocker/r-devel:latest
-  allow_failure: true
-  script:
-    - apt-get update && apt-get install curl -y
-    - curl -O http://security.ubuntu.com/ubuntu/pool/main/i/icu/libicu70_70.1-2_amd64.deb
-    - dpkg -i libicu70_70.1-2_amd64.deb
 
 test:r-oldrel-ubuntu:
   <<: *test_template  
   image: rocker/r-ver:4.4.0
-  allow_failure: true
-  script:
-    - apt-get update && apt-get install curl -y
-    - curl -O http://security.ubuntu.com/ubuntu/pool/main/i/icu/libicu70_70.1-2_amd64.deb
-    - dpkg -i libicu70_70.1-2_amd64.deb
 
 # Fast release job
 release:
