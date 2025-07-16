@@ -59,27 +59,101 @@ variables:
           libfribidi-dev \
           pkg-config
       fi
-    # Install package dependencies explicitly
-    - R -e "install.packages(c('Amelia', 'dplyr', 'lme4', 'broom.mixed', 'mice', 'rms'), repos = 'https://cloud.r-project.org/')"
+    # Install package dependencies explicitly with better error handling
+    - |
+      R -e "
+      options(warn = 1)  # Don't treat warnings as errors during installation
+      cat('Installing core package dependencies...\n')
+      
+      # Install dependencies one by one with error checking
+      deps <- c('Amelia', 'dplyr', 'lme4', 'broom.mixed', 'mice', 'rms')
+      for (pkg in deps) {
+        cat('Installing', pkg, '...\n')
+        tryCatch({
+          if (!requireNamespace(pkg, quietly = TRUE)) {
+            install.packages(pkg, repos = 'https://cloud.r-project.org/', dependencies = TRUE)
+          }
+          cat('✓', pkg, 'installed successfully\n')
+        }, error = function(e) {
+          cat('✗ Failed to install', pkg, ':', e$message, '\n')
+          quit(status = 1)
+        })
+      }
+      
+      cat('All core dependencies installed!\n')
+      "
     - R -e "remotes::install_deps(dependencies = TRUE, upgrade = 'always')"
     - R -e "install.packages(c('testthat', 'rcmdcheck', 'covr', 'spelling'))"
     # Ensure devtools is available (redundant check for safety)
     - R -e "if (!requireNamespace('devtools', quietly = TRUE)) install.packages('devtools')"
+    # Verify all dependencies are available before proceeding
+    - |
+      R -e "
+      cat('Verifying package dependencies...\n')
+      required_pkgs <- c('Amelia', 'dplyr', 'lme4', 'broom.mixed', 'mice', 'rms', 'devtools', 'testthat')
+      missing_pkgs <- character(0)
+      
+      for (pkg in required_pkgs) {
+        if (!requireNamespace(pkg, quietly = TRUE)) {
+          missing_pkgs <- c(missing_pkgs, pkg)
+        } else {
+          cat('✓', pkg, 'available\n')
+        }
+      }
+      
+      if (length(missing_pkgs) > 0) {
+        cat('✗ Missing packages:', paste(missing_pkgs, collapse = ', '), '\n')
+        cat('Attempting to install missing packages...\n')
+        install.packages(missing_pkgs, repos = 'https://cloud.r-project.org/', dependencies = TRUE)
+        
+        # Verify again
+        still_missing <- character(0)
+        for (pkg in missing_pkgs) {
+          if (!requireNamespace(pkg, quietly = TRUE)) {
+            still_missing <- c(still_missing, pkg)
+          }
+        }
+        
+        if (length(still_missing) > 0) {
+          cat('✗ Still missing packages after installation attempt:', paste(still_missing, collapse = ', '), '\n')
+          quit(status = 1)
+        }
+      }
+      
+      cat('✅ All dependencies verified!\n')
+      "
     # Check package build
     - mkdir -p check
     - R -e "result <- rcmdcheck::rcmdcheck(args = '--no-manual', error_on = 'error'); if (length(result\$errors) > 0 || length(result\$warnings) > 0) { dir.create('check', showWarnings = FALSE); writeLines(c(result\$errors, result\$warnings), 'check/rcmdcheck_output.txt') }"
-    # Run comprehensive tests
+    # Run comprehensive tests with better dependency handling
     - |
       R -e "
       options(warn = 2, error = traceback)
       
-      # Ensure devtools is loaded
-      if (!requireNamespace('devtools', quietly = TRUE)) {
-        install.packages('devtools')
-      }
-      library(devtools)
+      # Ensure all required packages are loaded
+      cat('Loading required packages...\n')
+      required_pkgs <- c('devtools', 'testthat', 'Amelia', 'dplyr', 'lme4', 'broom.mixed', 'mice', 'rms')
       
-      devtools::load_all()
+      for (pkg in required_pkgs) {
+        tryCatch({
+          library(pkg, character.only = TRUE)
+          cat('✓ Loaded', pkg, '\n')
+        }, error = function(e) {
+          cat('✗ Failed to load', pkg, ':', e\$message, '\n')
+          quit(status = 1)
+        })
+      }
+      
+      cat('Attempting to load package...\n')
+      tryCatch({
+        devtools::load_all()
+        cat('✅ Package loaded successfully!\n')
+      }, error = function(e) {
+        cat('✗ Failed to load package:', e\$message, '\n')
+        cat('Installed packages:\n')
+        print(installed.packages()[, c('Package', 'Version')])
+        quit(status = 1)
+      })
       
       tryCatch({
         cat('Running test-gwArsenic.R specifically...\n')
@@ -344,15 +418,51 @@ coverage:
         libharfbuzz-dev \
         libfribidi-dev \
         pkg-config
-    # Install package dependencies explicitly
-    - R -e "install.packages(c('Amelia', 'dplyr', 'lme4', 'broom.mixed', 'mice', 'rms'), repos = 'https://cloud.r-project.org/')"
+    # Install package dependencies explicitly with verification
+    - |
+      R -e "
+      options(warn = 1)
+      cat('Installing core package dependencies...\n')
+      
+      # Install dependencies with error checking
+      deps <- c('Amelia', 'dplyr', 'lme4', 'broom.mixed', 'mice', 'rms')
+      for (pkg in deps) {
+        cat('Installing', pkg, '...\n')
+        if (!requireNamespace(pkg, quietly = TRUE)) {
+          install.packages(pkg, repos = 'https://cloud.r-project.org/', dependencies = TRUE)
+        }
+        cat('✓', pkg, 'installed\n')
+      }
+      "
     - R -e "remotes::install_deps(dependencies = TRUE, upgrade = 'always')"
     - R -e "install.packages(c('covr', 'testthat', 'devtools', 'DT', 'htmltools'))"
+    # Verify dependencies before proceeding
+    - |
+      R -e "
+      cat('Verifying all dependencies are available...\n')
+      required_pkgs <- c('Amelia', 'dplyr', 'lme4', 'broom.mixed', 'mice', 'rms', 'devtools', 'covr')
+      
+      for (pkg in required_pkgs) {
+        if (!requireNamespace(pkg, quietly = TRUE)) {
+          cat('✗ Missing package:', pkg, '\n')
+          quit(status = 1)
+        } else {
+          cat('✓', pkg, 'available\n')
+        }
+      }
+      cat('✅ All dependencies verified!\n')
+      "
     # Generate coverage report
     - |
       R -e "
       options(repos = c(CRAN = 'https://cloud.r-project.org/'))
       
+      # Load all required packages before load_all
+      cat('Loading required packages...\n')
+      library(devtools)
+      library(covr)
+      
+      cat('Loading package...\n')
       devtools::load_all('.', quiet = FALSE)
       
       cat('Generating coverage for gwArsenic.R...\n')
