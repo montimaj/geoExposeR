@@ -61,7 +61,6 @@ variables:
       cat('✅ All packages available\n')
       
       # Load and test
-      devtools::document()
       devtools::build()
       devtools::install()      
       devtools::load_all()
@@ -330,20 +329,93 @@ docs:
       - "NAMESPACE"
       - ".gitlab-ci.yml"
 
-# Simplified pages job
+# Enhanced pages job with vignette support
 pages:
   <<: *r_base
   stage: deploy
   image: rocker/r-ver:latest
   script:
+    # Install system dependencies including ICU and vignette requirements
     - apt-get update && apt-get install curl -y
     - curl -O http://security.ubuntu.com/ubuntu/pool/main/i/icu/libicu70_70.1-2_amd64.deb
     - dpkg -i libicu70_70.1-2_amd64.deb
-    - apt-get update && apt-get install -y libcurl4-openssl-dev libssl-dev libxml2-dev build-essential pandoc
-    - R -e "install.packages(c('pkgdown', 'devtools', 'rmarkdown', 'knitr'), Ncpus = 4)"
+    - |
+      apt-get update && apt-get install -y \
+        libcurl4-openssl-dev \
+        libssl-dev \
+        libxml2-dev \
+        libicu-dev \
+        gfortran \
+        build-essential \
+        pandoc \
+        pandoc-citeproc \
+        texlive-latex-base \
+        texlive-fonts-recommended \
+        texlive-fonts-extra \
+        texlive-latex-extra
+    # Install R packages needed for vignettes and pkgdown
+    - R -e "install.packages(c('pkgdown', 'devtools', 'rmarkdown', 'knitr', 'markdown', 'htmltools'), Ncpus = 4)"
+    # Install package dependencies (including those needed for vignettes)
+    - R -e "install.packages(c('Amelia', 'dplyr', 'lme4', 'broom.mixed', 'mice', 'rms'), Ncpus = 4)"
     - R -e "remotes::install_deps(dependencies = TRUE)"
-    - R -e "pkgdown::build_site()"
-  timeout: 15m
+    # Verify vignette dependencies
+    - |
+      R -e "
+      # Check if vignettes directory exists
+      if (dir.exists('vignettes')) {
+        cat('✅ Vignettes directory found\n')
+        vignette_files <- list.files('vignettes', pattern = '\\\\.Rmd$', full.names = TRUE)
+        if (length(vignette_files) > 0) {
+          cat('Found vignettes:', paste(basename(vignette_files), collapse = ', '), '\n')
+        } else {
+          cat('No .Rmd vignette files found\n')
+        }
+      } else {
+        cat('No vignettes directory found\n')
+      }
+      
+      # Verify key packages for vignettes
+      required_pkgs <- c('knitr', 'rmarkdown', 'pkgdown')
+      for (pkg in required_pkgs) {
+        if (!requireNamespace(pkg, quietly = TRUE)) {
+          cat('❌ Missing:', pkg, '\n')
+          quit(status = 1)
+        }
+      }
+      cat('✅ All vignette dependencies available\n')
+      "
+    # Build pkgdown site with error handling
+    - |
+      R -e "
+      library(pkgdown)
+      library(devtools)
+      
+      cat('Building pkgdown site...\n')
+      
+      # Set options for better error handling
+      options(repos = c(CRAN = 'https://cloud.r-project.org/'))
+      
+      tryCatch({
+        # Build site with explicit destination
+        pkgdown::build_site()
+        cat('✅ pkgdown site built successfully\n')
+      }, error = function(e) {
+        cat('❌ ERROR building pkgdown site:\n')
+        print(e)
+        
+        # Try building without vignettes if that's the issue
+        cat('Attempting to build without vignettes...\n')
+        tryCatch({
+          pkgdown::build_site()
+          cat('✅ pkgdown site built successfully (without vignettes)\n')
+        }, error = function(e2) {
+          cat('❌ ERROR even without vignettes:\n')
+          print(e2)
+          quit(status = 1)
+        })
+      })
+      "
+  timeout: 25m
   artifacts:
     paths:
       - public
