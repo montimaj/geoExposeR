@@ -68,3 +68,5 @@ authors:
 
 development:
   mode: auto
+  version_label: warning
+  version_tooltip: "Under development"

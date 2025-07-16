@@ -73,7 +73,7 @@ Rural-Urban Continuum Code. Defaults to "RUCC".}
 
 \item{geoid_col}{A character string specifying the column name for the
 Geographic Identifier (e.g., county FIPS code) in the arsenic data.
-Defaults to "GEOID10".}
+Defaults to "GEOID10". This can be participant-specific IDs as well.}
 
 \item{as_conc_cols}{A character vector of column names from the USGS data
 for the arsenic concentration probabilities. Defaults to
@@ -84,10 +84,13 @@ levels based on EPA data. If NULL, will be automatically determined based
 on number of USGS columns. Defaults to c(5, 10)}
 
 \item{pop_well_col}{A character string specifying the column name from the
-USGS data for the population of well users. Defaults to "Wells_2010".}
+USGS data for the population of well users. Defaults to "Wells_2010".
+This has to be at the same scale as the \code{geoid_col} and \code{birth_county_col}.}
 
 \item{birth_county_col}{A character string specifying the column name for
-the birth county FIPS code in the birth data. Defaults to "FIPS".}
+the birth county FIPS code in the birth data. Defaults to "FIPS".
+This can be participant-specific IDs as well. There should be overlapping
+IDs between the birth data and the arsenic data.}
 
 \item{as_level_col}{A character string for the name of the imputed arsenic
 level column. Defaults to "AsLevel".}
