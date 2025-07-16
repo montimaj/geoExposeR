@@ -271,172 +271,92 @@ coverage:
   stage: coverage
   image: rocker/r-ver:latest
   script:
-    # Install system dependencies for fonts and graphics
-    - |
-      apt-get update && apt-get install -y \
-        libfontconfig1-dev \
-        libfreetype6-dev \
-        libpng-dev \
-        libtiff5-dev \
-        libjpeg-dev \
-        libharfbuzz-dev \
-        libfribidi-dev \
-        pkg-config
-    # Install dependencies quickly
-    - R -e "install.packages(c('Amelia', 'dplyr', 'lme4', 'broom.mixed', 'mice', 'rms', 'covr', 'testthat', 'devtools'), repos = 'https://cloud.r-project.org/', Ncpus = 2)"
+    # Install system dependencies
+    - apt-get update && apt-get install -y libfontconfig1-dev libfreetype6-dev libharfbuzz-dev libfribidi-dev pkg-config
+    # Install package dependencies first
+    - R -e "install.packages(c('Amelia', 'dplyr', 'lme4', 'broom.mixed', 'mice', 'rms'), repos = 'https://cloud.r-project.org/', Ncpus = 2)"
     - R -e "remotes::install_deps(dependencies = TRUE)"
-    # Generate coverage report
+    # Install coverage dependencies explicitly
+    - R -e "install.packages(c('covr', 'testthat', 'devtools'), repos = 'https://cloud.r-project.org/')"
+    # Verify dependencies are available
     - |
       R -e "
-      options(repos = c(CRAN = 'https://cloud.r-project.org/'))
+      # Check if packages are available
+      required_pkgs <- c('devtools', 'covr', 'testthat')
+      missing <- character(0)
       
-      # Load all required packages before load_all
-      cat('Loading required packages...\n')
+      for (pkg in required_pkgs) {
+        if (!requireNamespace(pkg, quietly = TRUE)) {
+          missing <- c(missing, pkg)
+        } else {
+          cat('✓', pkg, 'available\n')
+        }
+      }
+      
+      if (length(missing) > 0) {
+        cat('Missing packages:', paste(missing, collapse = ', '), '\n')
+        install.packages(missing, repos = 'https://cloud.r-project.org/')
+      }
+      
+      # Load packages
       library(devtools)
       library(covr)
+      library(testthat)
+      cat('All coverage dependencies loaded successfully\n')
+      "
+    # Generate simplified coverage
+    - |
+      R -e "
+      # Load package
+      devtools::load_all()
       
-      cat('Loading package...\n')
-      devtools::load_all('.', quiet = FALSE)
-      
-      cat('Generating coverage for gwArsenic.R...\n')
-      start_time <- Sys.time()
-      
-      # Generate coverage specifically for gwArsenic.R
-      full_cov <- covr::package_coverage(
+      # Quick coverage check for gwArsenic.R
+      cat('Generating coverage...\n')
+      cov <- covr::package_coverage(
         path = 'R/gwArsenic.R',
         test_files = 'tests/testthat/test-gwArsenic.R',
-        quiet = FALSE,
-        clean = FALSE,
-        type = 'tests'
+        quiet = FALSE
       )
       
-      end_time <- Sys.time()
-      cat('✅ Coverage generation completed in',
-          round(as.numeric(end_time - start_time, units = 'secs'), 2),
-          'seconds\n\n')
+      # Calculate coverage percentage
+      coverage_pct <- covr::percent_coverage(cov)
+      cat(sprintf('Coverage: %.1f%%\n', coverage_pct))
       
-      # Create coverage directory
+      # Create coverage directory and save results
       dir.create('coverage', showWarnings = FALSE)
       
-      # Generate HTML report for gwArsenic.R only
-      cat('\n=== Generating gwArsenic.R Coverage Report ===\n')
+      # Generate simple HTML report
       tryCatch({
-        # Filter coverage to show only gwArsenic.R
-        gwarsenic_only_cov <- Filter(function(x) {
-          if (is.list(x) && !is.null(x\$srcref)) {
-            srcfile_name <- attr(x\$srcref, 'srcfile')\$filename
-            grepl('gwArsenic\\\\.R', basename(srcfile_name), ignore.case = TRUE)
-          } else {
-            FALSE
-          }
-        }, full_cov)
-        
-        # Recreate coverage object with proper class and attributes
-        if (length(gwarsenic_only_cov) > 0) {
-          class(gwarsenic_only_cov) <- class(full_cov)
-          attr(gwarsenic_only_cov, 'package') <- attr(full_cov, 'package')
-          attr(gwarsenic_only_cov, 'relative') <- attr(full_cov, 'relative')
-          
-          # Generate report with filtered coverage
-          covr::report(gwarsenic_only_cov, file = 'coverage/gwArsenic-coverage.html')
-          cat('✅ HTML coverage report generated for gwArsenic.R only\n')
-        } else {
-          cat('⚠️ No gwArsenic.R coverage found, generating full report\n')
-          covr::report(full_cov, file = 'coverage/gwArsenic-coverage.html')
-        }
+        covr::report(cov, file = 'coverage/coverage-report.html')
+        cat('Coverage report generated\n')
       }, error = function(e) {
-        cat('⚠️ Warning: Could not generate HTML report:\n')
-        print(e)
-        cat('Trying fallback approach...\n')
-        tryCatch({
-          covr::report(full_cov, file = 'coverage/gwArsenic-coverage.html')
-          cat('✅ Fallback HTML report generated\n')
-        }, error = function(e2) {
-          cat('❌ Could not generate any HTML report\n')
-        })
+        cat('Warning: Could not generate HTML report\n')
       })
       
-      # Create a focused summary file
-      coverage_pct <- covr::percent_coverage(gwarsenic_only_cov)
-      cat(sprintf('📊 gwArsenic.R Coverage: %.1f%%\n\n', coverage_pct))
-      total_lines <- length(full_cov)
-      uncovered_lines <- ceiling(
-        total_lines - coverage_pct / 100 * total_lines
+      # Write coverage summary
+      writeLines(
+        c(
+          paste('Coverage:', sprintf('%.1f%%', coverage_pct)),
+          paste('Date:', Sys.Date()),
+          paste('File: R/gwArsenic.R')
+        ),
+        'coverage/coverage-summary.txt'
       )
-      coverage_summary <- data.frame(
-        File = 'gwArsenic.R',
-        Coverage = sprintf('%.1f%%', coverage_pct),
-        Status = if (coverage_pct >= 85) {
-          '✅ EXCELLENT'
-        } else if (coverage_pct >= 75) {
-          '✅ GOOD'
-        } else if (coverage_pct >= 65) {
-          '⚠️ NEEDS IMPROVEMENT'
-        } else {
-          '❌ INSUFFICIENT'
-        },
-        Target = '≥85%',
-        Uncovered_Lines = uncovered_lines,
-        Total_Lines = total_lines,
-        stringsAsFactors = FALSE
-      )
-      cat('\n=== gwArsenic.R Coverage Summary ===\n')
-      print(coverage_summary)
-      write.csv(coverage_summary, 'coverage/gwArsenic-coverage-summary.csv', row.names = FALSE)
-
-      # Set quality gates
-      cat('\n=== Quality Gate Assessment ===\n')
+      
+      # Quality gate
       if (coverage_pct < 65) {
-        cat(sprintf('❌ FAIL: gwArsenic.R coverage %.1f%% is below minimum threshold (65%%)\n', coverage_pct))
-        cat('🔧 Recommendation: Add more comprehensive tests\n')
+        cat('❌ Coverage below 65% threshold\n')
         quit(status = 1)
       } else if (coverage_pct < 75) {
-        cat(sprintf('⚠️ WARNING: gwArsenic.R coverage %.1f%% is below recommended threshold (75%%)\n', coverage_pct))
-        cat('🔧 Recommendation: Consider adding tests for edge cases\n')
+        cat('⚠️ Coverage below 75% recommended threshold\n')
       } else {
-        cat(sprintf('✅ SUCCESS: gwArsenic.R coverage %.1f%% meets quality standards\n', coverage_pct))
+        cat('✅ Coverage meets quality standards\n')
       }
-      
-      # Additional recommendations
-      if (coverage_pct < 85) {
-        cat('\n📝 Suggestions to improve coverage:\n')
-        cat('1. Add tests for error conditions and edge cases\n')
-        cat('2. Test all branches of conditional statements\n')
-        cat('3. Ensure all validation functions are tested\n')
-        cat('4. Test both success and failure scenarios\n')
-      }
-      
-      # Generate coverage badge data
-      if (coverage_pct >= 90) {
-        color <- 'brightgreen'
-      } else if (coverage_pct >= 80) {
-        color <- 'green' 
-      } else if (coverage_pct >= 70) {
-        color <- 'yellow'
-      } else if (coverage_pct >= 60) {
-        color <- 'orange'
-      } else {
-        color <- 'red'
-      }
-      
-      badge_url <- sprintf('https://img.shields.io/badge/coverage-%.1f%%%%25-%s.svg', 
-                          coverage_pct, color)
-      
-      # Write badge info to file for potential README updates
-      writeLines(c(
-        paste('COVERAGE_PCT=', coverage_pct, sep=''),
-        paste('COVERAGE_BADGE=', badge_url, sep='')
-      ), 'coverage/badge-info.txt')
-      
-      cat(sprintf('Generated coverage badge: %s\n', badge_url))
       "
+  timeout: 20m
   artifacts:
     paths:
       - coverage/
-    reports:
-      coverage_report:
-        coverage_format: cobertura
-        path: coverage/coverage.xml
     expire_in: 1 week
   coverage: '/Coverage: \d+\.\d+%/'
   only:
@@ -454,12 +374,18 @@ docs:
   stage: docs
   image: rocker/r-ver:latest
   script:
-    # Install dependencies
+    # Install system dependencies
+    - apt-get update && apt-get install -y libfontconfig1-dev libfreetype6-dev libharfbuzz-dev libfribidi-dev pkg-config
+    # Install package dependencies
+    - R -e "install.packages(c('Amelia', 'dplyr', 'lme4', 'broom.mixed', 'mice', 'rms'), repos = 'https://cloud.r-project.org/', Ncpus = 2)"
     - R -e "remotes::install_deps(dependencies = TRUE, upgrade = 'always')"
-    - R -e "install.packages(c('roxygen2', 'devtools', 'pkgdown'))"
+    # Install documentation dependencies
+    - R -e "install.packages(c('roxygen2', 'devtools'), repos = 'https://cloud.r-project.org/')"
     # Check documentation
     - |
       R -e "
+      library(devtools)
+      
       cat('Generating documentation...\n')
       devtools::document()
       
@@ -475,6 +401,7 @@ docs:
       
       cat('Documentation is up to date!\n')
       "
+  timeout: 15m
   only:
     refs:
       - main
@@ -494,7 +421,7 @@ pages:
   stage: deploy
   image: rocker/r-ver:latest
   script:
-    # Install system dependencies first
+    # Install system dependencies
     - |
       apt-get update && apt-get install -y \
         libfontconfig1-dev \
@@ -505,31 +432,19 @@ pages:
     # Install package dependencies
     - R -e "install.packages(c('Amelia', 'dplyr', 'lme4', 'broom.mixed', 'mice', 'rms'), repos = 'https://cloud.r-project.org/', Ncpus = 2)"
     - R -e "remotes::install_deps(dependencies = TRUE, upgrade = 'always')"
-    # Install pkgdown and documentation dependencies explicitly
+    # Install documentation dependencies
     - R -e "install.packages(c('pkgdown', 'devtools', 'rmarkdown', 'knitr'), repos = 'https://cloud.r-project.org/')"
-    # Verify pkgdown is available
+    # Verify and build site
     - |
       R -e "
-      if (!requireNamespace('pkgdown', quietly = TRUE)) {
-        cat('pkgdown not found, installing again...\n')
-        install.packages('pkgdown', repos = 'https://cloud.r-project.org/', dependencies = TRUE)
-      }
-      cat('pkgdown version:', packageVersion('pkgdown'), '\n')
-      "
-    # Clean and build pkgdown site
-    - |
-      R -e "
-      # Load required packages
+      # Load packages
       library(pkgdown)
       library(devtools)
       
-      # Force clean any existing pkgdown artifacts
-      pkgdown::clean_site(force = TRUE)
-      
-      # Build site for GitLab Pages
+      # Build site
       pkgdown::build_site(dest_dir = 'public', new_process = TRUE, install = TRUE)
       "
-
+  timeout: 20m
   artifacts:
     paths:
       - public
