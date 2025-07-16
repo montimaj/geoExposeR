@@ -272,7 +272,16 @@ coverage:
   image: rocker/r-ver:latest
   script:
     # Install system dependencies
-    - apt-get update && apt-get install -y libfontconfig1-dev libfreetype6-dev libharfbuzz-dev libfribidi-dev pkg-config
+    - |
+      apt-get update && apt-get install -y \
+        libfontconfig1-dev \
+        libfreetype6-dev \
+        libharfbuzz-dev \
+        libfribidi-dev \
+        libpng-dev \
+        libtiff5-dev \
+        libjpeg-dev \
+        pkg-config
     # Install package dependencies first
     - R -e "install.packages(c('Amelia', 'dplyr', 'lme4', 'broom.mixed', 'mice', 'rms'), repos = 'https://cloud.r-project.org/', Ncpus = 2)"
     - R -e "remotes::install_deps(dependencies = TRUE)"
@@ -375,7 +384,16 @@ docs:
   image: rocker/r-ver:latest
   script:
     # Install system dependencies
-    - apt-get update && apt-get install -y libfontconfig1-dev libfreetype6-dev libharfbuzz-dev libfribidi-dev pkg-config
+    - |
+      apt-get update && apt-get install -y \
+        libfontconfig1-dev \
+        libfreetype6-dev \
+        libharfbuzz-dev \
+        libfribidi-dev \
+        libpng-dev \
+        libtiff5-dev \
+        libjpeg-dev \
+        pkg-config
     # Install package dependencies
     - R -e "install.packages(c('Amelia', 'dplyr', 'lme4', 'broom.mixed', 'mice', 'rms'), repos = 'https://cloud.r-project.org/', Ncpus = 2)"
     - R -e "remotes::install_deps(dependencies = TRUE, upgrade = 'always')"
@@ -428,6 +446,9 @@ pages:
         libfreetype6-dev \
         libharfbuzz-dev \
         libfribidi-dev \
+        libpng-dev \
+        libtiff5-dev \
+        libjpeg-dev \
         pkg-config
     # Install package dependencies
     - R -e "install.packages(c('Amelia', 'dplyr', 'lme4', 'broom.mixed', 'mice', 'rms'), repos = 'https://cloud.r-project.org/', Ncpus = 2)"
