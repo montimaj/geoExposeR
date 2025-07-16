@@ -13,7 +13,35 @@ format_geographic_ids <- function(data_frame, geoid_col) {
 
 #' Validate Input Parameters for Sensitivity Analysis
 #'
-#' @param ... All parameters to validate
+# @param birth_data_txt Path to birth data text file
+#' @param as_usgs_prob_csv Path to USGS arsenic probability CSV file
+#' @param as_epa_prob_csv Path to EPA arsenic probability CSV file
+#' @param ndraws Number of draws for sensitivity analysis
+#' @param regression_formula Regression formula for modeling
+#' @param targets Target variables for analysis
+#' @param impute_vars Variables to impute
+#' @param output_dir Output directory for results
+#' @param mice_m Number of multiple imputations
+#' @param mice_maxit Maximum iterations for MICE
+#' @param mice_method MICE method for imputation
+#' @param epa_as_mean_col Column name for EPA arsenic meanlog
+#' @param epa_as_sd_col Column name for EPA arsenic sdlog
+#' @param seed Random seed for reproducibility
+#' @param as_cat_label Arsenic category label
+#' @param as_level_col Column name for arsenic level
+#' @param drop_as_cat_label_reg Regular expression to drop arsenic categories
+#' @param epa_cutoffs EPA cutoffs for arsenic categories
+#' @param usgs_columns USGS columns to include in analysis
+#' @param validate_cutoffs Whether to validate cutoffs
+#' @param columns_to_select Columns to select from the data
+#' @param rucc_col Column name for RUCC classification
+#' @param geoid_col Column name for geographic identifier
+#' @param as_conc_cols Arsenic concentration columns
+#' @param pop_well_col Column name for population well
+#' @param birth_county_col Column name for birth county
+#' @param epa_pwell_col Column name for EPA population well
+#' @param mice_covs Covariates for MICE imputation
+#' @param apply_imputation_fallback Whether to apply imputation fallback
 #' @return NULL (throws error if validation fails)
 #' @keywords internal
 validate_all_inputs <- function(

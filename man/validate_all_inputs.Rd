@@ -37,7 +37,61 @@ validate_all_inputs(
 )
 }
 \arguments{
-\item{...}{All parameters to validate}
+\item{as_usgs_prob_csv}{Path to USGS arsenic probability CSV file}
+
+\item{as_epa_prob_csv}{Path to EPA arsenic probability CSV file}
+
+\item{ndraws}{Number of draws for sensitivity analysis}
+
+\item{regression_formula}{Regression formula for modeling}
+
+\item{targets}{Target variables for analysis}
+
+\item{impute_vars}{Variables to impute}
+
+\item{output_dir}{Output directory for results}
+
+\item{mice_m}{Number of multiple imputations}
+
+\item{mice_maxit}{Maximum iterations for MICE}
+
+\item{mice_method}{MICE method for imputation}
+
+\item{epa_as_mean_col}{Column name for EPA arsenic meanlog}
+
+\item{epa_as_sd_col}{Column name for EPA arsenic sdlog}
+
+\item{seed}{Random seed for reproducibility}
+
+\item{as_cat_label}{Arsenic category label}
+
+\item{as_level_col}{Column name for arsenic level}
+
+\item{drop_as_cat_label_reg}{Regular expression to drop arsenic categories}
+
+\item{epa_cutoffs}{EPA cutoffs for arsenic categories}
+
+\item{usgs_columns}{USGS columns to include in analysis}
+
+\item{validate_cutoffs}{Whether to validate cutoffs}
+
+\item{columns_to_select}{Columns to select from the data}
+
+\item{rucc_col}{Column name for RUCC classification}
+
+\item{geoid_col}{Column name for geographic identifier}
+
+\item{as_conc_cols}{Arsenic concentration columns}
+
+\item{pop_well_col}{Column name for population well}
+
+\item{birth_county_col}{Column name for birth county}
+
+\item{epa_pwell_col}{Column name for EPA population well}
+
+\item{mice_covs}{Covariates for MICE imputation}
+
+\item{apply_imputation_fallback}{Whether to apply imputation fallback}
 }
 \value{
 NULL (throws error if validation fails)

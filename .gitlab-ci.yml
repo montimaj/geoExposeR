@@ -569,7 +569,7 @@ security_scan:
   image: rocker/r-ver:latest
   script:
     - R -e "if (!requireNamespace('oysteR', quietly = TRUE)) install.packages('oysteR')"
-    - R -e "oysteR::audit(version='4.4.1')"
+    - R -e "oysteR::audit_installed_r_pkgs()"
   allow_failure: true
   only:
     refs:
