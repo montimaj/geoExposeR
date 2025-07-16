@@ -28,7 +28,7 @@ variables:
     # Set up R library cache directory
     - mkdir -p .cache/R
     - export R_LIBS_USER="$(pwd)/.cache/R"
-    - echo "R_LIBS_USER=$R_LIBS_USER" >> $CI_ENV
+    - echo "R_LIBS_USER=$R_LIBS_USER"
     # Update package repositories
     - echo 'options(repos = c(CRAN = Sys.getenv("CRAN_REPO", "https://cloud.r-project.org/")))' > ~/.Rprofile
     - echo 'options(warn = 2, error = traceback)' >> ~/.Rprofile
@@ -51,7 +51,8 @@ variables:
     - R -e "remotes::install_deps(dependencies = TRUE, upgrade = 'always')"
     - R -e "install.packages(c('testthat', 'rcmdcheck', 'covr', 'spelling'))"
     # Check package build
-    - R -e "rcmdcheck::rcmdcheck(args = '--no-manual', error_on = 'error')"
+    - mkdir -p check
+    - R -e "result <- rcmdcheck::rcmdcheck(args = '--no-manual', error_on = 'error'); if (length(result\$errors) > 0 || length(result\$warnings) > 0) { dir.create('check', showWarnings = FALSE); writeLines(c(result\$errors, result\$warnings), 'check/rcmdcheck_output.txt') }"
     # Run comprehensive tests
     - |
       R -e "
@@ -111,7 +112,12 @@ variables:
     when: on_failure
     paths:
       - check/
+      - "*.Rcheck/"
     expire_in: 1 week
+  after_script:
+    # Ensure check directory exists for artifact collection
+    - mkdir -p check
+    - if [ -d "*.Rcheck" ]; then cp -r *.Rcheck/* check/ 2>/dev/null || true; fi
   only:
     refs:
       - main
