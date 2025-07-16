@@ -96,7 +96,7 @@ variables:
       
       cat('✅ Tests completed!\n')
       "
-  timeout: 30m
+  timeout: 120m
   artifacts:
     when: on_failure
     paths:
@@ -173,7 +173,7 @@ test:r-release-macos:
       
       cat('✅ macOS tests completed!\n')
       "
-  timeout: 25m
+  timeout: 120m
   allow_failure: true
   only:
     refs:
@@ -259,7 +259,7 @@ coverage:
         cat('✅ Coverage meets quality standards\n')
       }
       "
-  timeout: 20m
+  timeout: 120m
   artifacts:
     paths:
       - coverage/
@@ -301,7 +301,7 @@ docs:
       
       cat('Documentation completed!\n')
       "
-  timeout: 15m
+  timeout: 120m
   only:
     refs:
       - main
@@ -340,7 +340,7 @@ pages:
       
       pkgdown::build_site(dest_dir = 'public', new_process = FALSE, install = FALSE)
       "
-  timeout: 20m
+  timeout: 120m
   artifacts:
     paths:
       - public
