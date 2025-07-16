@@ -149,9 +149,9 @@ test:r-devel-ubuntu:
 
 test:r-oldrel-ubuntu:
   <<: *test_template
-  image: rocker/r-ver:4.3.0  # Adjust to appropriate oldrel version
+  image: rocker/r-ver:4.4.0  # Updated to meet R >= 4.4.0 requirement
   variables:
-    R_VERSION: "oldrel-1"
+    R_VERSION: "4.4.0"
     PLATFORM: "ubuntu-latest"
 
 # Windows test jobs
@@ -603,7 +603,7 @@ security_scan:
   image: rocker/r-ver:latest
   script:
     - R -e "if (!requireNamespace('oysteR', quietly = TRUE)) install.packages('oysteR')"
-    - R -e "oysteR::audit_deps('.')"
+    - R -e "oysteR::audit('.')"
   allow_failure: true
   only:
     refs:
