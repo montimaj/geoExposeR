@@ -494,17 +494,42 @@ pages:
   stage: deploy
   image: rocker/r-ver:latest
   script:
-    # Install dependencies
+    # Install system dependencies first
+    - |
+      apt-get update && apt-get install -y \
+        libfontconfig1-dev \
+        libfreetype6-dev \
+        libharfbuzz-dev \
+        libfribidi-dev \
+        pkg-config
+    # Install package dependencies
+    - R -e "install.packages(c('Amelia', 'dplyr', 'lme4', 'broom.mixed', 'mice', 'rms'), repos = 'https://cloud.r-project.org/', Ncpus = 2)"
     - R -e "remotes::install_deps(dependencies = TRUE, upgrade = 'always')"
-    - R -e "install.packages(c('pkgdown', 'devtools'))"
+    # Install pkgdown and documentation dependencies explicitly
+    - R -e "install.packages(c('pkgdown', 'devtools', 'rmarkdown', 'knitr'), repos = 'https://cloud.r-project.org/')"
+    # Verify pkgdown is available
+    - |
+      R -e "
+      if (!requireNamespace('pkgdown', quietly = TRUE)) {
+        cat('pkgdown not found, installing again...\n')
+        install.packages('pkgdown', repos = 'https://cloud.r-project.org/', dependencies = TRUE)
+      }
+      cat('pkgdown version:', packageVersion('pkgdown'), '\n')
+      "
     # Clean and build pkgdown site
     - |
       R -e "
+      # Load required packages
+      library(pkgdown)
+      library(devtools)
+      
       # Force clean any existing pkgdown artifacts
       pkgdown::clean_site(force = TRUE)
+      
       # Build site for GitLab Pages
-      pkgdown::build_site(dest_dir = 'public', new_process = FALSE, install = FALSE)
+      pkgdown::build_site(dest_dir = 'public', new_process = TRUE, install = TRUE)
       "
+
   artifacts:
     paths:
       - public
