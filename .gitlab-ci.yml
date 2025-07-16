@@ -154,6 +154,190 @@ test:r-oldrel-ubuntu:
     R_VERSION: "oldrel-1"
     PLATFORM: "ubuntu-latest"
 
+# Windows test jobs
+test:r-release-windows:
+  <<: *r_base
+  <<: *r_cache
+  stage: test
+  tags:
+    - windows
+  script:
+    # Install package dependencies
+    - R -e "remotes::install_deps(dependencies = TRUE, upgrade = 'always')"
+    - R -e "install.packages(c('testthat', 'rcmdcheck', 'covr', 'spelling'))"
+    # Check package build
+    - mkdir check
+    - R -e "result <- rcmdcheck::rcmdcheck(args = '--no-manual', error_on = 'error'); if (length(result$errors) > 0 || length(result$warnings) > 0) { dir.create('check', showWarnings = FALSE); writeLines(c(result$errors, result$warnings), 'check/rcmdcheck_output.txt') }"
+    # Run comprehensive tests
+    - |
+      R -e "
+      options(warn = 2, error = traceback)
+      devtools::load_all()
+      
+      tryCatch({
+        cat('Running test-gwArsenic.R specifically...\n')
+        if (file.exists('tests/testthat/test-gwArsenic.R')) {
+          testthat::test_file('tests/testthat/test-gwArsenic.R', reporter = 'summary')
+          cat('test-gwArsenic.R completed successfully!\n')
+        } else {
+          cat('Warning: test-gwArsenic.R not found, trying filter approach...\n')
+          devtools::test(filter = 'gwArsenic', reporter = 'summary')
+        }
+        
+        cat('Running full test suite...\n')
+        devtools::test(reporter = 'summary')
+        
+        cat('Testing package installation...\n')
+        devtools::install(quiet = FALSE)
+        library(gwArsenicR)
+        
+        # Test main function exists
+        stopifnot(exists('perform_sensitivity_analysis'))
+        cat('All tests completed successfully!\n')
+      }, error = function(e) {
+        cat('Test failed with error:\n')
+        print(e)
+        quit(status = 1)
+      })
+      "
+    # Test vignette rendering
+    - |
+      R -e "
+      if (file.exists('vignettes/gwArsenicR-vignette.Rmd')) {
+        cat('Testing vignette rendering...\n')
+        tryCatch({
+          rmarkdown::render('vignettes/gwArsenicR-vignette.Rmd', 
+                          output_dir = tempdir())
+          cat('Vignette rendered successfully!\n')
+        }, error = function(e) {
+          cat('Vignette rendering failed:\n')
+          print(e)
+          quit(status = 1)
+        })
+      }
+      "
+    # Show session info
+    - |
+      R -e "
+      options(width = 100)
+      pkgs <- installed.packages()[, 'Package']
+      sessioninfo::session_info(pkgs, include_base = TRUE)
+      "
+  variables:
+    R_VERSION: "release"
+    PLATFORM: "windows-latest"
+  artifacts:
+    when: on_failure
+    paths:
+      - check/
+    expire_in: 1 week
+  allow_failure: true  # Windows can have different behavior
+  only:
+    refs:
+      - main
+      - develop
+      - merge_requests
+    changes:
+      - "**/*.R"
+      - "**/*.Rmd"
+      - "DESCRIPTION"
+      - "NAMESPACE"
+      - "tests/**/*"
+      - ".gitlab-ci.yml"
+
+# macOS test jobs
+test:r-release-macos:
+  <<: *r_base
+  <<: *r_cache
+  stage: test
+  tags:
+    - macos
+  script:
+    # Install system dependencies for macOS
+    - brew install pandoc || true
+    # Install package dependencies
+    - R -e "remotes::install_deps(dependencies = TRUE, upgrade = 'always')"
+    - R -e "install.packages(c('testthat', 'rcmdcheck', 'covr', 'spelling'))"
+    # Check package build
+    - mkdir -p check
+    - R -e "result <- rcmdcheck::rcmdcheck(args = '--no-manual', error_on = 'error'); if (length(result\$errors) > 0 || length(result\$warnings) > 0) { dir.create('check', showWarnings = FALSE); writeLines(c(result\$errors, result\$warnings), 'check/rcmdcheck_output.txt') }"
+    # Run comprehensive tests
+    - |
+      R -e "
+      options(warn = 2, error = traceback)
+      devtools::load_all()
+      
+      tryCatch({
+        cat('Running test-gwArsenic.R specifically...\n')
+        if (file.exists('tests/testthat/test-gwArsenic.R')) {
+          testthat::test_file('tests/testthat/test-gwArsenic.R', reporter = 'summary')
+          cat('test-gwArsenic.R completed successfully!\n')
+        } else {
+          cat('Warning: test-gwArsenic.R not found, trying filter approach...\n')
+          devtools::test(filter = 'gwArsenic', reporter = 'summary')
+        }
+        
+        cat('Running full test suite...\n')
+        devtools::test(reporter = 'summary')
+        
+        cat('Testing package installation...\n')
+        devtools::install(quiet = FALSE)
+        library(gwArsenicR)
+        
+        # Test main function exists
+        stopifnot(exists('perform_sensitivity_analysis'))
+        cat('All tests completed successfully!\n')
+      }, error = function(e) {
+        cat('Test failed with error:\n')
+        print(e)
+        quit(status = 1)
+      })
+      "
+    # Test vignette rendering
+    - |
+      R -e "
+      if (file.exists('vignettes/gwArsenicR-vignette.Rmd')) {
+        cat('Testing vignette rendering...\n')
+        tryCatch({
+          rmarkdown::render('vignettes/gwArsenicR-vignette.Rmd', 
+                          output_dir = tempdir())
+          cat('Vignette rendered successfully!\n')
+        }, error = function(e) {
+          cat('Vignette rendering failed:\n')
+          print(e)
+          quit(status = 1)
+        })
+      }
+      "
+    # Show session info
+    - |
+      R -e "
+      options(width = 100)
+      pkgs <- installed.packages()[, 'Package']
+      sessioninfo::session_info(pkgs, include_base = TRUE)
+      "
+  variables:
+    R_VERSION: "release"
+    PLATFORM: "macos-latest"
+  artifacts:
+    when: on_failure
+    paths:
+      - check/
+    expire_in: 1 week
+  allow_failure: true  # macOS can have different behavior
+  only:
+    refs:
+      - main
+      - develop
+      - merge_requests
+    changes:
+      - "**/*.R"
+      - "**/*.Rmd"
+      - "DESCRIPTION"
+      - "NAMESPACE"
+      - "tests/**/*"
+      - ".gitlab-ci.yml"
+
 # Coverage job
 coverage:
   <<: *r_base
