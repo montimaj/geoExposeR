@@ -10,7 +10,7 @@ An R package for modeling and estimating arsenic exposure from groundwater, base
 [![Pipeline Status](https://code.usgs.gov/envirohealth/gwArsenicR/badges/main/pipeline.svg)](https://code.usgs.gov/envirohealth/gwArsenicR/-/pipelines)
 
 <!-- Quality Metrics -->
-[![Test Coverage](https://code.usgs.gov/envirohealth/gwArsenicR/badges/main/coverage.svg)](https://code.usgs.gov/envirohealth/gwArsenicR/-/commits/main)
+[![Coverage Report](https://img.shields.io/badge/Coverage-Report-blue?style=flat-square&logo=gitlab)](https://code.usgs.gov/envirohealth/gwArsenicR/-/jobs/artifacts/main/file/coverage/gwArsenic-coverage.html?job=coverage)
 
 <!-- Documentation and Usage -->
 [![Documentation](https://img.shields.io/badge/docs-pkgdown-blue.svg)](https://gwarsenicr.code-pages.usgs.gov)
