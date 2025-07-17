@@ -34,6 +34,7 @@ variables:
   <<: *r_base
   stage: test
   script:
+    - mkdir -p check test-coverage
     # Install minimal system dependencies
     - apt-get update && apt-get install curl -y
     - curl -O http://security.ubuntu.com/ubuntu/pool/main/i/icu/libicu70_70.1-2_amd64.deb
