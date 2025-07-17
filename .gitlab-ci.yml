@@ -371,7 +371,6 @@ build-pages:
   image: rocker/r-ver:latest
   stage: deploy
   script:
-    - mkdir -p public
     # Install system dependencies including ICU and vignette requirements
     - apt-get update && apt-get install curl -y
     - curl -O http://security.ubuntu.com/ubuntu/pool/main/i/icu/libicu70_70.1-2_amd64.deb
@@ -435,11 +434,8 @@ build-pages:
       pkgdown::build_site()
       "
   timeout: 25m
-  pages: true
-  artifacts:
-    paths:
-      - public
-    expire_in: 30 days
+  pages:
+    publish: docs
   only:
     refs:
       - main

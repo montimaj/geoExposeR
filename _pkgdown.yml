@@ -74,6 +74,5 @@ authors:
 
 development:
   mode: auto
-  destination: public
   version_label: warning
   version_tooltip: "Under development"
