@@ -407,8 +407,6 @@ build-pages:
     expire_in: 30 days
   pages:
     publish: public
-  rules:
-    - if: $CI_COMMIT_REF_NAME == $CI_DEFAULT_BRANCH  
   only:
     refs:
       - main
