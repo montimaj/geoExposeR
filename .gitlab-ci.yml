@@ -332,7 +332,7 @@ docs:
       # - ".gitlab-ci.yml"
 
 # Enhanced pages job with vignette support
-pages:
+build-pages:
   <<: *r_base
   stage: deploy
   image: rocker/r-ver:latest
@@ -405,9 +405,22 @@ pages:
     paths:
       - public
     expire_in: 30 days
+  
   only:
     refs:
       - main
+
+# Deploy to GitLab Pages (new separate job)
+create-pages:
+  stage: deploy
+  needs: ["build-pages"]
+  script:
+    - echo "Deploying to GitLab Pages..."
+    - ls -la public/
+  pages:
+    publish: public
+  rules:
+    - if: $CI_COMMIT_REF_NAME == $CI_DEFAULT_BRANCH
 
 # macOS test - keep as is since it's already fast
 test:r-release-macos:
