@@ -335,10 +335,6 @@ coverage:
   only:
     refs:
       - main
-    changes:
-      - "**/*.R"
-      - "tests/**/*"
-      - ".gitlab-ci.yml"
 
 # Simplified docs job
 docs:
