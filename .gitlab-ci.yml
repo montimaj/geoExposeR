@@ -357,9 +357,9 @@ pages:
         libjpeg-dev \
         
     # Install R packages needed for vignettes and pkgdown
-    - R -e "install.packages(c('pkgdown', 'devtools', 'rmarkdown', 'knitr', 'markdown', 'htmltools'), Ncpus = 4)"
+    - R -e "install.packages(c('pkgdown', 'devtools', 'rmarkdown', 'knitr', 'markdown', 'htmltools'))"
     # Install package dependencies (including those needed for vignettes)
-    - R -e "install.packages(c('Amelia', 'dplyr', 'lme4', 'broom.mixed', 'mice', 'rms'), Ncpus = 4)"
+    - R -e "install.packages(c('Amelia', 'dplyr', 'lme4', 'broom.mixed', 'mice', 'rms'))"
     - R -e "remotes::install_deps(dependencies = TRUE)"
     # Verify vignette dependencies
     - |
