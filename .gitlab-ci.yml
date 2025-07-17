@@ -401,10 +401,6 @@ build-pages:
       pkgdown::build_site()
       "
   timeout: 25m
-  artifacts:
-    paths:
-      - public
-    expire_in: 30 days
   pages:
     publish: public
   only:
