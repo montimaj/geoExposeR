@@ -10,7 +10,7 @@ An R package for modeling and estimating arsenic exposure from groundwater, base
 [![Pipeline Status](https://code.usgs.gov/envirohealth/gwArsenicR/badges/main/pipeline.svg)](https://code.usgs.gov/envirohealth/gwArsenicR/-/pipelines)
 
 <!-- Quality Metrics -->
-[![Test Coverage](https://code.usgs.gov/envirohealth/gwArsenicR/badges/main/coverage.svg)](https://code.usgs.gov/envirohealth/gwArsenicR/-/graphs/main/charts)
+[![Test Coverage](https://code.usgs.gov/envirohealth/gwArsenicR/badges/main/coverage.svg)](https://code.usgs.gov/envirohealth/gwArsenicR/-/commits/main)
 
 <!-- Documentation and Usage -->
 [![Documentation](https://img.shields.io/badge/docs-pkgdown-blue.svg)](https://envirohealth.code.usgs.gov/gwArsenicR)
@@ -110,7 +110,7 @@ packageVersion("gwArsenicR")
 
 **Package Documentation Website:**
 
-The complete package documentation, including detailed function references, vignettes, and examples, is available at: **https://envirohealth.code.usgs.gov/gwArsenicR**
+The complete package documentation, including detailed function references, vignettes, and examples, is available at: **https://gwarsenicr.code-pages.usgs.gov**
 
 This website is automatically generated and updated whenever changes are made to the main branch, ensuring you always have access to the latest documentation.
 
@@ -317,7 +317,7 @@ The function is designed to handle the complex statistical methodology while pro
 ## Documentation
 
 ### Online Documentation
-📖 **Complete documentation website**: https://envirohealth.code.usgs.gov/gwArsenicR
+📖 **Complete documentation website**: https://gwarsenicr.code-pages.usgs.gov
 
 The documentation website includes:
 - **Function Reference**: Detailed documentation for all package functions

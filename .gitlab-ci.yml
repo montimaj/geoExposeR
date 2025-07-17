@@ -83,7 +83,7 @@ variables:
       - "**/*.R"
       - "DESCRIPTION"
       - "tests/**/*"
-      # - ".gitlab-ci.yml"
+      - ".gitlab-ci.yml"
 
 # Test jobs for different R versions - optimized
 test:r-release-ubuntu:
@@ -338,7 +338,7 @@ coverage:
     changes:
       - "**/*.R"
       - "tests/**/*"
-      # - ".gitlab-ci.yml"
+      - ".gitlab-ci.yml"
 
 # Simplified docs job
 docs:
@@ -363,7 +363,7 @@ docs:
       - "R/**/*"
       - "DESCRIPTION"
       - "NAMESPACE"
-      # - ".gitlab-ci.yml"
+      - ".gitlab-ci.yml"
 
 # Enhanced pages job with vignette support
 build-pages:
