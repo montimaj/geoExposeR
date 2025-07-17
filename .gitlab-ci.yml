@@ -354,7 +354,7 @@ pages:
         texlive-latex-extra \
         libtiff5-dev \
         libpng-dev \
-        libjpeg-dev \        
+        libjpeg-dev    
     # Install R packages needed for vignettes and pkgdown
     - R -e "install.packages(c('pkgdown', 'devtools', 'rmarkdown', 'knitr', 'markdown', 'htmltools'))"
     # Install package dependencies (including those needed for vignettes)
