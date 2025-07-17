@@ -184,6 +184,7 @@ gwArsenicR/
 │   ├── paper.bib                       # Bibliography
 │   └── paper.html                      # Generated HTML version
 ├── .gitlab-ci.yml                      # GitLab CI/CD pipeline configuration
+|── ._pkgdown.yml                       # Website configuration
 ├── CONTRIBUTING.md                     # Contribution guidelines
 ├── DESCRIPTION                         # Package metadata and dependencies
 ├── NAMESPACE                           # Package exports and imports

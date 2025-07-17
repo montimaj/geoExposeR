@@ -351,7 +351,11 @@ pages:
         texlive-latex-base \
         texlive-fonts-recommended \
         texlive-fonts-extra \
-        texlive-latex-extra
+        texlive-latex-extra \
+        libtiff5-dev \
+        libpng-dev \
+        libjpeg-dev \
+        
     # Install R packages needed for vignettes and pkgdown
     - R -e "install.packages(c('pkgdown', 'devtools', 'rmarkdown', 'knitr', 'markdown', 'htmltools'), Ncpus = 4)"
     # Install package dependencies (including those needed for vignettes)
@@ -389,30 +393,8 @@ pages:
       library(pkgdown)
       library(devtools)
       
-      cat('Building pkgdown site...\n')
-      
-      # Set options for better error handling
-      options(repos = c(CRAN = 'https://cloud.r-project.org/'))
-      
-      tryCatch({
-        # Build site with explicit destination
-        pkgdown::build_site()
-        cat('✅ pkgdown site built successfully\n')
-      }, error = function(e) {
-        cat('❌ ERROR building pkgdown site:\n')
-        print(e)
-        
-        # Try building without vignettes if that's the issue
-        cat('Attempting to build without vignettes...\n')
-        tryCatch({
-          pkgdown::build_site()
-          cat('✅ pkgdown site built successfully (without vignettes)\n')
-        }, error = function(e2) {
-          cat('❌ ERROR even without vignettes:\n')
-          print(e2)
-          quit(status = 1)
-        })
-      })
+      cat('Building pkgdown site...\n')      
+      pkgdown::build_site()
       "
   timeout: 25m
   artifacts:
