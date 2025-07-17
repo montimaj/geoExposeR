@@ -27,7 +27,7 @@ variables:
     - echo 'options(HTTPUserAgent = sprintf("R/%s R (%s)", getRversion(), paste(getRversion(), R.version$platform, R.version$arch, R.version$os)))' >> ~/.Rprofile
     - echo 'options(warn = 1, error = traceback)' >> ~/.Rprofile
     # Install basic dependencies quickly
-    - R -e "install.packages(c('remotes', 'devtools'), Ncpus = 4, quiet = TRUE)"
+    - R -e "install.packages(c('remotes', 'devtools'))"
 
 # Fast test job template
 .test_template: &test_template
