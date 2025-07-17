@@ -76,7 +76,7 @@ If you do not have Pandoc, you can download and install it from the official web
 
 ### R Package Installation
 
-**Prerequisites:** R (≥ 4.1.0) and [Pandoc](https://pandoc.org/installing.html) for building vignettes.
+**Prerequisites:** R (≥ 4.4.0) and [Pandoc](https://pandoc.org/installing.html) for building vignettes.
 
 **Install from GitLab:**
 ```r
