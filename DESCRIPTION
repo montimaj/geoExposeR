@@ -33,8 +33,6 @@ License: CC0 1.0 Universal + file LICENSE.md
 Encoding: UTF-8
 Roxygen: list(markdown = TRUE)
 RoxygenNote: 7.3.2
-URL: https://envirohealth.code.usgs.gov/gwArsenicR
-BugReports: https://code.usgs.gov/envirohealth/gwArsenicR/-/issues
 Imports:
     Amelia,
     data.table,

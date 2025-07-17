@@ -8,6 +8,12 @@ home:
   title: "gwArsenicR: Groundwater Arsenic Exposure Modeling"
   description: "An R package for modeling and estimating arsenic exposure from groundwater"
   strip_header: false  # Keep the README header with badges
+
+repo:
+  url:
+    home: https://code.usgs.gov/envirohealth/gwArsenicR
+    source: https://code.usgs.gov/envirohealth/gwArsenicR/-/blob/main/
+    issue: https://code.usgs.gov/envirohealth/gwArsenicR/-/issues/
   
   # Custom sidebar with badges
   sidebar:
