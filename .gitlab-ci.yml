@@ -334,7 +334,6 @@ docs:
 # Enhanced pages job with vignette support
 build-pages:
   <<: *r_base
-  stage: deploy
   image: rocker/r-ver:latest
   script:
     - mkdir -p public
