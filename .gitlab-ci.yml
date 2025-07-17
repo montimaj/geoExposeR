@@ -335,6 +335,7 @@ docs:
 build-pages:
   <<: *r_base
   image: rocker/r-ver:latest
+  stage: deploy
   script:
     - mkdir -p public
     # Install system dependencies including ICU and vignette requirements
@@ -404,22 +405,14 @@ build-pages:
     paths:
       - public
     expire_in: 30 days
-  
+  pages:
+    publish: public
+  rules:
+    - if: $CI_COMMIT_REF_NAME == $CI_DEFAULT_BRANCH  
   only:
     refs:
       - main
 
-# Deploy to GitLab Pages (new separate job)
-create-pages:
-  stage: deploy
-  needs: ["build-pages"]
-  script:
-    - echo "Deploying to GitLab Pages..."
-    - ls -la public/
-  pages:
-    publish: public
-  rules:
-    - if: $CI_COMMIT_REF_NAME == $CI_DEFAULT_BRANCH
 
 # macOS test - keep as is since it's already fast
 test:r-release-macos:
