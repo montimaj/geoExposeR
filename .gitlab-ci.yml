@@ -46,7 +46,7 @@ variables:
         build-essential \
         pandoc
     # Install all R dependencies quickly using binary packages
-    - R -e "install.packages(c('Amelia', 'dplyr', 'lme4', 'broom.mixed', 'mice', 'rms', 'testthat', 'rcmdcheck', 'rmarkdown', 'knitr'))"
+    - R -e "install.packages(c('Amelia', 'dplyr', 'lme4', 'broom.mixed', 'mice', 'rms', 'testthat', 'rcmdcheck', 'rmarkdown', 'knitr', 'covr'))"
     - R -e "remotes::install_deps(dependencies = TRUE)"
     # Quick verification and test
     - |
@@ -70,9 +70,14 @@ variables:
       "
   timeout: 15m  # Much shorter timeout
   artifacts:
-    when: on_failure
+    when: always  # Generate artifacts even if tests fail
     paths:
       - check/
+      - test-coverage/  # Add coverage artifacts
+    reports:
+      coverage_report:
+        coverage_format: cobertura
+        path: test-coverage/coverage.xml
     expire_in: 1 week
   only:
     refs:
