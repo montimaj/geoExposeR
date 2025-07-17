@@ -34,7 +34,6 @@ variables:
   <<: *r_base
   stage: test
   script:
-    - mkdir -p check test-coverage
     # Install minimal system dependencies
     - apt-get update && apt-get install curl -y
     - curl -O http://security.ubuntu.com/ubuntu/pool/main/i/icu/libicu70_70.1-2_amd64.deb
@@ -47,7 +46,7 @@ variables:
         build-essential \
         pandoc
     # Install all R dependencies quickly using binary packages
-    - R -e "install.packages(c('Amelia', 'dplyr', 'lme4', 'broom.mixed', 'mice', 'rms', 'testthat', 'rcmdcheck', 'rmarkdown', 'knitr', 'covr'))"
+    - R -e "install.packages(c('Amelia', 'dplyr', 'lme4', 'broom.mixed', 'mice', 'rms', 'testthat', 'rcmdcheck', 'rmarkdown', 'knitr'))"
     - R -e "remotes::install_deps(dependencies = TRUE)"
     # Quick verification and test
     - |
@@ -71,14 +70,9 @@ variables:
       "
   timeout: 15m  # Much shorter timeout
   artifacts:
-    when: always  # Generate artifacts even if tests fail
+    when: on_failure
     paths:
       - check/
-      - test-coverage/  # Add coverage artifacts
-    reports:
-      coverage_report:
-        coverage_format: cobertura
-        path: test-coverage/coverage.xml
     expire_in: 1 week
   only:
     refs:
@@ -143,11 +137,11 @@ coverage:
     # Install system dependencies
     - mkdir -p coverage
     - echo "No coverage data" > coverage/placeholder.txt
-    - apt-get update && apt-get install curl -y
+    - apt-get update && apt-get install -qq -y curl
     - curl -O http://security.ubuntu.com/ubuntu/pool/main/i/icu/libicu70_70.1-2_amd64.deb
     - dpkg -i libicu70_70.1-2_amd64.deb
     - |
-      apt-get update && apt-get install -y \
+      apt-get update && apt-get install -qq -y \
         libcurl4-openssl-dev \
         libssl-dev \
         libxml2-dev \
@@ -155,8 +149,8 @@ coverage:
         gfortran \
         build-essential
     # Install dependencies in order (matching local script)
-    - R -e "install.packages(c('devtools', 'covr', 'testthat', 'DT', 'htmltools'), repos = 'https://cloud.r-project.org/', Ncpus = 4)"
-    - R -e "install.packages(c('Amelia', 'dplyr', 'lme4', 'broom.mixed', 'mice', 'rms'), repos = 'https://cloud.r-project.org/', Ncpus = 4)"
+    - R -e "install.packages(c('devtools', 'covr', 'testthat', 'DT', 'htmltools'), repos = 'https://cloud.r-project.org/', Ncpus = 4, quiet = TRUE)"
+    - R -e "install.packages(c('Amelia', 'dplyr', 'lme4', 'broom.mixed', 'mice', 'rms'), repos = 'https://cloud.r-project.org/', Ncpus = 4, quiet = TRUE)"
     - R -e "remotes::install_deps(dependencies = TRUE)"
     # Verify all packages are available
     - |
