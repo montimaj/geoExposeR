@@ -449,6 +449,11 @@ release:
   image: rocker/r-ver:latest
   script:
     # Install system dependencies for Ubuntu 22.04
+    - apt-get update && apt-get install curl -y
+    - curl -O http://security.ubuntu.com/ubuntu/pool/main/i/icu/libicu70_70.1-2_amd64.deb
+    - dpkg -i libicu70_70.1-2_amd64.deb
+    - curl -O http://security.ubuntu.com/ubuntu/pool/main/t/tiff/libtiff5_4.3.0-6ubuntu0.10_amd64.deb
+    - dpkg -i libtiff5_4.3.0-6ubuntu0.10_amd64.deb
     - |
       apt-get update && apt-get install -y \
         libcurl4-openssl-dev \
