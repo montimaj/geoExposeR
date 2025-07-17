@@ -366,7 +366,7 @@ docs:
       - ".gitlab-ci.yml"
 
 # Enhanced pages job with vignette support
-build-pages:
+create-pages:
   <<: *r_base
   image: rocker/r-ver:latest
   stage: deploy
