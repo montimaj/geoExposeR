@@ -31,7 +31,7 @@
 #' @param columns_to_select A character vector of column names to be selected
 #'   from the birth data. If NULL, all columns are used.
 #' @param rucc_col A character string specifying the column name for the
-#'   Rural-Urban Continuum Code. Defaults to "RUCC".
+#'   Rural-Urban Continuum Code. Defaults to NULL.
 #' @param geoid_col A character string specifying the column name for the
 #'   Geographic Identifier (e.g., county FIPS code) in the arsenic data.
 #'   Defaults to "GEOID10". This can be participant-specific IDs as well.
@@ -65,7 +65,7 @@
 #' @param mice_method A character string specifying the imputation method for
 #'   covariates. Defaults to "pmm" (predictive mean matching).
 #' @param mice_covs A character vector of column names to be used as
-#'   covariates in the mice imputation process. Defaults to c("RUCC", "pm").
+#'   covariates in the mice imputation process. Defaults to c("pm").
 #'   Make sure these columns exist in the birth data.
 #' @param apply_imputation_fallback Logical indicating whether to apply fallback
 #'  imputation for missing arsenic levels. The fallback fills missing
@@ -119,7 +119,7 @@ perform_sensitivity_analysis <- function(
   as_cat_label = c("As<5", "As5-10", "As10+"),
   drop_as_cat_label_reg = c("As<5"),
   columns_to_select = NULL,
-  rucc_col = "RUCC",
+  rucc_col = NULL,
   geoid_col = "GEOID10",
   as_conc_cols = c("RFC3_C1v2", "RFC3_C2v2", "RFC3_C3v2"),
   epa_cutoffs = c(5, 10),
@@ -133,7 +133,7 @@ perform_sensitivity_analysis <- function(
   mice_m = 1,
   mice_maxit = 5,
   mice_method = "pmm",
-  mice_covs = c("RUCC", "pm"),
+  mice_covs = c("pm"),
   apply_imputation_fallback = TRUE
 ) {
 

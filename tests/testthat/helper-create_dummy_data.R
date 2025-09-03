@@ -87,8 +87,6 @@ create_dummy_data <- function(
     MEDUC_3 = sample(0:1, num_births, replace = TRUE),
     MEDUC_4 = sample(0:1, num_births, replace = TRUE),
     smoke = sample(0:1, num_births, replace = TRUE),
-    RUCC = sample(1:9, num_births, replace = TRUE),
-    RUCC_F = factor(sample(1:9, num_births, replace = TRUE)),
     pm = stats::rnorm(num_births, mean = 8, sd = 2),
     DMAR_1 = sample(0:1, num_births, replace = TRUE),
     FIPS = birth_fips,

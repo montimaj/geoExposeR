@@ -162,8 +162,6 @@ create_dummy_data <- function(
     MEDUC_3 = sample(0:1, num_births, replace = TRUE),
     MEDUC_4 = sample(0:1, num_births, replace = TRUE),
     smoke = sample(0:1, num_births, replace = TRUE),
-    RUCC = sample(1:9, num_births, replace = TRUE),
-    RUCC_F = factor(sample(1:9, num_births, replace = TRUE)),
     pm = stats::rnorm(num_births, mean = 8, sd = 2),
     DMAR_1 = sample(0:1, num_births, replace = TRUE),
     FIPS = birth_fips,
@@ -211,7 +209,7 @@ regression_formula <- paste0(
   "rms::rcs(MAGE_R, parms = 3) + ",
   "as.factor(MRACEHISP_F) + ",
   "MEDUC_2 + MEDUC_3 + MEDUC_4 + ",
-  "as.factor(RUCC_F) + DMAR_1 + smoke + pm + ",
+  "DMAR_1 + smoke + pm + ",
   "(1 | MRSTATE / FIPS)"
 )
 ```

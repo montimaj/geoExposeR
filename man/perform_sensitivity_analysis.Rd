@@ -16,7 +16,7 @@ perform_sensitivity_analysis(
   as_cat_label = c("As<5", "As5-10", "As10+"),
   drop_as_cat_label_reg = c("As<5"),
   columns_to_select = NULL,
-  rucc_col = "RUCC",
+  rucc_col = NULL,
   geoid_col = "GEOID10",
   as_conc_cols = c("RFC3_C1v2", "RFC3_C2v2", "RFC3_C3v2"),
   epa_cutoffs = c(5, 10),
@@ -30,7 +30,7 @@ perform_sensitivity_analysis(
   mice_m = 1,
   mice_maxit = 5,
   mice_method = "pmm",
-  mice_covs = c("RUCC", "pm"),
+  mice_covs = c("pm"),
   apply_imputation_fallback = TRUE
 )
 }
@@ -69,7 +69,7 @@ used as the reference level in the regression. Defaults to c("As<5").}
 from the birth data. If NULL, all columns are used.}
 
 \item{rucc_col}{A character string specifying the column name for the
-Rural-Urban Continuum Code. Defaults to "RUCC".}
+Rural-Urban Continuum Code. Defaults to NULL.}
 
 \item{geoid_col}{A character string specifying the column name for the
 Geographic Identifier (e.g., county FIPS code) in the arsenic data.
@@ -117,7 +117,7 @@ Defaults to 5.}
 covariates. Defaults to "pmm" (predictive mean matching).}
 
 \item{mice_covs}{A character vector of column names to be used as
-covariates in the mice imputation process. Defaults to c("RUCC", "pm").
+covariates in the mice imputation process. Defaults to c("pm").
 Make sure these columns exist in the birth data.}
 
 \item{apply_imputation_fallback}{Logical indicating whether to apply fallback

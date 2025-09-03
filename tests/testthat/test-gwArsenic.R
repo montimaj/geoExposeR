@@ -31,7 +31,7 @@ test_that("Function handles missing covariates and produces valid output", {
   targets <- c("BWT", "OEGEST")
   impute_vars <- c("MAGE_R", "smoke")
   as_level_col <- "AsLevel"
-  mice_covs <- c("RUCC", "pm", "DMAR_1", "MEDUC_2", "MEDUC_3", "MEDUC_4")
+  mice_covs <- c("pm", "DMAR_1", "MEDUC_2", "MEDUC_3", "MEDUC_4")
 
   # check if mice_covs are in the birth_data
   if (!all(mice_covs %in% names(birth_data))) {

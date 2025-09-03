@@ -163,7 +163,7 @@ load_and_process_birth_data <- function(
   }
 
   # Create rural indicator if RUCC column exists
-  if (rucc_col %in% names(births)) {
+  if (!is.null(rucc_col) && rucc_col %in% names(births)) {
     births <- births %>%
       dplyr::mutate(rural = .data[[rucc_col]] > 3)
   }
@@ -262,20 +262,9 @@ convert_epa_to_multinomial <- function(
   prob_cols <- paste0("EPA_C", seq_len(n_categories), "v2")
   row_sums <- rowSums(datmatx_epa[, prob_cols, with = FALSE])
 
-  # Check if normalization is needed
-  tolerance <- 1e-12
-  needs_normalization <- any(abs(row_sums - 1) > tolerance)
-
-  if (needs_normalization) {
-    warning(
-      "Row sums deviate from 1.0, applying normalization. Max deviation: ",
-      max(abs(row_sums - 1))
-    )
-
-    # Normalize only if needed
-    datmatx_epa[prob_cols] <- datmatx_epa[prob_cols] / row_sums
-  } else {
-    message("Row sums are within tolerance, no normalization needed")
+  # Normalize probabilities to sum to 1
+  for (col in prob_cols) {
+    datmatx_epa[[col]] <- datmatx_epa[[col]] / row_sums
   }
 
   if (!return_prob_matrix) {
