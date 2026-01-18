@@ -43,13 +43,14 @@ variables:
     - if: '$CI_COMMIT_BRANCH == "develop"'
 
 # Test jobs for different R versions
+# Note: Package requires R >= 4.4.0 (see DESCRIPTION)
 test:r-release:
   <<: *test_template
   image: rocker/r-ver:latest
 
-test:r-oldrel:
+test:r-4.4:
   <<: *test_template
-  image: rocker/r-ver:4.4.0
+  image: rocker/r-ver:4.4.2
 
 # Coverage job
 coverage:
