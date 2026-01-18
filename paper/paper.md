@@ -113,7 +113,7 @@ Ultimately, gwArsenicR empowers a wider research community to contribute to our 
 
 # Availability
 
-gwArsenicR is available on GitLab at https://code.usgs.gov/envirohealth/gwArsenicR under a CC0 1.0 Universal license. Comprehensive documentation, including a detailed vignette with worked examples and full API reference, is available at https://project.code-pages.usgs.gov/gwArsenicR/. The package requires R >= 4.4.0 and can be installed via:
+gwArsenicR is available on GitLab at https://code.usgs.gov/envirohealth/gwArsenicR under a CC0 1.0 Universal license. Comprehensive documentation, including a detailed vignette with worked examples and full API reference, is available at https://envirohealth.code-pages.usgs.gov/gwArsenicR/. The package requires R >= 4.4.0 and can be installed via:
 
 ```r
 # Install remotes if not already installed

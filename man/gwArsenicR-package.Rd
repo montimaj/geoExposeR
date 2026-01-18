@@ -11,7 +11,7 @@ The exposure of fetuses to arsenic concentrations greater than 50 ug/L in drinki
 \seealso{
 Useful links:
 \itemize{
-  \item \url{https://project.code-pages.usgs.gov/gwArsenicR/}
+  \item \url{https://envirohealth.code-pages.usgs.gov/gwArsenicR/}
   \item Report bugs at \url{https://code.usgs.gov/envirohealth/gwArsenicR/-/issues}
 }
 
