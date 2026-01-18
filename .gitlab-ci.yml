@@ -28,7 +28,7 @@ variables:
   stage: test
   script:
     - apt-get update && apt-get install -qq -y libcurl4-openssl-dev libssl-dev libxml2-dev build-essential pandoc libgdal-dev libgeos-dev libproj-dev libudunits2-dev
-    - R -e "install.packages(c('Amelia', 'data.table', 'dplyr', 'exactextractr', 'Hmisc', 'lme4', 'broom.mixed', 'mice', 'rlang', 'rms', 'sf', 'terra', 'testthat', 'rcmdcheck', 'rmarkdown', 'knitr'), Ncpus = 4, quiet = TRUE)"
+    - R -e "install.packages(c('Amelia', 'data.table', 'dplyr', 'exactextractr', 'Hmisc', 'lme4', 'broom.mixed', 'mice', 'rlang', 'rms', 'sf', 'terra', 'testthat', 'rcmdcheck', 'rmarkdown', 'knitr'), Ncpus = 4)"
     - R -e "remotes::install_deps(dependencies = TRUE)"
     - R -e "devtools::load_all(); devtools::test()"
   timeout: 20m
@@ -46,7 +46,7 @@ variables:
 # Note: Package requires R >= 4.4.0 (see DESCRIPTION)
 test:r-release:
   <<: *test_template
-  image: rocker/r-ver:latest
+  image: rocker/r-ver:4.5.0
 
 test:r-4.4:
   <<: *test_template
@@ -56,12 +56,12 @@ test:r-4.4:
 coverage:
   <<: *r_base
   stage: coverage
-  image: rocker/r-ver:latest
+  image: rocker/r-ver:4.5.0
   script:
     - mkdir -p coverage
     - apt-get update && apt-get install -qq -y libcurl4-openssl-dev libssl-dev libxml2-dev libicu-dev gfortran build-essential libgdal-dev libgeos-dev libproj-dev libudunits2-dev
-    - R -e "install.packages(c('devtools', 'covr', 'testthat', 'DT', 'htmltools'), quiet = TRUE)"
-    - R -e "install.packages(c('Amelia', 'data.table', 'dplyr', 'exactextractr', 'Hmisc', 'lme4', 'broom.mixed', 'mice', 'rlang', 'rms', 'sf', 'terra'), quiet = TRUE)"
+    - R -e "install.packages(c('devtools', 'covr', 'testthat', 'DT', 'htmltools'), Ncpus = 4)"
+    - R -e "install.packages(c('Amelia', 'data.table', 'dplyr', 'exactextractr', 'Hmisc', 'lme4', 'broom.mixed', 'mice', 'rlang', 'rms', 'sf', 'terra'), Ncpus = 4)"
     - R -e "remotes::install_deps(dependencies = TRUE)"
     - |
       R -e '
@@ -112,10 +112,10 @@ coverage:
 docs:
   <<: *r_base
   stage: docs
-  image: rocker/r-ver:latest
+  image: rocker/r-ver:4.5.0
   script:
     - apt-get update && apt-get install -y libcurl4-openssl-dev libssl-dev build-essential pandoc libgdal-dev libgeos-dev libproj-dev libudunits2-dev
-    - R -e "install.packages(c('roxygen2', 'devtools'), quiet = TRUE)"
+    - R -e "install.packages(c('roxygen2', 'devtools'), Ncpus = 4)"
     - R -e "remotes::install_deps(dependencies = TRUE)"
     - R -e "devtools::document()"
   timeout: 10m
@@ -128,11 +128,11 @@ docs:
 pages:
   <<: *r_base
   stage: deploy
-  image: rocker/r-ver:latest
+  image: rocker/r-ver:4.5.0
   script:
     - apt-get update && apt-get install -qq -y libcurl4-openssl-dev libssl-dev libxml2-dev libicu-dev gfortran build-essential pandoc texlive-latex-base texlive-fonts-recommended texlive-latex-extra libtiff5-dev libpng-dev libjpeg-dev libgdal-dev libgeos-dev libproj-dev libudunits2-dev
-    - R -e "install.packages(c('pkgdown', 'devtools', 'rmarkdown', 'knitr', 'markdown', 'htmltools'), quiet = TRUE)"
-    - R -e "install.packages(c('Amelia', 'data.table', 'dplyr', 'exactextractr', 'Hmisc', 'lme4', 'broom.mixed', 'mice', 'rlang', 'rms', 'sf', 'terra'), quiet = TRUE)"
+    - R -e "install.packages(c('pkgdown', 'devtools', 'rmarkdown', 'knitr', 'markdown', 'htmltools'), Ncpus = 4)"
+    - R -e "install.packages(c('Amelia', 'data.table', 'dplyr', 'exactextractr', 'Hmisc', 'lme4', 'broom.mixed', 'mice', 'rlang', 'rms', 'sf', 'terra'), Ncpus = 4)"
     - R -e "remotes::install_deps(dependencies = TRUE)"
     - R -e "pkgdown::build_site()"
     - mv docs public
