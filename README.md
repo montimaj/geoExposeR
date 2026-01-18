@@ -349,8 +349,6 @@ gwArsenicR/
 │   ├── paper.md                        # Paper manuscript
 │   ├── paper.bib                       # References
 │   └── joss.txt                        # JOSS submission metadata
-├── scripts/
-│   └── test_coverage_local.R           # Local coverage analysis script
 ├── .gitlab-ci.yml                      # GitLab CI/CD pipeline configuration
 ├── .gitignore                          # Git ignore patterns
 ├── .Rbuildignore                       # R build ignore patterns
@@ -389,7 +387,6 @@ The package includes comprehensive testing with 100% code coverage:
 
 - **`tests/testthat/test-gwArsenic.R`**: Main test suite with 476 tests (includes helper functions)
 - **`tests/testthat.R`**: Standard R package test runner
-- **`scripts/test_coverage_local.R`**: Local coverage analysis script
 - **`.gitlab-ci.yml`**: GitLab CI/CD pipeline with automated testing and coverage reporting
 
 ### Key Internal Functions
@@ -1065,8 +1062,8 @@ devtools::test()
 # Run specific test with detailed output
 testthat::test_file("tests/testthat/test-gwArsenic.R", reporter = "progress")
 
-# Check test coverage (requires DT and htmltools)
-Rscript scripts/test_coverage_local.R
+# Check test coverage (requires covr, DT and htmltools)
+covr::report(covr::package_coverage())
 ```
 
 ### Testing Configuration

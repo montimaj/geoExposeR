@@ -161,7 +161,7 @@ The current implementation has the following limitations that users should consi
 
 # Author Contributions
 
-Using the CRediT (Contributor Roles Taxonomy) framework: **Sayantan Majumdar**: Software, Methodology, Validation, Writing - Original Draft, Writing - Review & Editing. **Scott M. Bartell**: Methodology, Validation, Writing - Review & Editing. **Melissa A. Lombard**: Data Curation, Methodology, Resources, Writing - Review & Editing. **Ryan G. Smith**: Validation, Writing - Review & Editing. **Matthew O. Gribble**: Conceptualization, Funding Acquisition, Project Administration, Supervision, Writing - Review & Editing.
+Using the CRediT (Contributor Roles Taxonomy) framework: **Sayantan Majumdar**: Software, Methodology, Validation, Writing - Original Draft, Funding Acquisition. **Scott M. Bartell**: Methodology, Writing - Review & Editing. **Melissa A. Lombard**: Data Curation, Methodology, Resources, Writing - Review & Editing. **Ryan G. Smith**: Methodology, Funding Acquisition, Writing - Review & Editing, Project Administration. **Matthew O. Gribble**: Conceptualization, Funding Acquisition, Project Administration, Methodology, Supervision, Writing - Review & Editing.
 
 # Acknowledgments
 
