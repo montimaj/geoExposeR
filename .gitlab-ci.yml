@@ -20,14 +20,14 @@ variables:
     - echo 'options(repos = c(CRAN = "https://packagemanager.posit.co/cran/__linux__/jammy/latest"))' > ~/.Rprofile
     - echo 'options(HTTPUserAgent = sprintf("R/%s R (%s)", getRversion(), paste(getRversion(), R.version$platform, R.version$arch, R.version$os)))' >> ~/.Rprofile
     - echo 'options(warn = 1)' >> ~/.Rprofile
-    - R -e "install.packages(c('remotes', 'devtools'), quiet = TRUE)"
+    - R -e "install.packages(c('remotes', 'devtools'), Ncpus = 4)"
 
 # Test job template
 .test_template: &test_template
   <<: *r_base
   stage: test
   script:
-    - R -e "install.packages(c('Amelia', 'data.table', 'dplyr', 'exactextractr', 'Hmisc', 'lme4', 'broom.mixed', 'mice', 'rlang', 'rms', 'sf', 'terra', 'testthat', 'rcmdcheck', 'rmarkdown', 'knitr'), Ncpus = 4, quiet = TRUE)"
+    - R -e "install.packages(c('Amelia', 'data.table', 'dplyr', 'Hmisc', 'lme4', 'broom.mixed', 'mice', 'rlang', 'rms', 'testthat', 'rcmdcheck', 'rmarkdown', 'knitr'), Ncpus = 4)"
     - R -e "remotes::install_deps(dependencies = TRUE)"
     - R -e "devtools::load_all(); devtools::test()"
   timeout: 20m
@@ -53,8 +53,8 @@ coverage:
   image: rocker/geospatial:latest
   script:
     - mkdir -p coverage
-    - R -e "install.packages(c('devtools', 'covr', 'testthat', 'DT', 'htmltools'), quiet = TRUE)"
-    - R -e "install.packages(c('Amelia', 'data.table', 'dplyr', 'exactextractr', 'Hmisc', 'lme4', 'broom.mixed', 'mice', 'rlang', 'rms', 'sf', 'terra'), quiet = TRUE)"
+    - R -e "install.packages(c('devtools', 'covr', 'testthat', 'DT', 'htmltools'), Ncpus = 4)"
+    - R -e "install.packages(c('Amelia', 'data.table', 'dplyr', 'Hmisc', 'lme4', 'broom.mixed', 'mice', 'rlang', 'rms'), Ncpus = 4)"
     - R -e "remotes::install_deps(dependencies = TRUE)"
     - |
       R -e '
@@ -107,7 +107,7 @@ docs:
   stage: docs
   image: rocker/geospatial:latest
   script:
-    - R -e "install.packages(c('roxygen2', 'devtools'), quiet = TRUE)"
+    - R -e "install.packages(c('roxygen2', 'devtools'), Ncpus = 4)"
     - R -e "remotes::install_deps(dependencies = TRUE)"
     - R -e "devtools::document()"
   timeout: 10m
@@ -123,8 +123,8 @@ pages:
   image: rocker/geospatial:latest
   script:
     - apt-get update && apt-get install -qq -y texlive-latex-base texlive-fonts-recommended texlive-latex-extra
-    - R -e "install.packages(c('pkgdown', 'devtools', 'rmarkdown', 'knitr', 'markdown', 'htmltools'), quiet = TRUE)"
-    - R -e "install.packages(c('Amelia', 'data.table', 'dplyr', 'exactextractr', 'Hmisc', 'lme4', 'broom.mixed', 'mice', 'rlang', 'rms', 'sf', 'terra'), quiet = TRUE)"
+    - R -e "install.packages(c('pkgdown', 'devtools', 'rmarkdown', 'knitr', 'markdown', 'htmltools'), Ncpus = 4)"
+    - R -e "install.packages(c('Amelia', 'data.table', 'dplyr', 'Hmisc', 'lme4', 'broom.mixed', 'mice', 'rlang', 'rms'), Ncpus = 4)"
     - R -e "remotes::install_deps(dependencies = TRUE)"
     - R -e "pkgdown::build_site()"
     - mv docs public
