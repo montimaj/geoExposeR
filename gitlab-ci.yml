@@ -27,6 +27,7 @@ variables:
   <<: *r_base
   stage: test
   script:
+    - apt-get update && apt-get install -qq -y libcurl4-openssl-dev libssl-dev libxml2-dev build-essential pandoc libgdal-dev libgeos-dev libproj-dev libudunits2-dev
     - R -e "install.packages(c('Amelia', 'data.table', 'dplyr', 'exactextractr', 'Hmisc', 'lme4', 'broom.mixed', 'mice', 'rlang', 'rms', 'sf', 'terra', 'testthat', 'rcmdcheck', 'rmarkdown', 'knitr'), Ncpus = 4, quiet = TRUE)"
     - R -e "remotes::install_deps(dependencies = TRUE)"
     - R -e "devtools::load_all(); devtools::test()"
@@ -41,18 +42,19 @@ variables:
     - if: '$CI_COMMIT_BRANCH == "main"'
     - if: '$CI_COMMIT_BRANCH == "develop"'
 
-# Test job - R release only (package requires R >= 4.4.0)
+# Test jobs for different R versions
 test:r-release:
   <<: *test_template
-  image: rocker/geospatial:latest
+  image: rocker/r-ver:latest
 
 # Coverage job
 coverage:
   <<: *r_base
   stage: coverage
-  image: rocker/geospatial:latest
+  image: rocker/r-ver:latest
   script:
     - mkdir -p coverage
+    - apt-get update && apt-get install -qq -y libcurl4-openssl-dev libssl-dev libxml2-dev libicu-dev gfortran build-essential libgdal-dev libgeos-dev libproj-dev libudunits2-dev
     - R -e "install.packages(c('devtools', 'covr', 'testthat', 'DT', 'htmltools'), quiet = TRUE)"
     - R -e "install.packages(c('Amelia', 'data.table', 'dplyr', 'exactextractr', 'Hmisc', 'lme4', 'broom.mixed', 'mice', 'rlang', 'rms', 'sf', 'terra'), quiet = TRUE)"
     - R -e "remotes::install_deps(dependencies = TRUE)"
@@ -105,8 +107,9 @@ coverage:
 docs:
   <<: *r_base
   stage: docs
-  image: rocker/geospatial:latest
+  image: rocker/r-ver:latest
   script:
+    - apt-get update && apt-get install -y libcurl4-openssl-dev libssl-dev build-essential pandoc libgdal-dev libgeos-dev libproj-dev libudunits2-dev
     - R -e "install.packages(c('roxygen2', 'devtools'), quiet = TRUE)"
     - R -e "remotes::install_deps(dependencies = TRUE)"
     - R -e "devtools::document()"
@@ -120,9 +123,9 @@ docs:
 pages:
   <<: *r_base
   stage: deploy
-  image: rocker/geospatial:latest
+  image: rocker/r-ver:latest
   script:
-    - apt-get update && apt-get install -qq -y texlive-latex-base texlive-fonts-recommended texlive-latex-extra
+    - apt-get update && apt-get install -qq -y libcurl4-openssl-dev libssl-dev libxml2-dev libicu-dev gfortran build-essential pandoc texlive-latex-base texlive-fonts-recommended texlive-latex-extra libtiff5-dev libpng-dev libjpeg-dev libgdal-dev libgeos-dev libproj-dev libudunits2-dev
     - R -e "install.packages(c('pkgdown', 'devtools', 'rmarkdown', 'knitr', 'markdown', 'htmltools'), quiet = TRUE)"
     - R -e "install.packages(c('Amelia', 'data.table', 'dplyr', 'exactextractr', 'Hmisc', 'lme4', 'broom.mixed', 'mice', 'rlang', 'rms', 'sf', 'terra'), quiet = TRUE)"
     - R -e "remotes::install_deps(dependencies = TRUE)"
