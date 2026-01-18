@@ -17,10 +17,10 @@ variables:
   before_script:
     - mkdir -p /tmp/R-libs
     - export R_LIBS_USER="/tmp/R-libs"
-    - R -e "cat('R version:', as.character(getRversion()), '\n')"
-    - echo 'options(repos = c(CRAN = "https://cloud.r-project.org"))' > ~/.Rprofile
+    - echo 'options(repos = c(CRAN = "https://packagemanager.posit.co/cran/__linux__/jammy/latest"))' > ~/.Rprofile
+    - echo 'options(HTTPUserAgent = sprintf("R/%s R (%s)", getRversion(), paste(getRversion(), R.version$platform, R.version$arch, R.version$os)))' >> ~/.Rprofile
     - echo 'options(warn = 1)' >> ~/.Rprofile
-    - R -e "install.packages(c('remotes', 'devtools'), Ncpus = 4)"
+    - R -e "install.packages(c('remotes', 'devtools'), quiet = TRUE)"
 
 # Test job template
 .test_template: &test_template
@@ -28,10 +28,10 @@ variables:
   stage: test
   script:
     - apt-get update && apt-get install -qq -y libcurl4-openssl-dev libssl-dev libxml2-dev build-essential pandoc libgdal-dev libgeos-dev libproj-dev libudunits2-dev
-    - R -e "install.packages(c('Amelia', 'data.table', 'dplyr', 'exactextractr', 'Hmisc', 'lme4', 'broom.mixed', 'mice', 'rlang', 'rms', 'sf', 'terra', 'testthat', 'rcmdcheck', 'rmarkdown', 'knitr'), Ncpus = 4)"
+    - R -e "install.packages(c('Amelia', 'data.table', 'dplyr', 'exactextractr', 'Hmisc', 'lme4', 'broom.mixed', 'mice', 'rlang', 'rms', 'sf', 'terra', 'testthat', 'rcmdcheck', 'rmarkdown', 'knitr'), Ncpus = 4, quiet = TRUE)"
     - R -e "remotes::install_deps(dependencies = TRUE)"
     - R -e "devtools::load_all(); devtools::test()"
-  timeout: 45m
+  timeout: 20m
   artifacts:
     when: on_failure
     paths:
@@ -42,26 +42,21 @@ variables:
     - if: '$CI_COMMIT_BRANCH == "main"'
     - if: '$CI_COMMIT_BRANCH == "develop"'
 
-# Test jobs for different R versions
-# Note: Package requires R >= 4.4.0 (see DESCRIPTION)
+# Test job - R release only (package requires R >= 4.4.0)
 test:r-release:
   <<: *test_template
-  image: rocker/r-ver:4.5.0
-
-test:r-4.4:
-  <<: *test_template
-  image: rocker/r-ver:4.4.2
+  image: rocker/r-ver:latest
 
 # Coverage job
 coverage:
   <<: *r_base
   stage: coverage
-  image: rocker/r-ver:4.5.0
+  image: rocker/r-ver:latest
   script:
     - mkdir -p coverage
     - apt-get update && apt-get install -qq -y libcurl4-openssl-dev libssl-dev libxml2-dev libicu-dev gfortran build-essential libgdal-dev libgeos-dev libproj-dev libudunits2-dev
-    - R -e "install.packages(c('devtools', 'covr', 'testthat', 'DT', 'htmltools'), Ncpus = 4)"
-    - R -e "install.packages(c('Amelia', 'data.table', 'dplyr', 'exactextractr', 'Hmisc', 'lme4', 'broom.mixed', 'mice', 'rlang', 'rms', 'sf', 'terra'), Ncpus = 4)"
+    - R -e "install.packages(c('devtools', 'covr', 'testthat', 'DT', 'htmltools'), quiet = TRUE)"
+    - R -e "install.packages(c('Amelia', 'data.table', 'dplyr', 'exactextractr', 'Hmisc', 'lme4', 'broom.mixed', 'mice', 'rlang', 'rms', 'sf', 'terra'), quiet = TRUE)"
     - R -e "remotes::install_deps(dependencies = TRUE)"
     - |
       R -e '
@@ -99,7 +94,7 @@ coverage:
         cat("SUCCESS: Coverage meets threshold\n")
       }
       '
-  timeout: 45m
+  timeout: 25m
   artifacts:
     paths:
       - coverage/
@@ -112,13 +107,13 @@ coverage:
 docs:
   <<: *r_base
   stage: docs
-  image: rocker/r-ver:4.5.0
+  image: rocker/r-ver:latest
   script:
     - apt-get update && apt-get install -y libcurl4-openssl-dev libssl-dev build-essential pandoc libgdal-dev libgeos-dev libproj-dev libudunits2-dev
-    - R -e "install.packages(c('roxygen2', 'devtools'), Ncpus = 4)"
+    - R -e "install.packages(c('roxygen2', 'devtools'), quiet = TRUE)"
     - R -e "remotes::install_deps(dependencies = TRUE)"
     - R -e "devtools::document()"
-  timeout: 30m
+  timeout: 10m
   rules:
     - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
     - if: '$CI_COMMIT_BRANCH == "main"'
@@ -128,15 +123,15 @@ docs:
 pages:
   <<: *r_base
   stage: deploy
-  image: rocker/r-ver:4.5.0
+  image: rocker/r-ver:latest
   script:
     - apt-get update && apt-get install -qq -y libcurl4-openssl-dev libssl-dev libxml2-dev libicu-dev gfortran build-essential pandoc texlive-latex-base texlive-fonts-recommended texlive-latex-extra libtiff5-dev libpng-dev libjpeg-dev libgdal-dev libgeos-dev libproj-dev libudunits2-dev
-    - R -e "install.packages(c('pkgdown', 'devtools', 'rmarkdown', 'knitr', 'markdown', 'htmltools'), Ncpus = 4)"
-    - R -e "install.packages(c('Amelia', 'data.table', 'dplyr', 'exactextractr', 'Hmisc', 'lme4', 'broom.mixed', 'mice', 'rlang', 'rms', 'sf', 'terra'), Ncpus = 4)"
+    - R -e "install.packages(c('pkgdown', 'devtools', 'rmarkdown', 'knitr', 'markdown', 'htmltools'), quiet = TRUE)"
+    - R -e "install.packages(c('Amelia', 'data.table', 'dplyr', 'exactextractr', 'Hmisc', 'lme4', 'broom.mixed', 'mice', 'rlang', 'rms', 'sf', 'terra'), quiet = TRUE)"
     - R -e "remotes::install_deps(dependencies = TRUE)"
     - R -e "pkgdown::build_site()"
     - mv docs public
-  timeout: 60m
+  timeout: 30m
   artifacts:
     paths:
       - public
