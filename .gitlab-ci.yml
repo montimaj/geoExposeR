@@ -1,5 +1,5 @@
-# GitLab CI/CD pipeline for testing gwArsenicR package
-# Optimized for faster builds using binary packages
+# GitLab CI/CD pipeline for gwArsenicR R package
+# Optimized for USGS GitLab with pkgdown site deployment
 
 stages:
   - test
@@ -10,428 +10,134 @@ stages:
 variables:
   DOCKER_DRIVER: overlay2
   R_KEEP_PKG_SOURCE: "yes"
-  # Use RSPM for faster binary package installation
-  CRAN_REPO: "https://packagemanager.rstudio.com/cran/__linux__/jammy/latest"
-  # Disable package caching to avoid GLIBC conflicts
   R_LIBS_USER: "/tmp/R-libs"
 
-# Base R setup template - optimized for speed
+# Base R setup template
 .r_base: &r_base
   before_script:
-    # Set up fresh R library directory
     - mkdir -p /tmp/R-libs
     - export R_LIBS_USER="/tmp/R-libs"
-    - echo "R_LIBS_USER=$R_LIBS_USER"
-    # Configure R for binary packages (much faster)
-    - echo 'options(repos = c(CRAN = "https://packagemanager.rstudio.com/cran/__linux__/jammy/latest"))' > ~/.Rprofile
+    - echo 'options(repos = c(CRAN = "https://packagemanager.posit.co/cran/__linux__/jammy/latest"))' > ~/.Rprofile
     - echo 'options(HTTPUserAgent = sprintf("R/%s R (%s)", getRversion(), paste(getRversion(), R.version$platform, R.version$arch, R.version$os)))' >> ~/.Rprofile
-    - echo 'options(warn = 1, error = traceback)' >> ~/.Rprofile
-    # Install basic dependencies quickly
-    - R -e "install.packages(c('remotes', 'devtools'))"
+    - echo 'options(warn = 1)' >> ~/.Rprofile
+    - R -e "install.packages(c('remotes', 'devtools'), quiet = TRUE)"
 
-# Fast test job template
+# Test job template
 .test_template: &test_template
   <<: *r_base
   stage: test
   script:
-    # Install minimal system dependencies
-    - apt-get update && apt-get install -qq -y curl
-    - curl -O http://security.ubuntu.com/ubuntu/pool/main/i/icu/libicu70_70.1-2_amd64.deb
-    - dpkg -i libicu70_70.1-2_amd64.deb
-    - |
-      apt-get update && apt-get install -qq -y \
-        libcurl4-openssl-dev \
-        libssl-dev \
-        libxml2-dev \
-        build-essential \
-        pandoc
-    # Install all R dependencies quickly using binary packages
-    - R -e "install.packages(c('Amelia', 'dplyr', 'lme4', 'broom.mixed', 'mice', 'rms', 'testthat', 'rcmdcheck', 'rmarkdown', 'knitr'), Ncpus = 4, quiet = TRUE)"
+    - apt-get update && apt-get install -qq -y libcurl4-openssl-dev libssl-dev libxml2-dev build-essential pandoc libgdal-dev libgeos-dev libproj-dev libudunits2-dev
+    - R -e "install.packages(c('Amelia', 'data.table', 'dplyr', 'exactextractr', 'Hmisc', 'lme4', 'broom.mixed', 'mice', 'rlang', 'rms', 'sf', 'terra', 'testthat', 'rcmdcheck', 'rmarkdown', 'knitr'), Ncpus = 4, quiet = TRUE)"
     - R -e "remotes::install_deps(dependencies = TRUE)"
-    # Quick verification and test
-    - |
-      R -e "
-      # Quick package check
-      required_pkgs <- c('Amelia', 'dplyr', 'lme4', 'broom.mixed', 'mice', 'rms', 'testthat', 'devtools')
-      missing <- sapply(required_pkgs, function(x) !requireNamespace(x, quietly = TRUE))
-      if (any(missing)) {
-        cat('Missing packages:', names(missing)[missing], '\n')
-        install.packages(names(missing)[missing])
-      }
-      cat('✅ All packages available\n')
-      
-      # Load and test
-      devtools::build()
-      devtools::install()      
-      devtools::load_all()
-      devtools::test()
-      
-      cat('✅ Tests completed!\n')
-      "
-  timeout: 15m  # Much shorter timeout
+    - R -e "devtools::load_all(); devtools::test()"
+  timeout: 20m
   artifacts:
     when: on_failure
     paths:
       - check/
     expire_in: 1 week
-  only:
-    refs:
-      - main
-      - develop
-      - merge_requests
-    changes:
-      - "**/*.R"
-      - "DESCRIPTION"
-      - "tests/**/*"
-      - ".gitlab-ci.yml"
+  rules:
+    - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
+    - if: '$CI_COMMIT_BRANCH == "main"'
+    - if: '$CI_COMMIT_BRANCH == "develop"'
 
-# Test jobs for different R versions - optimized
-test:r-release-ubuntu:
+# Test jobs for different R versions
+test:r-release:
   <<: *test_template
   image: rocker/r-ver:latest
-  variables:
-    R_VERSION: "release"
-    PLATFORM: "ubuntu-latest"
 
-# macOS test - keep as is since it's already fast
-test:r-release-macos:
-  <<: *r_base
-  stage: test
-  tags:
-    - macos
-  script:
-    - brew install pandoc || true
-    - R -e "install.packages(c('Amelia', 'dplyr', 'lme4', 'broom.mixed', 'mice', 'rms', 'testthat', 'devtools'))"
-    - R -e "remotes::install_deps(dependencies = TRUE)"
-    - |
-      R -e "
-      devtools::load_all()
-      devtools::test()
-      "
-  timeout: 15m
-  only:
-    refs:
-      - main
-      - merge_requests
-    changes:
-      - "**/*.R"
-      - "DESCRIPTION"
-      - "tests/**/*"
-      - ".gitlab-ci.yml"
-
-test:r-devel-ubuntu:
+test:r-oldrel:
   <<: *test_template
-  image: rocker/r-devel:latest
-
-test:r-oldrel-ubuntu:
-  <<: *test_template  
   image: rocker/r-ver:4.4.0
-    
 
-# Enhanced coverage job based on local coverage script
+# Coverage job
 coverage:
   <<: *r_base
   stage: coverage
   image: rocker/r-ver:latest
   script:
-    # Install system dependencies
     - mkdir -p coverage
-    - echo "No coverage data" > coverage/placeholder.txt
-    - apt-get update && apt-get install -qq -y curl
-    - curl -O http://security.ubuntu.com/ubuntu/pool/main/i/icu/libicu70_70.1-2_amd64.deb
-    - dpkg -i libicu70_70.1-2_amd64.deb
-    - |
-      apt-get update && apt-get install -qq -y \
-        libcurl4-openssl-dev \
-        libssl-dev \
-        libxml2-dev \
-        libicu-dev \
-        gfortran \
-        build-essential
-    # Install dependencies in order (matching local script)
-    - R -e "install.packages(c('devtools', 'covr', 'testthat', 'DT', 'htmltools'), repos = 'https://cloud.r-project.org/', Ncpus = 4, quiet = TRUE)"
-    - R -e "install.packages(c('Amelia', 'dplyr', 'lme4', 'broom.mixed', 'mice', 'rms'), repos = 'https://cloud.r-project.org/', Ncpus = 4, quiet = TRUE)"
+    - apt-get update && apt-get install -qq -y libcurl4-openssl-dev libssl-dev libxml2-dev libicu-dev gfortran build-essential libgdal-dev libgeos-dev libproj-dev libudunits2-dev
+    - R -e "install.packages(c('devtools', 'covr', 'testthat', 'DT', 'htmltools'), quiet = TRUE)"
+    - R -e "install.packages(c('Amelia', 'data.table', 'dplyr', 'exactextractr', 'Hmisc', 'lme4', 'broom.mixed', 'mice', 'rlang', 'rms', 'sf', 'terra'), quiet = TRUE)"
     - R -e "remotes::install_deps(dependencies = TRUE)"
-    # Verify all packages are available
     - |
-      R -e "
-      required_packages <- c('devtools', 'covr', 'testthat', 'DT', 'htmltools')
-      cat('Checking required packages...\n')
+      R -e '
+      library(devtools)
+      library(covr)
       
-      for (pkg in required_packages) {
-        if (!requireNamespace(pkg, quietly = TRUE)) {
-          cat('❌ Missing package:', pkg, '\n')
-          quit(status = 1)
-        } else {
-          cat('✅', pkg, 'available\n')
-        }
-      }
-      "
-    # Load package and generate coverage (matching local script logic)
-    - |
-      R -e "
-      cat('=== CI Coverage Testing for gwArsenicR ===\n')
-      cat('Starting at:', as.character(Sys.time()), '\n\n')
+      cat("=== Coverage Testing for gwArsenicR ===\n")
       
-      # Load required libraries
-      suppressMessages({
-        library(devtools)
-        library(covr)
-        library(testthat)
-      })
-      
-      # Load package first
-      cat('Loading package...\n')
-      tryCatch({
-        devtools::load_all('.', quiet = FALSE)
-        cat('✅ Package loaded successfully\n\n')
-      }, error = function(e) {
-        cat('❌ ERROR loading package:\n')
-        print(e)
-        quit(status = 1)
-      })
-      
-      # Generate coverage for gwArsenic.R specifically
-      cat('Generating coverage for gwArsenic.R...\n')
-      start_time <- Sys.time()
-      
-      tryCatch({
-        full_cov <- covr::package_coverage(
-          path = 'R/gwArsenic.R',
-          test_files = 'tests/testthat/test-gwArsenic.R',
-          quiet = FALSE,
-          clean = FALSE,
-          type = 'tests'
-        )
-        
-        end_time <- Sys.time()
-        cat('✅ Coverage generation completed in',
-            round(as.numeric(end_time - start_time, units = 'secs'), 2),
-            'seconds\n\n')
-      }, error = function(e) {
-        cat('❌ ERROR generating coverage:\n')
-        print(e)
-        quit(status = 1)
-      })
-      
-      # Filter coverage to show only gwArsenic.R
-      cat('=== Filtering Coverage for gwArsenic.R ===\n')
-      gwarsenic_only_cov <- Filter(function(x) {
-        if (is.list(x) && !is.null(x\$srcref)) {
-          srcfile_name <- attr(x\$srcref, 'srcfile')\$filename
-          grepl('gwArsenic\\\\.R', basename(srcfile_name), ignore.case = TRUE)
-        } else {
-          FALSE
-        }
-      }, full_cov)
-      
-      # Recreate coverage object with proper class and attributes
-      if (length(gwarsenic_only_cov) > 0) {
-        class(gwarsenic_only_cov) <- class(full_cov)
-        attr(gwarsenic_only_cov, 'package') <- attr(full_cov, 'package')
-        attr(gwarsenic_only_cov, 'relative') <- attr(full_cov, 'relative')
-        cov <- gwarsenic_only_cov
-      } else {
-        cat('⚠️ No gwArsenic.R specific coverage found, using full coverage\n')
-        cov <- full_cov
-      }
+      # Generate coverage
+      devtools::load_all()
+      cov <- covr::package_coverage()
       
       # Calculate coverage percentage
       coverage_pct <- covr::percent_coverage(cov)
-      cat(sprintf('📊 gwArsenic.R Coverage: %.1f%%\n\n', coverage_pct))
+      cat(sprintf("Coverage: %.1f%%\n", coverage_pct))
       
-      # Create coverage directory and save results
-      dir.create('coverage', showWarnings = FALSE)
+      # Generate reports
+      dir.create("coverage", showWarnings = FALSE)
+      covr::report(cov, file = "coverage/coverage-report.html")
       
-      # Generate HTML report
-      tryCatch({
-        covr::report(cov, file = 'coverage/gwArsenic-coverage.html')
-        cat('✅ HTML coverage report generated\n')
-      }, error = function(e) {
-        cat('⚠️ Warning: Could not generate HTML report:\n')
-        print(e)
-      })
-      
-      # Create summary data (matching local script)
-      total_lines <- length(cov)
-      uncovered_lines <- ceiling(total_lines - coverage_pct / 100 * total_lines)
-      
-      coverage_summary <- data.frame(
-        File = 'gwArsenic.R',
-        Coverage = sprintf('%.1f%%', coverage_pct),
-        Status = if (coverage_pct >= 85) {
-          'EXCELLENT'
-        } else if (coverage_pct >= 75) {
-          'GOOD'
-        } else if (coverage_pct >= 65) {
-          'NEEDS IMPROVEMENT'
-        } else {
-          'INSUFFICIENT'
-        },
-        Target = '≥85%',
-        Uncovered_Lines = uncovered_lines,
-        Total_Lines = total_lines,
-        stringsAsFactors = FALSE
-      )
-      
-      cat('\n=== gwArsenic.R Coverage Summary ===\n')
-      print(coverage_summary)
-      
-      # Write summary files
+      # Write summary
       writeLines(
         c(
-          paste('Coverage:', sprintf('%.1f%%', coverage_pct)),
-          paste('Status:', coverage_summary\$Status),
-          paste('Target: ≥85%'),
-          paste('Date:', Sys.Date()),
-          paste('File: gwArsenic.R'),
-          paste('Total Lines:', total_lines),
-          paste('Uncovered Lines:', uncovered_lines)
+          paste("Coverage:", sprintf("%.1f%%", coverage_pct)),
+          paste("Date:", Sys.Date())
         ),
-        'coverage/coverage-summary.txt'
+        "coverage/coverage-summary.txt"
       )
       
-      # Write CSV summary
-      write.csv(coverage_summary, 'coverage/gwArsenic-coverage-summary.csv', row.names = FALSE)
-      
-      # Quality gate assessment (matching local script logic)
-      cat('\n=== Quality Gate Assessment ===\n')
+      # Quality gate
       if (coverage_pct < 65) {
-        cat(sprintf('❌ FAIL: gwArsenic.R coverage %.1f%% is below minimum threshold (65%%)\n', coverage_pct))
-        cat('🔧 Recommendation: Add more comprehensive tests\n')
+        cat("FAIL: Coverage below 65%\n")
         quit(status = 1)
-      } else if (coverage_pct < 75) {
-        cat(sprintf('⚠️ WARNING: gwArsenic.R coverage %.1f%% is below recommended threshold (75%%)\n', coverage_pct))
-        cat('🔧 Recommendation: Consider adding tests for edge cases\n')
-      } else if (coverage_pct < 85) {
-        cat(sprintf('✅ SUCCESS: gwArsenic.R coverage %.1f%% meets minimum standards\n', coverage_pct))
-        cat('💡 Suggestion: Aim for 85%+ coverage for excellence\n')
       } else {
-        cat(sprintf('🎉 EXCELLENT: gwArsenic.R coverage %.1f%% exceeds expectations\n', coverage_pct))
+        cat("SUCCESS: Coverage meets threshold\n")
       }
-      
-      # Additional recommendations for lower coverage
-      if (coverage_pct < 85) {
-        cat('\n📝 Suggestions to improve coverage:\n')
-        cat('1. Add tests for error conditions and edge cases\n')
-        cat('2. Test all branches of conditional statements\n')
-        cat('3. Ensure all validation functions are tested\n')
-        cat('4. Test both success and failure scenarios\n')
-      }
-      
-      cat('\n=== Coverage Testing Complete ===\n')
-      cat('Completed at:', as.character(Sys.time()), '\n')
-      "
-  timeout: 20m
+      '
+  timeout: 25m
   artifacts:
     paths:
       - coverage/
-    reports:
-      coverage_report:
-        coverage_format: cobertura
-        path: coverage/coverage.xml
     expire_in: 1 week
   coverage: '/Coverage: (\d+\.\d+)%/'
-  only:
-    refs:
-      - main
+  rules:
+    - if: '$CI_COMMIT_BRANCH == "main"'
 
-# Simplified docs job
+# Documentation generation
 docs:
   <<: *r_base
   stage: docs
   image: rocker/r-ver:latest
   script:
-    - apt-get update && apt-get install curl -y
-    - curl -O http://security.ubuntu.com/ubuntu/pool/main/i/icu/libicu70_70.1-2_amd64.deb
-    - dpkg -i libicu70_70.1-2_amd64.deb
-    - apt-get update && apt-get install -y libcurl4-openssl-dev libssl-dev build-essential pandoc
-    - R -e "install.packages(c('roxygen2', 'devtools'), Ncpus = 4)"
+    - apt-get update && apt-get install -y libcurl4-openssl-dev libssl-dev build-essential pandoc libgdal-dev libgeos-dev libproj-dev libudunits2-dev
+    - R -e "install.packages(c('roxygen2', 'devtools'), quiet = TRUE)"
     - R -e "remotes::install_deps(dependencies = TRUE)"
     - R -e "devtools::document()"
-  timeout: 8m
-  only:
-    refs:
-      - main
-      - develop
-      - merge_requests
-    changes:
-      - "R/**/*"
-      - "DESCRIPTION"
-      - "NAMESPACE"
-      - ".gitlab-ci.yml"
+  timeout: 10m
+  rules:
+    - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
+    - if: '$CI_COMMIT_BRANCH == "main"'
+    - if: '$CI_COMMIT_BRANCH == "develop"'
 
-# Enhanced pages job with vignette support
-create-pages:
+# GitLab Pages deployment
+pages:
   <<: *r_base
-  image: rocker/r-ver:latest
   stage: deploy
+  image: rocker/r-ver:latest
   script:
-    # Install system dependencies including ICU and vignette requirements
-    - apt-get update && apt-get install -qq -y curl
-    - curl -O http://security.ubuntu.com/ubuntu/pool/main/i/icu/libicu70_70.1-2_amd64.deb
-    - dpkg -i libicu70_70.1-2_amd64.deb
-    - curl -O http://security.ubuntu.com/ubuntu/pool/main/t/tiff/libtiff5_4.3.0-6ubuntu0.10_amd64.deb
-    - dpkg -i libtiff5_4.3.0-6ubuntu0.10_amd64.deb
-    - |
-      apt-get update && apt-get install -qq -y \
-        libcurl4-openssl-dev \
-        libssl-dev \
-        libxml2-dev \
-        libicu-dev \
-        gfortran \
-        build-essential \
-        pandoc \
-        texlive-latex-base \
-        texlive-fonts-recommended \
-        texlive-fonts-extra \
-        texlive-latex-extra \
-        libtiff5-dev \
-        libpng-dev \
-        libjpeg-dev    
-    # Install R packages needed for vignettes and pkgdown
-    - R -e "install.packages(c('pkgdown', 'devtools', 'rmarkdown', 'knitr', 'markdown', 'htmltools'), Ncpus = 4, quiet = TRUE)"
-    # Install package dependencies (including those needed for vignettes)
-    - R -e "install.packages(c('Amelia', 'dplyr', 'lme4', 'broom.mixed', 'mice', 'rms'), Ncpus = 4, quiet = TRUE)"
+    - apt-get update && apt-get install -qq -y libcurl4-openssl-dev libssl-dev libxml2-dev libicu-dev gfortran build-essential pandoc texlive-latex-base texlive-fonts-recommended texlive-latex-extra libtiff5-dev libpng-dev libjpeg-dev libgdal-dev libgeos-dev libproj-dev libudunits2-dev
+    - R -e "install.packages(c('pkgdown', 'devtools', 'rmarkdown', 'knitr', 'markdown', 'htmltools'), quiet = TRUE)"
+    - R -e "install.packages(c('Amelia', 'data.table', 'dplyr', 'exactextractr', 'Hmisc', 'lme4', 'broom.mixed', 'mice', 'rlang', 'rms', 'sf', 'terra'), quiet = TRUE)"
     - R -e "remotes::install_deps(dependencies = TRUE)"
-    # Verify vignette dependencies
-    - |
-      R -e "
-      # Check if vignettes directory exists
-      if (dir.exists('vignettes')) {
-        cat('✅ Vignettes directory found\n')
-        vignette_files <- list.files('vignettes', pattern = '\\\\.Rmd$', full.names = TRUE)
-        if (length(vignette_files) > 0) {
-          cat('Found vignettes:', paste(basename(vignette_files), collapse = ', '), '\n')
-        } else {
-          cat('No .Rmd vignette files found\n')
-        }
-      } else {
-        cat('No vignettes directory found\n')
-      }
-      
-      # Verify key packages for vignettes
-      required_pkgs <- c('knitr', 'rmarkdown', 'pkgdown')
-      for (pkg in required_pkgs) {
-        if (!requireNamespace(pkg, quietly = TRUE)) {
-          cat('❌ Missing:', pkg, '\n')
-          quit(status = 1)
-        }
-      }
-      cat('✅ All vignette dependencies available\n')
-      "
-    # Build pkgdown site with error handling
-    - |
-      R -e "
-      library(pkgdown)
-      library(devtools)
-      
-      cat('Building pkgdown site...\n')      
-      pkgdown::build_site()
-      "
-  timeout: 25m
-  pages:
-    publish: docs
-  only:
-    refs:
-      - main
+    - R -e "pkgdown::build_site()"
+    - mv docs public
+  timeout: 30m
+  artifacts:
+    paths:
+      - public
+  rules:
+    - if: '$CI_COMMIT_BRANCH == "main"'

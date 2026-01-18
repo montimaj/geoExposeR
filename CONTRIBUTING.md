@@ -8,7 +8,7 @@ Thank you for your interest in contributing to gwArsenicR! This document provide
 - [Development Setup](#development-setup)
 - [How to Contribute](#how-to-contribute)
 - [Reporting Issues](#reporting-issues)
-- [Submitting Pull Requests](#submitting-pull-requests)
+- [Submitting Merge Requests](#submitting-merge-requests)
 - [Development Guidelines](#development-guidelines)
 - [Testing](#testing)
 - [Documentation](#documentation)
@@ -53,7 +53,7 @@ install.packages(c("data.table", "dplyr", "lme4", "mice", "broom.mixed"))
 1. **Fork the repository** on GitLab
 2. **Clone your fork** locally:
    ```bash
-   git clone https://gitlab.com/YOUR_USERNAME/gwArsenicR.git
+   git clone https://code.usgs.gov/YOUR_USERNAME/gwArsenicR.git
    cd gwArsenicR
    ```
 
@@ -125,7 +125,7 @@ When reporting issues, please include:
 2. **Use case**: Why this feature would be useful
 3. **Proposed implementation**: If you have ideas about how to implement it
 
-## Submitting Pull Requests
+## Submitting Merge Requests
 
 ### Before Submitting
 1. **Ensure your code passes all checks**:
@@ -144,7 +144,7 @@ When reporting issues, please include:
 
 4. **Update NEWS.md** with your changes
 
-### Pull Request Process
+### Merge Request Process
 1. **Commit your changes** with clear, descriptive messages:
    ```bash
    git add .
@@ -156,7 +156,7 @@ When reporting issues, please include:
    git push origin feature/your-feature-name
    ```
 
-3. **Create a pull request** on GitLab with:
+3. **Create a merge request** on GitLab with:
    - Clear title describing the change
    - Detailed description of what was changed and why
    - Reference to any related issues
@@ -164,7 +164,7 @@ When reporting issues, please include:
 
 4. **Respond to review feedback** promptly and professionally
 
-### Pull Request Guidelines
+### Merge Request Guidelines
 - Keep changes focused and atomic
 - Write clear commit messages
 - Include tests for new functionality

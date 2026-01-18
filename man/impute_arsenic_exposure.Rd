@@ -11,8 +11,8 @@ impute_arsenic_exposure(
   births,
   ndraws,
   as_cat_label,
-  geoid_col,
-  birth_county_col,
+  id_col,
+  record_id_col,
   as_level_col,
   apply_imputation_fallback
 )
@@ -31,9 +31,9 @@ identifiers}
 
 \item{as_cat_label}{Character vector of arsenic category labels}
 
-\item{geoid_col}{Column name for geographic identifier in USGS data}
+\item{id_col}{Column name for geographic/participant identifier in USGS data}
 
-\item{birth_county_col}{Column name for county identifier in birth data}
+\item{record_id_col}{Column name for matching identifier in health data}
 
 \item{as_level_col}{Column name for arsenic level variable}
 

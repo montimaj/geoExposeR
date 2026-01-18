@@ -10,10 +10,15 @@
 #' @param pop_well_col Column name for population weights
 #' @param epa_as_mean_col Column name for EPA arsenic meanlog
 #' @param epa_as_sd_col Column name for EPA arsenic sdlog
+#' @param epa_as_conc_col Column name for raw EPA arsenic concentration (optional)
+#' @param epa_default_sdlog Default sdlog value when not provided (default: 1.0)
 #' @param epa_pwell_col Column name for private well percentage
-#' @param geoid_col Column name for geographic identifier
+#' @param id_col Column name for geographic identifier
 #' @param epa_cutoffs A numeric vector of cutoffs for categorizing arsenic
 #' levels based on EPA data
+#' @param format_ids Logical. Whether to apply smart identifier formatting.
+#'   If TRUE (default), numeric FIPS-like codes (1-5 digits) are zero-padded,
+#'   while alphanumeric identifiers are preserved unchanged.
 #' @return List containing processed arsenic data
 #'
 #' @keywords internal
@@ -24,9 +29,12 @@ load_and_process_arsenic_data <- function(
   pop_well_col,
   epa_as_mean_col,
   epa_as_sd_col,
+  epa_as_conc_col = NULL,
+  epa_default_sdlog = 1.0,
   epa_pwell_col,
-  geoid_col,
-  epa_cutoffs
+  id_col,
+  epa_cutoffs,
+  format_ids = TRUE
 ) {
   # Load USGS data (returns a list)
   usgs_data <- load_usgs_data(as_usgs_prob_csv, as_conc_cols, pop_well_col)
@@ -37,6 +45,15 @@ load_and_process_arsenic_data <- function(
     header = TRUE,
     showProgress = FALSE,
     nThread = parallel::detectCores()
+  )
+
+  # Auto-calculate lognormal parameters if needed
+  datmatx_epa <- calculate_epa_lognormal_params(
+    datmatx_epa = datmatx_epa,
+    epa_as_mean_col = epa_as_mean_col,
+    epa_as_sd_col = epa_as_sd_col,
+    epa_as_conc_col = epa_as_conc_col,
+    epa_default_sdlog = epa_default_sdlog
   )
 
   # Validate data alignment - use the actual data frames
@@ -55,7 +72,7 @@ load_and_process_arsenic_data <- function(
 
     message("Detected ", n_usgs_categories, " USGS arsenic categories\n")
     message("Using auto-generated EPA cutoffs:",
-            paste(cutoff_config$cutoffs, "µg/L"), "\n")
+            paste(cutoff_config$cutoffs, "ug/L"), "\n")
   } else {
     # User provided cutoffs are already validated and aligned with USGS
     cutoff_config <- validate_epa_cutoffs(
@@ -63,7 +80,7 @@ load_and_process_arsenic_data <- function(
     )
     message("Detected ", n_usgs_categories, " USGS arsenic categories\n")
     message("Using user-provided EPA cutoffs:",
-            paste(cutoff_config$cutoffs, "µg/L"), "\n")
+            paste(cutoff_config$cutoffs, "ug/L"), "\n")
   }
 
   # Convert EPA lognormal to multinomial
@@ -83,11 +100,20 @@ load_and_process_arsenic_data <- function(
     epa_pwell_col = epa_pwell_col
   )
 
-  # Format geographic identifiers
-  formatted_usgs <- format_geographic_ids(
-    usgs_data$datmatx_usgs,
-    geoid_col
-  )
+  # replace negative values with zero
+  rasterprob_combined[rasterprob_combined < 0] <- 0
+
+  # Format identifiers if requested
+  if (format_ids) {
+    formatted_usgs <- format_ids_func(
+      usgs_data$datmatx_usgs,
+      id_col
+    )
+  } else {
+    # Just ensure character type without formatting
+    formatted_usgs <- usgs_data$datmatx_usgs
+    formatted_usgs[[id_col]] <- as.character(formatted_usgs[[id_col]])
+  }
 
   return(list(
     datmatx_usgs = formatted_usgs,
@@ -140,7 +166,10 @@ load_usgs_data <- function(as_usgs_prob_csv, as_conc_cols, pop_well_col) {
 #' @param birth_data_txt Path to birth data file
 #' @param columns_to_select Column names to select (NULL for all)
 #' @param rucc_col Column name for Rural-Urban Continuum Code
-#' @param birth_county_col Column name for birth county identifier
+#' @param record_id_col Column name for birth county identifier
+#' @param format_ids Logical. Whether to apply smart identifier formatting.
+#'   If TRUE (default), numeric FIPS-like codes (1-5 digits) are zero-padded,
+#'   while alphanumeric identifiers are preserved unchanged.
 #' @return Processed birth data frame
 #'
 #' @keywords internal
@@ -148,7 +177,8 @@ load_and_process_birth_data <- function(
   birth_data_txt,
   columns_to_select,
   rucc_col,
-  birth_county_col
+  record_id_col,
+  format_ids = TRUE
 ) {
   # Load birth data
   births <- data.table::fread(
@@ -168,11 +198,98 @@ load_and_process_birth_data <- function(
       dplyr::mutate(rural = .data[[rucc_col]] > 3)
   }
 
-  # Format county identifiers
-  births_county_numeric <- as.numeric(births[[birth_county_col]])
-  births[[birth_county_col]] <- sprintf("%05d", births_county_numeric)
+  # Format identifiers if requested
+  if (format_ids) {
+    births <- format_ids_func(births, record_id_col)
+  } else {
+    # Just ensure character type without formatting
+    births[[record_id_col]] <- as.character(births[[record_id_col]])
+  }
 
   return(births)
+}
+
+#' Calculate EPA Lognormal Parameters
+#'
+#' Automatically calculates lognormal parameters (meanlog, sdlog) from raw
+#' arsenic concentration values if the lognormal columns don't exist.
+#'
+#' @param datmatx_epa EPA data frame
+#' @param epa_as_mean_col Column name for EPA arsenic meanlog
+#' @param epa_as_sd_col Column name for EPA arsenic sdlog
+#' @param epa_as_conc_col Column name for raw arsenic concentration (optional)
+#' @param epa_default_sdlog Default sdlog value (default: 1.0)
+#' @return Modified EPA data frame with lognormal parameters
+#'
+#' @keywords internal
+calculate_epa_lognormal_params <- function(
+  datmatx_epa,
+  epa_as_mean_col,
+  epa_as_sd_col,
+  epa_as_conc_col = NULL,
+  epa_default_sdlog = 1.0
+) {
+  # Check if lognormal columns already exist
+ has_meanlog <- epa_as_mean_col %in% names(datmatx_epa)
+ has_sdlog <- epa_as_sd_col %in% names(datmatx_epa)
+
+  # If both columns exist, return as-is
+  if (has_meanlog && has_sdlog) {
+    return(datmatx_epa)
+  }
+
+  # If meanlog doesn't exist, we need to calculate it
+  if (!has_meanlog) {
+    if (is.null(epa_as_conc_col)) {
+      stop(
+        "EPA lognormal meanlog column '", epa_as_mean_col, "' not found. ",
+        "Please provide 'epa_as_conc_col' to specify the raw arsenic ",
+        "concentration column for automatic conversion."
+      )
+    }
+
+    if (!epa_as_conc_col %in% names(datmatx_epa)) {
+      stop(
+        "EPA arsenic concentration column '", epa_as_conc_col,
+        "' not found in the data."
+      )
+    }
+
+    # Calculate meanlog from concentration: log(conc + 0.1) to avoid log(0)
+    conc_values <- datmatx_epa[[epa_as_conc_col]]
+
+    # Use data.table::set() to avoid shallow copy warnings
+    data.table::set(
+      datmatx_epa,
+      j = epa_as_mean_col,
+      value = ifelse(
+        !is.na(conc_values) & conc_values > 0,
+        log(conc_values + 0.1),
+        NA_real_
+      )
+    )
+
+    message(
+      "Calculated EPA lognormal meanlog from '", epa_as_conc_col,
+      "' column using: log(concentration + 0.1)"
+    )
+  }
+
+  # If sdlog doesn't exist, use default value
+  if (!has_sdlog) {
+    # Use data.table::set() to avoid shallow copy warnings
+    data.table::set(
+      datmatx_epa,
+      j = epa_as_sd_col,
+      value = epa_default_sdlog
+    )
+
+    message(
+      "Using default EPA lognormal sdlog = ", epa_default_sdlog
+    )
+  }
+
+  return(datmatx_epa)
 }
 
 #' Validate Data Alignment
@@ -261,11 +378,29 @@ convert_epa_to_multinomial <- function(
   # After calculating probabilities in convert_epa_to_multinomial
   prob_cols <- paste0("EPA_C", seq_len(n_categories), "v2")
   row_sums <- rowSums(datmatx_epa[, prob_cols, with = FALSE])
-
-  # Normalize probabilities to sum to 1
   for (col in prob_cols) {
+    # Normalize probabilities
     datmatx_epa[[col]] <- datmatx_epa[[col]] / row_sums
   }
+
+  # Check if normalization is needed
+  # tolerance <- 1e-12
+  # needs_normalization <- any(abs(row_sums - 1) > tolerance)
+
+  # if (needs_normalization) {
+  #   warning(
+  #     "Row sums deviate from 1.0, applying normalization. Max deviation: ",
+  #     max(abs(row_sums - 1))
+  #   )
+
+  #   # Normalize only if needed
+  #   for (col in prob_cols) {
+  #   # Normalize probabilities
+  #   datmatx_epa[[col]] <- datmatx_epa[[col]] / row_sums
+  # }
+  # } else {
+  #   message("Row sums are within tolerance, no normalization needed")
+  # }
 
   if (!return_prob_matrix) {
     return(datmatx_epa)
@@ -294,7 +429,16 @@ create_weighted_prob_matrix <- function(
   w_public <- 1 - w_private
 
   # Element-wise multiplication and addition for final weighted probability
-  (rasterprob_usgs * w_private) + (rasterprob_epa * w_public)
+  result <- (rasterprob_usgs * w_private) + (rasterprob_epa * w_public)
+
+  # Handle NA values in EPA probabilities by falling back to USGS probabilities
+  # This happens when EPA meanlog/sdlog are NA
+  na_rows <- which(apply(result, 1, function(x) any(is.na(x))))
+  if (length(na_rows) > 0) {
+    result[na_rows, ] <- rasterprob_usgs[na_rows, , drop = FALSE]
+  }
+
+  return(result)
 }
 
 
@@ -308,7 +452,7 @@ generate_default_epa_cutoffs <- function(n_categories) {
 
   # Define cutoff schemes for different numbers of categories
   cutoff_schemes <- list(
-    "2" = c(5),                    # 2 categories: <5, ≥5
+    "2" = c(5),                    # 2 categories: <5, >=5
     "3" = c(5, 10),                # 3 categories: <5, 5-10, >10 (default)
     "4" = c(2.5, 5, 10),           # 4 categories: <2.5, 2.5-5, 5-10, >10
     "5" = c(1, 5, 10, 20),         # 5 categories: <1, 1-5, 5-10, 10-20, >20
@@ -338,7 +482,7 @@ generate_logarithmic_cutoffs <- function(n_categories) {
     stop("Must have at least 2 categories")
   }
 
-  # Generate logarithmically spaced cutoffs from 0.5 to 50 µg/L
+  # Generate logarithmically spaced cutoffs from 0.5 to 50 ug/L
   min_cutoff <- 0.5
   max_cutoff <- 50
 

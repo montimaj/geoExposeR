@@ -11,9 +11,12 @@ load_and_process_arsenic_data(
   pop_well_col,
   epa_as_mean_col,
   epa_as_sd_col,
+  epa_as_conc_col = NULL,
+  epa_default_sdlog = 1,
   epa_pwell_col,
-  geoid_col,
-  epa_cutoffs
+  id_col,
+  epa_cutoffs,
+  format_ids = TRUE
 )
 }
 \arguments{
@@ -29,12 +32,20 @@ load_and_process_arsenic_data(
 
 \item{epa_as_sd_col}{Column name for EPA arsenic sdlog}
 
+\item{epa_as_conc_col}{Column name for raw EPA arsenic concentration (optional)}
+
+\item{epa_default_sdlog}{Default sdlog value when not provided (default: 1.0)}
+
 \item{epa_pwell_col}{Column name for private well percentage}
 
-\item{geoid_col}{Column name for geographic identifier}
+\item{id_col}{Column name for geographic identifier}
 
 \item{epa_cutoffs}{A numeric vector of cutoffs for categorizing arsenic
 levels based on EPA data}
+
+\item{format_ids}{Logical. Whether to apply smart identifier formatting.
+If TRUE (default), numeric FIPS-like codes (1-5 digits) are zero-padded,
+while alphanumeric identifiers are preserved unchanged.}
 }
 \value{
 List containing processed arsenic data

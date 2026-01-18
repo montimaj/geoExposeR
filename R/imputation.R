@@ -10,8 +10,8 @@
 #' @param births Data frame containing birth records
 #' @param ndraws Number of imputed datasets to create
 #' @param as_cat_label Character vector of arsenic category labels
-#' @param geoid_col Column name for geographic identifier in USGS data
-#' @param birth_county_col Column name for county identifier in birth data
+#' @param id_col Column name for geographic/participant identifier in USGS data
+#' @param record_id_col Column name for matching identifier in health data
 #' @param as_level_col Column name for arsenic level variable
 #' @param apply_imputation_fallback Logical indicating whether to apply fallback
 #' imputation for missing arsenic levels. The fallback fills missing
@@ -29,13 +29,13 @@ impute_arsenic_exposure <- function(
   births,
   ndraws,
   as_cat_label,
-  geoid_col,
-  birth_county_col,
+  id_col,
+  record_id_col,
   as_level_col,
   apply_imputation_fallback
 ) {
   # Get unique counties and setup
-  county_id_list <- na.omit(unique(datmatx_usgs[[geoid_col]]))
+  county_id_list <- na.omit(unique(datmatx_usgs[[id_col]]))
   n_counties <- length(county_id_list)
   ncats <- length(as_cat_label)
   # Pre-allocate matrix with appropriate type
@@ -43,13 +43,12 @@ impute_arsenic_exposure <- function(
   # Create efficient county lookup using split()
   county_lookup <- split(
     seq_len(nrow(datmatx_usgs)),
-    datmatx_usgs[[geoid_col]]
+    datmatx_usgs[[id_col]]
   )
   # Vectorized probability calculation and sampling
   for (i in seq_len(n_counties)) {
     county_id <- county_id_list[i]
     cells_i <- county_lookup[[county_id]]
-    if (is.null(cells_i) || length(cells_i) == 0) next
     # Optimized probability calculation
     if (length(cells_i) == 1) {
       # Single cell - no aggregation needed
@@ -57,17 +56,22 @@ impute_arsenic_exposure <- function(
     } else {
       # Multiple cells - use efficient weighted mean
       weights <- cellpop[cells_i]
-      if (sum(weights) > 0) {
+      # Handle NA values in weights - use na.rm=TRUE for sum
+      weight_sum <- sum(weights, na.rm = TRUE)
+      if (!is.na(weight_sum) && weight_sum > 0) {
+        # Replace NA weights with 0 for weighted calculation
+        weights[is.na(weights)] <- 0
         prob_values <- colSums(
           rasterprob_combined[cells_i, , drop = FALSE] * weights
-        ) / sum(weights)
+        ) / weight_sum
       } else {
-        prob_values <- colMeans(rasterprob_combined[cells_i, , drop = FALSE])
+        prob_values <- colMeans(rasterprob_combined[cells_i, , drop = FALSE],
+                                na.rm = TRUE)
       }
     }
     # Normalize probabilities (handle numerical precision)
-    prob_sum <- sum(prob_values)
-    if (prob_sum > 0) {
+    prob_sum <- sum(prob_values, na.rm = TRUE)
+    if (!is.na(prob_sum) && prob_sum > 0) {
       prob_values <- prob_values / prob_sum
       # Sample all draws at once for this county
       as_temp[i, ] <- sample.int(
@@ -99,7 +103,7 @@ impute_arsenic_exposure <- function(
     imputed_datasets[[j]] <- merge(
       births,
       as_draw_df,
-      by.x = birth_county_col,
+      by.x = record_id_col,
       by.y = "countyID",
       all.x = TRUE,
       sort = FALSE
@@ -205,14 +209,6 @@ impute_additional_variables <- function(
       var_data <- as.data.frame(imputed_datasets[[j]])[c(var, available_covs)]
       # Only impute if there are missing values
       if (any(is.na(var_data[[var]]))) {
-        # Ensure we have at least 2 columns for MICE
-        if (ncol(var_data) < 2) {
-          warning(
-            "Insufficient variables for MICE imputation of ", var,
-            " in draw ", j
-          )
-          next
-        }
         # Run MICE imputation with error handling
         mice_result <- tryCatch({
           suppressWarnings(

@@ -8,7 +8,8 @@ load_and_process_birth_data(
   birth_data_txt,
   columns_to_select,
   rucc_col,
-  birth_county_col
+  record_id_col,
+  format_ids = TRUE
 )
 }
 \arguments{
@@ -18,7 +19,11 @@ load_and_process_birth_data(
 
 \item{rucc_col}{Column name for Rural-Urban Continuum Code}
 
-\item{birth_county_col}{Column name for birth county identifier}
+\item{record_id_col}{Column name for birth county identifier}
+
+\item{format_ids}{Logical. Whether to apply smart identifier formatting.
+If TRUE (default), numeric FIPS-like codes (1-5 digits) are zero-padded,
+while alphanumeric identifiers are preserved unchanged.}
 }
 \value{
 Processed birth data frame

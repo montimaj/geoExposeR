@@ -1,0 +1,17 @@
+^\.gitlab-ci\.yml$
+^docs$
+^examples$
+^paper$
+^scripts$
+^lib$
+^CONTRIBUTING\.md$
+^DISCLAIMER\.md$
+^LICENSE\.md$
+^_pkgdown\.yml$
+^code\.json$
+^\.github$
+^gwArsenicR\.Rcheck$
+^gwArsenicR.*\.tar\.gz$
+^README\.Rmd$
+^doc$
+^Meta$

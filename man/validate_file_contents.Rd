@@ -9,12 +9,13 @@ validate_file_contents(
   as_usgs_prob_csv,
   as_epa_prob_csv,
   rucc_col,
-  birth_county_col,
-  geoid_col,
+  record_id_col,
+  id_col,
   as_conc_cols,
   pop_well_col,
   epa_as_mean_col,
   epa_as_sd_col,
+  epa_as_conc_col,
   epa_pwell_col
 )
 }

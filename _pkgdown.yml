@@ -1,4 +1,4 @@
-url: https://gwarsenicr.code-pages.usgs.gov
+url: https://project.code-pages.usgs.gov/gwArsenicR/
 
 template:
   bootstrap: 5
@@ -6,14 +6,8 @@ template:
 
 home:
   title: "gwArsenicR: Groundwater Arsenic Exposure Modeling"
-  description: "An R package for modeling and estimating arsenic exposure from groundwater"
+  description: "An R package for modeling and estimating arsenic exposure from groundwater, featuring data ingestion from GeoTIFF rasters, EPA data processing, multiple imputation for exposure uncertainty, and mixed-effects regression with Rubin's Rules pooling."
   strip_header: false  # Keep the README header with badges
-
-repo:
-  url:
-    home: https://code.usgs.gov/envirohealth/gwArsenicR
-    source: https://code.usgs.gov/envirohealth/gwArsenicR/-/blob/main/
-    issue: https://code.usgs.gov/envirohealth/gwArsenicR/-/issues/
   
   # Custom sidebar with badges
   sidebar:
@@ -28,7 +22,7 @@ repo:
 navbar:
   structure:
     left: [home, reference, articles, news]
-    right: [search, github]
+    right: [search, gitlab]
   components:
     home:
       icon: fas-home
@@ -53,6 +47,16 @@ reference:
     desc: "Core functions for arsenic exposure analysis"
     contents:
     - perform_sensitivity_analysis
+
+  - title: "Data Ingestion"
+    desc: "Functions for preparing input data from raw sources"
+    contents:
+    - prepare_usgs_data
+    - prepare_epa_data
+    - format_health_data
+    - add_well_percentages
+    - subset_by_geography
+    - validate_prepared_inputs
 
 articles:
   - title: "Getting Started"

@@ -142,9 +142,13 @@ pool_estimates_by_term <- function(
     return(pooled_estimate)
   })
   # Combine results and remove NULL entries
-  pooled_results <- do.call(rbind, Filter(Negate(is.null), pooled_list))
+  filtered_list <- Filter(Negate(is.null), pooled_list)
+  if (length(filtered_list) == 0) {
+    return(NULL)
+  }
+  pooled_results <- do.call(rbind, filtered_list)
   # Reorder columns for clarity
-  if (nrow(pooled_results) > 0) {
+  if (!is.null(pooled_results) && nrow(pooled_results) > 0) {
     pooled_results <- pooled_results[, c(
       "term", "q.mi", "se.mi", "statistic",
       "conf.low", "conf.high", "p.value"

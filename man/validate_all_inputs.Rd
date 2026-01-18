@@ -18,6 +18,8 @@ validate_all_inputs(
   mice_method = NULL,
   epa_as_mean_col = NULL,
   epa_as_sd_col = NULL,
+  epa_as_conc_col = NULL,
+  epa_default_sdlog = 1,
   seed = NULL,
   as_cat_label = NULL,
   as_level_col = "AsLevel",
@@ -27,10 +29,10 @@ validate_all_inputs(
   validate_cutoffs = TRUE,
   columns_to_select = NULL,
   rucc_col = NULL,
-  geoid_col = NULL,
+  id_col = NULL,
   as_conc_cols = NULL,
   pop_well_col = NULL,
-  birth_county_col = NULL,
+  record_id_col = NULL,
   epa_pwell_col = NULL,
   mice_covs = NULL,
   apply_imputation_fallback = TRUE
@@ -79,13 +81,13 @@ validate_all_inputs(
 
 \item{rucc_col}{Column name for RUCC classification}
 
-\item{geoid_col}{Column name for geographic identifier}
+\item{id_col}{Column name for geographic identifier}
 
 \item{as_conc_cols}{Arsenic concentration columns}
 
 \item{pop_well_col}{Column name for population well}
 
-\item{birth_county_col}{Column name for birth county}
+\item{record_id_col}{Column name for birth county}
 
 \item{epa_pwell_col}{Column name for EPA population well}
 

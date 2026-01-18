@@ -1,13 +1,63 @@
-#' Format Geographic Identifiers
+#' @importFrom data.table fread fwrite data.table as.data.table rbindlist
+#'   set setnames setDT copy `:=` .SD .N
+#' @importFrom dplyr `%>%` select mutate group_by do all_of
+#' @importFrom rlang .data
+#' @importFrom stats as.formula na.omit plnorm pt qt update
+#' @importFrom terra rast vect extract
+#' @importFrom sf st_centroid st_crs st_transform st_read st_as_sf
+#' @importFrom exactextractr exact_extract
+#' @importFrom Hmisc wtd.mean wtd.var
+#' @import lme4
+#' @import rms
+#' @import broom.mixed
+#' @import Amelia
+#' @import mice
+#' @keywords internal
+"_PACKAGE"
+
+#' Format Identifiers (Smart Detection)
+#'
+#' Intelligently formats identifiers based on their detected type. For numeric
+#' IDs that appear to be FIPS codes (1-5 digits), applies zero-padding to
+#' 5 digits. For other formats (alphanumeric, longer codes, etc.), converts
+#' to character strings without modification.
 #'
 #' @param data_frame Data frame to format
-#' @param geoid_col Column name for geographic identifier
-#' @return Data frame with formatted geographic IDs
+#' @param id_col Column name for the identifier column
+#' @return Data frame with formatted identifiers as character strings
+#'
+#' @details
+#' The function uses the following logic:
+#' \itemize{
+#'   \item If all non-NA values are numeric and <= 99999, applies 5-digit
+#'         zero-padding (typical for county FIPS codes)
+#'   \item If values are already character strings or contain non-numeric
+#'         values, converts to character without modification
+#'   \item NA values are preserved as NA
+#' }
 #'
 #' @keywords internal
-format_geographic_ids <- function(data_frame, geoid_col) {
-  geoid_numeric <- as.numeric(data_frame[[geoid_col]])
-  data_frame[[geoid_col]] <- sprintf("%05d", geoid_numeric)
+format_ids_func <- function(data_frame, id_col) {
+  ids <- data_frame[[id_col]]
+  
+  # Check if IDs appear to be numeric FIPS-like codes
+  # (all numeric values between 1 and 99999)
+  if (is.numeric(ids)) {
+    non_na_ids <- ids[!is.na(ids)]
+    if (length(non_na_ids) > 0 && 
+        all(non_na_ids == floor(non_na_ids)) &&  # All integers
+        all(non_na_ids >= 1 & non_na_ids <= 99999)) {  # FIPS-like range
+      # Apply 5-digit zero-padding for FIPS codes
+      data_frame[[id_col]] <- sprintf("%05d", as.integer(ids))
+    } else {
+      # Longer numeric codes or decimals - just convert to character
+      data_frame[[id_col]] <- as.character(ids)
+    }
+  } else {
+    # Already character or mixed - ensure character type
+    data_frame[[id_col]] <- as.character(ids)
+  }
+  
   return(data_frame)
 }
 
@@ -35,10 +85,10 @@ format_geographic_ids <- function(data_frame, geoid_col) {
 #' @param validate_cutoffs Whether to validate cutoffs
 #' @param columns_to_select Columns to select from the data
 #' @param rucc_col Column name for RUCC classification
-#' @param geoid_col Column name for geographic identifier
+#' @param id_col Column name for geographic identifier
 #' @param as_conc_cols Arsenic concentration columns
 #' @param pop_well_col Column name for population well
-#' @param birth_county_col Column name for birth county
+#' @param record_id_col Column name for birth county
 #' @param epa_pwell_col Column name for EPA population well
 #' @param mice_covs Covariates for MICE imputation
 #' @param apply_imputation_fallback Whether to apply imputation fallback
@@ -58,6 +108,8 @@ validate_all_inputs <- function(
   mice_method = NULL,
   epa_as_mean_col = NULL,
   epa_as_sd_col = NULL,
+  epa_as_conc_col = NULL,
+  epa_default_sdlog = 1.0,
   seed = NULL,
   as_cat_label = NULL,
   as_level_col = "AsLevel",
@@ -67,10 +119,10 @@ validate_all_inputs <- function(
   validate_cutoffs = TRUE,
   columns_to_select = NULL,
   rucc_col = NULL,
-  geoid_col = NULL,
+  id_col = NULL,
   as_conc_cols = NULL,
   pop_well_col = NULL,
-  birth_county_col = NULL,
+  record_id_col = NULL,
   epa_pwell_col = NULL,
   mice_covs = NULL,
   apply_imputation_fallback = TRUE
@@ -85,6 +137,9 @@ validate_all_inputs <- function(
   # Validate imputation fallback parameter
   validate_imputation_fallback(apply_imputation_fallback)
 
+  # Validate epa_default_sdlog
+  validate_epa_default_sdlog(epa_default_sdlog)
+
   # Validate character vectors
   validate_character_vectors(
     targets = targets,
@@ -97,8 +152,8 @@ validate_all_inputs <- function(
 
   # Validate character scalars (column names)
   validate_column_names(
-    as_level_col, rucc_col, geoid_col, pop_well_col,
-    birth_county_col, epa_as_mean_col, epa_as_sd_col,
+    as_level_col, rucc_col, id_col, pop_well_col,
+    record_id_col, epa_as_mean_col, epa_as_sd_col,
     epa_pwell_col
   )
 
@@ -114,8 +169,10 @@ validate_all_inputs <- function(
   # Validate EPA cutoffs
   validate_epa_cutoff_params(epa_cutoffs, as_conc_cols)
 
-  # Validate EPA standard deviation column
-  validate_epa_sd_values(as_epa_prob_csv, epa_as_sd_col)
+  # Validate EPA lognormal columns (either lognormal cols or concentration col)
+  validate_epa_lognormal_input(
+    as_epa_prob_csv, epa_as_mean_col, epa_as_sd_col, epa_as_conc_col
+  )
 
   # Validate USGS columns
   validate_usgs_columns_param(usgs_columns)
@@ -123,9 +180,9 @@ validate_all_inputs <- function(
   # Validate file contents and column existence
   validate_file_contents(
     birth_data_txt, as_usgs_prob_csv, as_epa_prob_csv,
-    rucc_col, birth_county_col, geoid_col, as_conc_cols,
+    rucc_col, record_id_col, id_col, as_conc_cols,
     pop_well_col, epa_as_mean_col, epa_as_sd_col,
-    epa_pwell_col
+    epa_as_conc_col, epa_pwell_col
   )
 
   # Validate regression formula
@@ -308,17 +365,17 @@ validate_character_vectors <- function(
 #' Validate Column Name Parameters
 #' @keywords internal
 validate_column_names <- function(
-    as_level_col, rucc_col, geoid_col,
-    pop_well_col, birth_county_col,
+    as_level_col, rucc_col, id_col,
+    pop_well_col, record_id_col,
     epa_as_mean_col, epa_as_sd_col,
     epa_pwell_col) {
 
   char_scalar_params <- list(
     as_level_col = as_level_col,
     rucc_col = rucc_col,
-    geoid_col = geoid_col,
+    id_col = id_col,
     pop_well_col = pop_well_col,
-    birth_county_col = birth_county_col,
+    record_id_col = record_id_col,
     epa_as_mean_col = epa_as_mean_col,
     epa_as_sd_col = epa_as_sd_col,
     epa_pwell_col = epa_pwell_col
@@ -455,18 +512,41 @@ validate_usgs_columns_param <- function(usgs_columns) {
 #' @keywords internal
 validate_file_contents <- function(
     birth_data_txt, as_usgs_prob_csv,
-    as_epa_prob_csv, rucc_col, birth_county_col,
-    geoid_col, as_conc_cols, pop_well_col,
+    as_epa_prob_csv, rucc_col, record_id_col,
+    id_col, as_conc_cols, pop_well_col,
     epa_as_mean_col, epa_as_sd_col,
-    epa_pwell_col) {
+    epa_as_conc_col, epa_pwell_col) {
 
   # Define required columns for each file
-  birth_cols <- c(rucc_col, birth_county_col)
+  birth_cols <- c(rucc_col, record_id_col)
   if (is.null(rucc_col)) {
-    birth_cols <- c(birth_county_col)
+    birth_cols <- c(record_id_col)
   }
-  usgs_cols <- c(geoid_col, as_conc_cols, pop_well_col)
-  epa_cols <- c(geoid_col, epa_as_mean_col, epa_as_sd_col, epa_pwell_col)
+  usgs_cols <- c(id_col, as_conc_cols, pop_well_col)
+
+  # For EPA columns, check what's available in the file first
+  epa_cols_in_file <- tryCatch(
+    get_file_columns(as_epa_prob_csv),
+    error = function(e) character(0)
+  )
+
+  # EPA required columns depend on whether lognormal cols exist or conc col
+  # Handle NULL values properly
+  has_meanlog <- !is.null(epa_as_mean_col) && epa_as_mean_col %in% epa_cols_in_file
+  has_sdlog <- !is.null(epa_as_sd_col) && epa_as_sd_col %in% epa_cols_in_file
+  has_conc <- !is.null(epa_as_conc_col) && epa_as_conc_col %in% epa_cols_in_file
+
+  # Build EPA required columns based on available data
+  epa_cols <- c(id_col, epa_pwell_col)
+  if (has_meanlog) {
+    epa_cols <- c(epa_cols, epa_as_mean_col)
+  }
+  if (has_sdlog) {
+    epa_cols <- c(epa_cols, epa_as_sd_col)
+  }
+  if (!has_meanlog && has_conc) {
+    epa_cols <- c(epa_cols, epa_as_conc_col)
+  }
 
   data_list <- list(
     birth_data_txt = birth_data_txt,
@@ -485,24 +565,7 @@ validate_file_contents <- function(
     file_path <- data_list[[data_param]]
     required_cols <- data_col_checks[[data_param]]
 
-    # Read only the header to get column names
-    if (grepl("\\.csv$", file_path, ignore.case = TRUE)) {
-      cols_in_file <- names(
-        data.table::fread(
-          file_path, nrows = 0, header = TRUE,
-          showProgress = FALSE, nThread = parallel::detectCores()
-        )
-      )
-    } else if (grepl("\\.txt$", file_path, ignore.case = TRUE)) {
-      cols_in_file <- names(
-        data.table::fread(
-          file_path, nrows = 0, header = TRUE, sep = "\t",
-          showProgress = FALSE, nThread = parallel::detectCores()
-        )
-      )
-    } else {
-      stop("Unsupported file format for: ", file_path)
-    }
+    cols_in_file <- get_file_columns(file_path)
 
     missing_cols <- setdiff(required_cols, cols_in_file)
     if (length(missing_cols) > 0) {
@@ -511,14 +574,46 @@ validate_file_contents <- function(
     }
   }
 
-  # Validate EPA standard deviation column values
-  validate_epa_sd_values(as_epa_prob_csv, epa_as_sd_col)
+  # Validate EPA standard deviation column values only if column exists
+  if (has_sdlog) {
+    validate_epa_sd_values(as_epa_prob_csv, epa_as_sd_col)
+  }
+}
+
+#' Get Column Names from File
+#' @keywords internal
+get_file_columns <- function(file_path) {
+  if (grepl("\\.csv$", file_path, ignore.case = TRUE)) {
+    cols_in_file <- names(
+      data.table::fread(
+        file_path, nrows = 0, header = TRUE,
+        showProgress = FALSE, nThread = parallel::detectCores()
+      )
+    )
+  } else if (grepl("\\.txt$", file_path, ignore.case = TRUE)) {
+    cols_in_file <- names(
+      data.table::fread(
+        file_path, nrows = 0, header = TRUE, sep = "\t",
+        showProgress = FALSE, nThread = parallel::detectCores()
+      )
+    )
+  } else {
+    stop("Unsupported file format for: ", file_path)
+  }
+  return(cols_in_file)
 }
 
 #' Validate EPA Standard Deviation Values
 #' @keywords internal
 validate_epa_sd_values <- function(as_epa_prob_csv, epa_as_sd_col) {
   if (!is.null(epa_as_sd_col)) {
+    # Check if the column exists first
+    cols_in_file <- get_file_columns(as_epa_prob_csv)
+    if (!epa_as_sd_col %in% cols_in_file) {
+      # Column doesn't exist, will be auto-generated - skip validation
+      return(invisible(NULL))
+    }
+
     # Read the EPA data to check the column
     epa_data <- data.table::fread(
       as_epa_prob_csv, header = TRUE,
@@ -528,18 +623,25 @@ validate_epa_sd_values <- function(as_epa_prob_csv, epa_as_sd_col) {
 
     epa_sd_log_values <- epa_data[[epa_as_sd_col]]
 
-    # Check non-numeric values
-    if (!all(is.finite(epa_sd_log_values))) {
+    # Check for NA values first
+    if (any(is.na(epa_sd_log_values))) {
+      warning("epa_as_sd_col contains NA values. These rows will use ",
+              "fallback probability calculations.")
+    }
+
+    # Check non-numeric values (excluding NAs)
+    non_na_values <- epa_sd_log_values[!is.na(epa_sd_log_values)]
+    if (length(non_na_values) > 0 && !all(is.finite(non_na_values))) {
       stop("epa_as_sd_col must contain only finite numeric values. ",
            "Check for non-numeric values or extreme outliers.")
     }
 
-    if (any(epa_sd_log_values <= 0)) {
+    if (length(non_na_values) > 0 && any(non_na_values <= 0)) {
       stop("epa_as_sd_col must contain only positive values ")
     }
 
     # Check large values
-    if (any(epa_sd_log_values > 10)) {
+    if (length(non_na_values) > 0 && any(non_na_values > 10)) {
       warning("epa_as_sd_col contains very large values (> 10). This may ",
               "lead to extreme probabilities in the lognormal distribution.")
     }
@@ -553,5 +655,76 @@ validate_imputation_fallback <- function(apply_imputation_fallback) {
         length(apply_imputation_fallback) != 1) {
     stop("apply_imputation_fallback must be a single logical value ",
          "(TRUE or FALSE)")
+  }
+}
+
+#' Validate EPA Default Sdlog Parameter
+#' @keywords internal
+validate_epa_default_sdlog <- function(epa_default_sdlog) {
+  if (!is.numeric(epa_default_sdlog) || length(epa_default_sdlog) != 1) {
+    stop("epa_default_sdlog must be a single numeric value")
+  }
+  if (epa_default_sdlog <= 0) {
+    stop("epa_default_sdlog must be positive")
+  }
+  if (epa_default_sdlog > 10) {
+    warning("epa_default_sdlog is very large (> 10). This may lead to ",
+            "extreme probabilities in the lognormal distribution.")
+  }
+}
+
+#' Validate EPA Lognormal Input Parameters
+#'
+#' Validates that either lognormal columns exist or concentration column
+#' is provided for automatic calculation.
+#' @keywords internal
+validate_epa_lognormal_input <- function(
+    as_epa_prob_csv,
+    epa_as_mean_col,
+    epa_as_sd_col,
+    epa_as_conc_col
+) {
+  # Skip validation if EPA file path is NULL or doesn't exist
+  if (is.null(as_epa_prob_csv) || !file.exists(as_epa_prob_csv)) {
+    return(invisible(NULL))
+  }
+
+  # Try to get columns from file, skip if parsing fails
+  cols_in_file <- tryCatch(
+    get_file_columns(as_epa_prob_csv),
+    error = function(e) NULL
+  )
+
+  # If we couldn't parse the file, or file is not a proper CSV (e.g., test
+  # files with single "test" content), skip this validation - other
+  # validation functions will catch file format issues
+  if (is.null(cols_in_file) || length(cols_in_file) < 2) {
+    return(invisible(NULL))
+  }
+
+  has_meanlog <- epa_as_mean_col %in% cols_in_file
+  has_sdlog <- epa_as_sd_col %in% cols_in_file
+
+  # If meanlog doesn't exist and no concentration column provided, error
+  if (!has_meanlog && is.null(epa_as_conc_col)) {
+    stop(
+      "EPA lognormal meanlog column '", epa_as_mean_col, "' not found in data. ",
+      "Either provide EPA data with lognormal parameters, or specify ",
+      "'epa_as_conc_col' to enable automatic conversion from raw ",
+      "concentration values."
+    )
+  }
+
+  # If concentration column specified but doesn't exist in file
+  if (!is.null(epa_as_conc_col) && !epa_as_conc_col %in% cols_in_file) {
+    stop(
+      "EPA arsenic concentration column '", epa_as_conc_col,
+      "' not found in the data."
+    )
+  }
+
+  # Validate sdlog values if column exists
+  if (has_sdlog) {
+    validate_epa_sd_values(as_epa_prob_csv, epa_as_sd_col)
   }
 }

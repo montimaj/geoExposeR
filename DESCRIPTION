@@ -1,6 +1,6 @@
 Package: gwArsenicR
-Title: An R package for modeling and estimating arsenic exposure from groundwater
-Version: 0.1.0
+Title: Modeling and Estimating Arsenic Exposure from Groundwater
+Version: 1.0.0
 Authors@R: c(
        person(given = "Sayantan",
               family = "Majumdar",
@@ -29,18 +29,25 @@ Authors@R: c(
               comment = c(ORCID = "0000-0002-1614-2981"))
        )    
 Description: The exposure of fetuses to arsenic concentrations greater than 50 ug/L in drinking water during pregnancy is linked to unfavorable birth outcomes, while the evidence for concentrations below 50 ug/L is not conclusive. To investigate this issue, Lombard et al. (2021) utilized machine learning model estimates to determine the arsenic concentrations in private wells, which are not regulated by the federal government for drinking water contaminants. The study then assessed the relationship between these arsenic concentrations and birth outcomes across the contiguous United States.
-License: CC0 1.0 Universal + file LICENSE.md
+License: CC0
 Encoding: UTF-8
 Roxygen: list(markdown = TRUE)
-RoxygenNote: 7.3.2
+RoxygenNote: 7.3.3
+URL: https://project.code-pages.usgs.gov/gwArsenicR/
+BugReports: https://code.usgs.gov/envirohealth/gwArsenicR/-/issues
 Imports:
     Amelia,
     data.table,
     dplyr,
+    exactextractr,
+    Hmisc,
     lme4,
     broom.mixed,
     mice,
-    rms
+    rlang,
+    rms,
+    sf,
+    terra
 Suggests: 
     testthat,
     knitr,

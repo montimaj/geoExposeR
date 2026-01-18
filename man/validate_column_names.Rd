@@ -7,9 +7,9 @@
 validate_column_names(
   as_level_col,
   rucc_col,
-  geoid_col,
+  id_col,
   pop_well_col,
-  birth_county_col,
+  record_id_col,
   epa_as_mean_col,
   epa_as_sd_col,
   epa_pwell_col

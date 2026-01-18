@@ -1,7 +1,7 @@
 #!/usr/bin/env Rscript
 
 # Local Coverage Testing Script for gwArsenicR
-# This script replicates the GitHub Actions coverage workflow locally
+# This script replicates the GitLab CI/CD coverage workflow locally
 # Run this from the root directory of your gwArsenicR package
 
 cat("=== Local Coverage Testing for gwArsenicR ===\n")

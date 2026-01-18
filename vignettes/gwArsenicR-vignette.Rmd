@@ -24,11 +24,34 @@ Welcome to the `gwArsenicR` package vignette. This document provides a comprehen
 
 The core methodology implemented in this package is based on the approaches used in foundational epidemiological studies by [Bulka et al. (2022)](https://doi.org/10.1016/j.envint.2022.107176) and [Lombard et al. (2021)](https://doi.org/10.1021/acs.est.0c05239).
 
+### Package Features
+
+`gwArsenicR` provides two main categories of functionality:
+
+**1. Data Ingestion Functions** - Prepare raw data for analysis:
+
+| Function | Purpose |
+|----------|---------|
+| `prepare_usgs_data()` | Extract arsenic probabilities from GeoTIFF rasters |
+| `prepare_epa_data()` | Convert EPA measurements to lognormal parameters |
+| `format_health_data()` | Standardize health outcome data formats |
+| `add_well_percentages()` | Merge private well population percentages |
+| `subset_by_geography()` | Filter data by state, region, or custom area |
+| `validate_prepared_inputs()` | Validate all input files before analysis |
+
+**2. Core Analysis Function** - Run the sensitivity analysis:
+
+| Function | Purpose |
+|----------|---------|
+| `perform_sensitivity_analysis()` | Complete workflow from data loading to pooled results |
+
 This vignette will cover:
 
 1.  The conceptual background of the statistical model.
 2.  The required data formats for the analysis.
-3.  A complete, step-by-step example from data preparation to results interpretation.
+3.  Data preparation workflow using data ingestion functions.
+4.  A complete, step-by-step example from data preparation to results interpretation.
+5.  Working with GeoTIFF rasters and other data formats.
 
 ## Conceptual Framework
 
@@ -48,31 +71,221 @@ The primary challenge in studying the health effects of arsenic in private wells
 The `perform_sensitivity_analysis()` function requires three main data inputs.
 
 ### 1. USGS Arsenic Probability Data (`as_usgs_prob_csv`)
+A CSV file containing the multinomial probability of arsenic levels from the USGS model for each geographic unit.
 
-A CSV file containing the multinomial probability of arsenic levels from the USGS model for each raster grid cell.
+* **Default Column Names** (can be customized via function parameters):
+    * `RFC3_C1v2`: Probability of arsenic < 5 µg/L (Category 1 - low exposure)
+    * `RFC3_C2v2`: Probability of 5 ≤ arsenic < 10 µg/L (Category 2 - moderate exposure)
+    * `RFC3_C3v2`: Probability of arsenic ≥ 10 µg/L (Category 3 - above EPA MCL)
+    * `Wells_2010`: Numeric population of well users for each geographic unit
+    * `GEOID10`: A geographic or participant identifier (e.g., FIPS code, census tract, ZIP code, or custom ID)
 
-* **Required Columns**:
-    * `RFC3_C1v2`, `RFC3_C2v2`, `RFC3_C3v2`: Numeric probabilities for the three arsenic categories. These must sum to 1 for each row.
-    * `Wells_2010`: Numeric population of well users for each raster cell.
-    * `GEOID10`: A 5-digit character or numeric county identifier (FIPS code).
+**Note on column naming:** The `RFC3_C1v2`, `RFC3_C2v2`, `RFC3_C3v2` names match the USGS ScienceBase data release. If your data uses different column names, specify them via the `as_conc_cols` parameter:
+
+```{r, eval=FALSE}
+# Using custom probability column names
+results <- perform_sensitivity_analysis(
+  as_conc_cols = c("prob_low", "prob_med", "prob_high"),  # Your column names
+  # ... other parameters
+)
+```
+
+The probabilities must sum to 1.0 for each row.
 
 ### 2. EPA Arsenic Data (`as_epa_prob_csv`)
 
 A CSV file containing the EPA model data.
 
-* **Required Columns**:
-    * `EPA_AS_meanlog`: Numeric mean (on a log scale) of the arsenic concentration.
-    * `PWELL_private_pct`: Numeric percentage of the population on private wells (from 0 to 100).
-    * `GEOID10`: A 5-digit county identifier (FIPS code) to link with the USGS data.
+* **Default Column Names** (can be customized via function parameters):
+    * `EPA_AS_meanlog`: Numeric mean (on a log scale) of the arsenic concentration
+    * `PWELL_private_pct`: Numeric percentage of the population on private wells (from 0 to 100)
+    * `GEOID10`: A geographic or participant identifier matching the USGS data
 
-### 3. Birth Data (`birth_data`)
+#### Automatic Lognormal Conversion
+
+Alternatively, if your EPA data contains raw arsenic concentrations instead of pre-calculated lognormal parameters, you can use the `epa_as_conc_col` parameter to have gwArsenicR automatically convert them:
+
+* **Alternative Required Columns** (when using `epa_as_conc_col`):
+    * A column with raw arsenic concentration values (specified by `epa_as_conc_col`)
+    * `PWELL_private_pct`: Numeric percentage of the population on private wells
+    * A geographic or participant identifier matching the USGS data
+
+The conversion uses the formula:
+* `meanlog = log(concentration + 0.1)` (offset avoids log(0))
+* `sdlog = epa_default_sdlog` (defaults to 1.0 if not specified)
+
+```{r, eval=FALSE}
+# With automatic conversion from raw concentrations
+results <- perform_sensitivity_analysis(
+  as_epa_prob_csv = "epa_raw.csv",
+  epa_as_conc_col = "arsenic_ppb",     # Column with raw concentrations
+  epa_default_sdlog = 1.0,              # Optional, defaults to 1.0
+  # ... other parameters ...
+)
+```
+
+### 3. Health Outcome Data (`birth_data`)
 
 An R `data.frame` containing individual-level health outcome and covariate data.
 
-* **Required Columns**:
-    * `FIPS`: A 5-digit county identifier to link with the arsenic data.
-    * A column for each health outcome (e.g., `BWT` for birth weight).
-    * Columns for all covariates included in the regression formula (e.g., `MAGE_R`, `smoke`, `MRSTATE`).
+**Column names in the health data are fully user-defined.** The only requirement is that column names match those referenced in your parameters and regression formula.
+
+* **Configurable Columns**:
+    * **Identifier column** (default `"FIPS"`, set via `record_id_col`): A geographic or participant identifier matching the arsenic data
+    * **Outcome columns** (default `c("OEGEST", "BWT")`, set via `targets`): Columns for health outcomes
+    * **Covariate columns**: Any columns referenced in `regression_formula`
+
+**Example with custom column names:**
+```{r, eval=FALSE}
+# Your health data has: participant_id, birthweight_g, gest_weeks, mom_age, smoking
+results <- perform_sensitivity_analysis(
+  record_id_col = "participant_id",           # Your ID column name
+  targets = c("birthweight_g", "gest_weeks"), # Your outcome column names
+  regression_formula = "~ as.factor(AsLevel) + mom_age + smoking + (1|participant_id)",
+  # ... other parameters
+)
+```
+
+## Data Preparation Workflow
+
+The `gwArsenicR` package provides a suite of data ingestion functions to help prepare raw data for analysis. These functions are particularly useful when working with GeoTIFF rasters from USGS, raw EPA measurements, or health data in various formats.
+
+### Data Ingestion Functions Overview
+
+| Function | Purpose |
+|----------|---------|
+| `prepare_usgs_data()` | Extract arsenic probabilities from GeoTIFF rasters |
+| `prepare_epa_data()` | Convert EPA measurements to lognormal parameters |
+| `format_health_data()` | Standardize health outcome data formats |
+| `add_well_percentages()` | Merge private well population percentages |
+| `subset_by_geography()` | Filter data by state or geographic region |
+| `validate_prepared_inputs()` | Validate all input files before analysis |
+
+### Preparing USGS Data from GeoTIFF Rasters
+
+If you have USGS arsenic probability surfaces as GeoTIFF rasters, use `prepare_usgs_data()` to extract and aggregate probabilities by geographic unit. 
+
+**Data Citation:**
+> Lombard, M.A., 2021, Data used to model and map arsenic concentration exceedances in private wells throughout the conterminous United States for human health studies: U.S. Geological Survey data release, https://doi.org/10.5066/P90RBJXS.
+
+```{r, eval=FALSE}
+library(terra)
+library(sf)
+
+# Define raster paths (exceedance probabilities)
+prob_rasters <- list(
+  gt5 = "path/to/prob_gt5.tif",    # P(As > 5 µg/L)
+  gt10 = "path/to/prob_gt10.tif"   # P(As > 10 µg/L)
+)
+
+# Load county boundaries (e.g., from Census TIGER files)
+county_boundaries <- sf::st_read("path/to/county_boundaries.shp")
+
+# Extract and convert to multinomial probabilities
+usgs_processed <- prepare_usgs_data(
+  prob_rasters = prob_rasters,
+  boundaries = county_boundaries,
+  id_col = "GEOID",
+  extraction_method = "mean",  # or "centroid", "weighted"
+  cutoffs = c(5, 10),
+  output_file = "usgs_arsenic.csv"
+)
+```
+
+The function automatically converts exceedance probabilities to multinomial category probabilities (P(As < 5), P(5 ≤ As < 10), P(As ≥ 10)).
+
+### Preparing EPA Data
+
+Use `prepare_epa_data()` to convert raw EPA arsenic measurements to lognormal distribution parameters:
+
+```{r, eval=FALSE}
+# From raw measurements
+epa_processed <- prepare_epa_data(
+ epa_data = raw_epa_data,
+  id_col = "county_fips",
+  concentration_col = "arsenic_ug_L",
+  population_col = "pop_served",
+  private_well_pct_col = "pwell_pct",
+  input_type = "raw",
+  output_file = "epa_lognormal.csv"
+)
+
+# From pre-aggregated summary statistics
+epa_processed <- prepare_epa_data(
+  epa_data = summary_data,
+  id_col = "county_fips",
+  mean_col = "mean_arsenic",
+  sd_col = "sd_arsenic",
+  input_type = "summary"
+)
+```
+
+### Formatting Health Data
+
+Use `format_health_data()` to standardize health outcome data. The package uses **smart identifier formatting** (enabled by default via `format_ids = TRUE`) that automatically detects ID types:
+
+- **Numeric FIPS codes** (1-5 digits): Zero-padded to 5 digits (e.g., `1` → `"00001"`)
+- **Longer numeric codes** (census tracts, ZIP+4): Converted to character without modification
+- **Alphanumeric IDs** (participant IDs, custom codes): Preserved unchanged
+
+Set `format_ids = FALSE` in `perform_sensitivity_analysis()` to skip formatting and use identifiers as-is.
+
+```{r, eval=FALSE}
+health_formatted <- format_health_data(
+  health_data = raw_health_data,
+  id_col = "county_id",           # Works with any identifier format
+  outcome_cols = c("BWT", "OEGEST", "SBP"),
+  covariate_cols = c("MAGE_R", "smoke", "MRACEHISP_F"),
+  geoid_digits = 5,                  # For numeric IDs, pads to specified digits
+  validate = TRUE,
+  output_file = "health_outcomes.txt"
+)
+```
+
+### Subsetting by Geography
+
+Use `subset_by_geography()` to filter data to specific states or regions:
+
+```{r, eval=FALSE}
+# Subset to California and Nevada (state FIPS codes)
+western_data <- subset_by_geography(
+  data = usgs_processed,
+  id_col = "GEOID10",
+  state_fips = c("06", "32")
+)
+
+# Subset to specific counties
+selected_counties <- subset_by_geography(
+  data = usgs_processed,
+  id_col = "GEOID10",
+  geoid_list = c("06001", "06003", "06005", "32003")
+)
+```
+
+### Validating Prepared Inputs
+
+Before running the analysis, validate all input files using `validate_prepared_inputs()`:
+
+```{r, eval=FALSE}
+validation <- validate_prepared_inputs(
+  usgs_file = "usgs_arsenic.csv",
+  epa_file = "epa_lognormal.csv",
+  health_file = "health_outcomes.txt"
+)
+
+if (validation$valid) {
+  message("All files validated successfully!")
+  message("Summary:")
+  message("  USGS records: ", validation$summary$usgs$n_rows)
+  message("  EPA records: ", validation$summary$epa$n_rows)
+  message("  Health records: ", validation$summary$health$n_rows)
+} else {
+  message("Validation issues found:")
+  for (issue in validation$issues) {
+    message("  - ", issue)
+  }
+}
+```
 
 ## A Complete Walkthrough
 
@@ -162,6 +375,8 @@ create_dummy_data <- function(
     MEDUC_3 = sample(0:1, num_births, replace = TRUE),
     MEDUC_4 = sample(0:1, num_births, replace = TRUE),
     smoke = sample(0:1, num_births, replace = TRUE),
+    RUCC = sample(1:9, num_births, replace = TRUE),
+    RUCC_F = factor(sample(1:9, num_births, replace = TRUE)),
     pm = stats::rnorm(num_births, mean = 8, sd = 2),
     DMAR_1 = sample(0:1, num_births, replace = TRUE),
     FIPS = birth_fips,
@@ -228,7 +443,8 @@ results <- perform_sensitivity_analysis(
   regression_formula = regression_formula,
   impute_vars = vars_to_impute,
   output_dir = output_dir,
-  targets = targets
+  targets = targets,
+  rucc_col = NULL
 )
 ```
 
@@ -263,6 +479,62 @@ Finally, remove the dummy data directory created for this example.
 ```{r}
 unlink("example_data", recursive = TRUE)
 ```
+
+## Additional Examples
+
+The `gwArsenicR` package includes three complete working examples in the `examples/` folder:
+
+### 1. Basic CSV Workflow (`run_gwArsenicR_example.R`)
+
+The standard example using pre-formatted CSV data:
+
+```{r, eval=FALSE}
+# Run from package directory
+source("examples/run_gwArsenicR_example.R")
+```
+
+This example demonstrates:
+- Loading data with custom column names
+- Preprocessing EPA data to lognormal parameters
+- Running the complete sensitivity analysis
+- Interpreting pooled regression results
+
+### 2. GeoTIFF Workflow (`run_gwArsenicR_from_geotiff.R`)
+
+A complete workflow starting from GeoTIFF raster data:
+
+```{r, eval=FALSE}
+# Run from package directory
+source("examples/run_gwArsenicR_from_geotiff.R")
+```
+
+This example demonstrates:
+- Creating/loading GeoTIFF probability surfaces
+- Building geographic boundaries for extraction
+- Using `prepare_usgs_data()` to extract probabilities
+- Using `prepare_epa_data()` to process EPA measurements
+- Using `format_health_data()` to standardize health data
+- Using `validate_prepared_inputs()` for quality control
+- Running the complete analysis pipeline
+
+### 3. Data Pipeline Demo (`run_gwArsenicR_data_pipeline.R`)
+
+A comprehensive demonstration of all data ingestion functions:
+
+```{r, eval=FALSE}
+# Run from package directory
+source("examples/run_gwArsenicR_data_pipeline.R")
+```
+This example demonstrates:
+- `prepare_epa_data()` with both raw and summary input types
+- `format_health_data()` with different data formats
+- `add_well_percentages()` for merging Census well data
+
+**Domestic Well Data Citation:**
+> Johnson, T.D., and Belitz, K., 2019, Domestic well locations and populations served in the contiguous U.S.: datasets for decadal years 2000 and 2010: U.S. Geological Survey data release, https://doi.org/10.5066/P9FSLU3B.
+
+- `subset_by_geography()` for filtering by state or GEOID
+- `validate_prepared_inputs()` for comprehensive validation
 
 ---
 

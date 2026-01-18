@@ -32,9 +32,11 @@
 #'   from the birth data. If NULL, all columns are used.
 #' @param rucc_col A character string specifying the column name for the
 #'   Rural-Urban Continuum Code. Defaults to NULL.
-#' @param geoid_col A character string specifying the column name for the
-#'   Geographic Identifier (e.g., county FIPS code) in the arsenic data.
-#'   Defaults to "GEOID10". This can be participant-specific IDs as well.
+#' @param id_col A character string specifying the column name for the
+#'   Geographic Identifier in the arsenic data. Supports any identifier format
+#'   including county FIPS codes, census tract IDs, ZIP codes, or participant-
+#'   specific IDs. The only requirement is that identifiers match between
+#'   datasets. Defaults to "GEOID10".
 #' @param as_conc_cols A character vector of column names from the USGS data
 #'   for the arsenic concentration probabilities. Defaults to
 #'   c("RFC3_C1v2", "RFC3_C2v2", "RFC3_C3v2").
@@ -43,17 +45,29 @@
 #' on number of USGS columns. Defaults to c(5, 10)
 #' @param pop_well_col A character string specifying the column name from the
 #'   USGS data for the population of well users. Defaults to "Wells_2010".
-#'   This has to be at the same scale as the `geoid_col` and `birth_county_col`.
-#' @param birth_county_col A character string specifying the column name for
-#'   the birth county FIPS code in the birth data. Defaults to "FIPS".
-#'   This can be participant-specific IDs as well. There should be overlapping
-#'   IDs between the birth data and the arsenic data.
+#'   This has to be at the same scale as the `id_col` and `record_id_col`.
+#' @param record_id_col A character string specifying the column name for
+#'   the geographic/participant identifier in the health data. Supports any
+#'   identifier format (FIPS codes, census tracts, ZIP codes, participant IDs).
+#'   Must have matching values with `id_col` in the arsenic data.
+#'   Defaults to "FIPS".
 #' @param as_level_col A character string for the name of the imputed arsenic
 #'   level column. Defaults to "AsLevel".
 #' @param epa_as_mean_col A character string for the column name of the EPA
-#' arsenic lognormal meanlog parameter. Defaults to "EPA_AS_meanlog".
+#'   arsenic lognormal meanlog parameter. Defaults to "EPA_AS_meanlog".
+#'   If this column doesn't exist and `epa_as_conc_col` is provided, it will
+#'   be calculated automatically.
 #' @param epa_as_sd_col A character string for the column name of the EPA
-#' arsenic lognormal sdlog parameter. Defaults to "EPA_AS_sdlog".
+#'   arsenic lognormal sdlog parameter. Defaults to "EPA_AS_sdlog".
+#'   If this column doesn't exist, `epa_default_sdlog` will be used.
+#' @param epa_as_conc_col A character string for the column name of raw EPA
+#'   arsenic concentration values (in µg/L). If provided and the meanlog/sdlog
+#'   columns don't exist, lognormal parameters will be calculated automatically
+#'   as: meanlog = log(concentration + 0.1), sdlog = epa_default_sdlog.
+#'   Defaults to NULL.
+#' @param epa_default_sdlog A numeric value for the default lognormal sdlog
+#'   when EPA sdlog column is not provided. Defaults to 1.0, which is typical
+#'   for environmental arsenic data.
 #' @param epa_pwell_col A character string for the column name of the
 #'   percentage of private well users. Defaults to "PWELL_private_pct".
 #' @param seed An integer for setting the random number generator seed for
@@ -73,6 +87,11 @@
 #'  enabled, this fallback will be applied to any missing arsenic levels
 #'  after the initial imputation step. Otherwise, it will remove any rows
 #'  with missing arsenic levels.
+#' @param format_ids Logical indicating whether to apply smart identifier
+#'   formatting. If TRUE (default), numeric FIPS-like codes (1-5 digits) are
+#'   zero-padded to 5 digits for consistency, while alphanumeric identifiers
+#'   (census tracts, participant IDs, etc.) are preserved unchanged. Set to
+#'   FALSE to skip formatting and use identifiers as-is (converted to character).
 #'
 #' @return A list of data frames, each containing the pooled regression results
 #'   for a target health outcome.
@@ -120,21 +139,24 @@ perform_sensitivity_analysis <- function(
   drop_as_cat_label_reg = c("As<5"),
   columns_to_select = NULL,
   rucc_col = NULL,
-  geoid_col = "GEOID10",
+  id_col = "GEOID10",
   as_conc_cols = c("RFC3_C1v2", "RFC3_C2v2", "RFC3_C3v2"),
   epa_cutoffs = c(5, 10),
   pop_well_col = "Wells_2010",
-  birth_county_col = "FIPS",
+  record_id_col = "FIPS",
   as_level_col = "AsLevel",
   epa_as_mean_col = "EPA_AS_meanlog",
   epa_as_sd_col = "EPA_AS_sdlog",
+  epa_as_conc_col = NULL,
+  epa_default_sdlog = 1.0,
   epa_pwell_col = "PWELL_private_pct",
   seed = 12345,
   mice_m = 1,
   mice_maxit = 5,
   mice_method = "pmm",
   mice_covs = c("pm"),
-  apply_imputation_fallback = TRUE
+  apply_imputation_fallback = TRUE,
+  format_ids = TRUE
 ) {
 
   # --- 0. Validate all input parameters ---
@@ -152,6 +174,8 @@ perform_sensitivity_analysis <- function(
     mice_method = mice_method,
     epa_as_mean_col = epa_as_mean_col,
     epa_as_sd_col = epa_as_sd_col,
+    epa_as_conc_col = epa_as_conc_col,
+    epa_default_sdlog = epa_default_sdlog,
     seed = seed,
     as_cat_label = as_cat_label,
     as_level_col = as_level_col,
@@ -159,10 +183,10 @@ perform_sensitivity_analysis <- function(
     epa_cutoffs = epa_cutoffs,
     columns_to_select = columns_to_select,
     rucc_col = rucc_col,
-    geoid_col = geoid_col,
+    id_col = id_col,
     as_conc_cols = as_conc_cols,
     pop_well_col = pop_well_col,
-    birth_county_col = birth_county_col,
+    record_id_col = record_id_col,
     epa_pwell_col = epa_pwell_col,
     mice_covs = mice_covs,
     apply_imputation_fallback = apply_imputation_fallback
@@ -181,9 +205,12 @@ perform_sensitivity_analysis <- function(
     pop_well_col = pop_well_col,
     epa_as_mean_col = epa_as_mean_col,
     epa_as_sd_col = epa_as_sd_col,
+    epa_as_conc_col = epa_as_conc_col,
+    epa_default_sdlog = epa_default_sdlog,
     epa_pwell_col = epa_pwell_col,
-    geoid_col = geoid_col,
-    epa_cutoffs = epa_cutoffs
+    id_col = id_col,
+    epa_cutoffs = epa_cutoffs,
+    format_ids = format_ids
   )
 
   # --- 2. Load and Process Birth Data ---
@@ -191,7 +218,8 @@ perform_sensitivity_analysis <- function(
     birth_data_txt = birth_data_txt,
     columns_to_select = columns_to_select,
     rucc_col = rucc_col,
-    birth_county_col = birth_county_col
+    record_id_col = record_id_col,
+    format_ids = format_ids
   )
 
   # --- 3. Multiple Imputation ---
@@ -202,8 +230,8 @@ perform_sensitivity_analysis <- function(
     births = births,
     ndraws = ndraws,
     as_cat_label = as_cat_label,
-    geoid_col = geoid_col,
-    birth_county_col = birth_county_col,
+    id_col = id_col,
+    record_id_col = record_id_col,
     as_level_col = as_level_col,
     apply_imputation_fallback = apply_imputation_fallback
   )

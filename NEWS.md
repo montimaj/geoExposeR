@@ -1,8 +1,15 @@
-# gwArsenicR 0.1.0
+# gwArsenicR 1.0.0
 
-## Initial Release
+## First Stable Release
 
-This is the initial release of gwArsenicR, an R package for modeling and estimating arsenic exposure from groundwater based on epidemiological studies and existing concentration models.
+This is the first stable release of gwArsenicR, a feature-complete R package for modeling and estimating arsenic exposure from groundwater based on epidemiological studies and existing concentration models.
+
+### Highlights
+* **100% test coverage** with 476 comprehensive tests
+* **12 required dependencies** for robust functionality
+* **6 data ingestion functions** for preparing input data from various sources
+* **Complete documentation** including vignettes and pkgdown site
+* **CC0 1.0 Universal license** for unrestricted use
 
 ### New Features
 
@@ -17,7 +24,8 @@ This is the initial release of gwArsenicR, an R package for modeling and estimat
 * **USGS Data Support**: Load and process USGS arsenic probability data
 * **EPA Data Integration**: Convert EPA lognormal parameters to multinomial probabilities  
 * **Weighted Combination**: Population-weighted integration of USGS and EPA models
-* **Geographic Formatting**: Automatic FIPS code and geographic identifier processing
+* **Flexible Identifier Support**: Works with any geographic or participant-level identifier (FIPS codes, census tracts, ZIP codes, or custom IDs)
+* **Smart ID Formatting**: Automatic detection of identifier type—applies zero-padding for numeric FIPS codes (1-5 digits) while preserving alphanumeric identifiers unchanged. Controlled via `format_ids` parameter (enabled by default)
 * **Birth Data Processing**: Specialized handling of health outcome datasets
 
 #### Multiple Imputation Framework
@@ -36,9 +44,9 @@ This is the initial release of gwArsenicR, an R package for modeling and estimat
 ### Package Infrastructure
 
 #### Testing and Quality Assurance
-* **Comprehensive Test Suite**: >95% code coverage with automated testing
+* **Comprehensive Test Suite**: 100% code coverage with automated testing
 * **Synthetic Data Testing**: All tests use generated dummy data for reproducibility
-* **GitHub Actions CI/CD**: Automated testing across multiple R versions and operating systems
+* **GitLab CI/CD**: Automated testing across multiple R versions and operating systems
 * **Performance Optimization**: Fast execution with `ndraws = 2` for development testing
 
 #### Documentation and Usability
@@ -63,7 +71,7 @@ This is the initial release of gwArsenicR, an R package for modeling and estimat
 * **broom.mixed** (>= 0.2.9): Tidy statistical output formatting
 
 #### System Requirements
-* **R** (>= 4.1.0): Minimum R version for compatibility
+* **R** (>= 4.4.0): Minimum R version for compatibility
 * **Pandoc**: Required for vignette building and documentation
 
 ### Performance and Scalability
@@ -96,7 +104,7 @@ This is the initial release of gwArsenicR, an R package for modeling and estimat
 
 ### Known Limitations
 
-* **Geographic Scope**: Currently optimized for US-based studies with FIPS codes
+* **Geographic Scope**: Designed for US-based studies but supports any identifier format for international applications
 * **Data Format Requirements**: Specific column naming conventions required for input data
 * **Memory Usage**: Large datasets may require substantial memory for multiple imputation
 * **Convergence**: MICE convergence warnings expected for complex imputation models
@@ -121,4 +129,4 @@ This work was supported by the National Heart, Lung, and Blood Institute (R21HL1
 
 ## Citation
 
-Majumdar, S., Bartell, S. M., Lombard, M. A., Smith, R. G., & Gribble, M. O. (2025). gwArsenicR: An R package for modeling and estimating arsenic exposure from groundwater. *Journal of Open Source Software* (under review).
+Majumdar, S., Bartell, S. M., Lombard, M. A., Smith, R. G., & Gribble, M. O. (2026). gwArsenicR: An R package for modeling and estimating arsenic exposure from groundwater. *Journal of Open Source Software* (under review).

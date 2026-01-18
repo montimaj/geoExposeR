@@ -59,3 +59,10 @@ paper.html
 sensitivity_analysis/
 scripts/*.csv
 scripts/*.html
+misc/
+test_data
+examples/output*
+*.pdf
+joss.txt
+/doc/
+/Meta/
