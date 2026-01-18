@@ -60,6 +60,7 @@ If you use gwArsenicR in your research, please cite:
 
 ## Table of Contents
 - [Statement of Need](#statement-of-need)
+- [Workflow](#workflow)
 - [Installation](#installation)
 - [Quick Start](#quick-start)
 - [Examples](#examples)
@@ -78,6 +79,16 @@ If you use gwArsenicR in your research, please cite:
 ## Statement of Need
 
 gwArsenicR is an R package that provides a streamlined workflow for epidemiologists and public health researchers to estimate arsenic exposure from private and public well water and to assess its association with various health outcomes. The package implements a sophisticated statistical approach that combines geospatial arsenic prediction models with a multiple imputation framework to account for exposure uncertainty. The core functionality integrates predicted arsenic concentration probabilities from U.S. Geological Survey (USGS) models for private wells with U.S. Environmental Protection Agency (EPA) data for public water systems. It then uses a weighting scheme based on the proportion of the population served by each water source to create a unified, county-level exposure probability distribution. By encapsulating these complex methodologies into a single, user-friendly function, gwArsenicR makes this type of analysis more accessible, reproducible, and standardized.
+
+## Workflow
+
+The figure below illustrates the complete analytical workflow implemented in gwArsenicR. The pipeline integrates four input data sources through data ingestion, probability integration, multiple imputation, and statistical modeling stages to produce pooled estimates with proper uncertainty quantification.
+
+<p align="center">
+  <img src="paper/workflow.png" alt="gwArsenicR Workflow" width="400">
+</p>
+
+<p align="center"><em>gwArsenicR analytical workflow showing the data processing pipeline from input sources through statistical modeling to pooled estimates. Packages used at each stage are indicated in brackets. Pooled estimates include regression coefficients (β), standard errors (SE), 95% confidence intervals (CI), and p-values, all computed using Rubin's Rules.</em></p>
 
 ### Key Capabilities
 

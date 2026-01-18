@@ -27,17 +27,18 @@ library(rsvg)
 joss_workflow <- grViz("
 digraph gwArsenicR_joss {
   
-  # Graph attributes - narrow vertical layout
+  # Graph attributes - tight vertical layout
   graph [
     rankdir = TB,
     fontname = 'Arial',
     fontsize = 10,
-    nodesep = 0.2,
-    ranksep = 0.4,
+    nodesep = 0.15,
+    ranksep = 0.6,
     bgcolor = 'white',
     compound = true,
     newrank = true,
-    splines = ortho
+    splines = ortho,
+    pad = 0.1
   ]
   
   # Node defaults - compact
@@ -46,17 +47,17 @@ digraph gwArsenicR_joss {
     fontsize = 8,
     style = 'filled,rounded',
     shape = 'box',
-    margin = '0.08,0.04',
+    margin = '0.06,0.03',
     penwidth = 1.0,
-    width = 1.0,
-    height = 0.4
+    width = 0.9,
+    height = 0.35
   ]
   
   # Edge defaults
   edge [
     fontname = 'Arial',
     fontsize = 7,
-    color = '#546E7A',
+    color = 'black',
     penwidth = 1.0,
     arrowsize = 0.5
   ]
@@ -71,7 +72,7 @@ digraph gwArsenicR_joss {
     style = 'rounded,filled'
     color = '#1976D2'
     fillcolor = '#E3F2FD'
-    margin = 8
+    margin = 4
     
     usgs [label = 'USGS Arsenic\\nRasters', fillcolor = 'white', color = '#1976D2']
     epa [label = 'EPA Water\\nSystem Data', fillcolor = 'white', color = '#1976D2']
@@ -92,9 +93,9 @@ digraph gwArsenicR_joss {
     style = 'rounded,filled'
     color = '#388E3C'
     fillcolor = '#E8F5E9'
-    margin = 8
+    margin = 4
     
-    ingest [label = 'prepare_usgs_data()\\nprepare_epa_data()\\nadd_well_percentages()\\nformat_health_data()', fillcolor = 'white', color = '#388E3C', width = 2.2, height = 0.7]
+    ingest [label = 'prepare_usgs_data()\nprepare_epa_data()\nadd_well_percentages()\nformat_health_data()', fillcolor = 'white', color = '#388E3C', width = 2.0, height = 0.6]
   }
   
   # ==== PROBABILITY INTEGRATION ====
@@ -107,9 +108,9 @@ digraph gwArsenicR_joss {
     style = 'rounded,filled'
     color = '#F57C00'
     fillcolor = '#FFF3E0'
-    margin = 8
+    margin = 4
     
-    convert [label = 'convert_epa_to_multinomial()\\ncreate_weighted_prob_matrix()', fillcolor = 'white', color = '#F57C00', width = 2.2, height = 0.5]
+    convert [label = 'convert_epa_to_multinomial()\ncreate_weighted_prob_matrix()', fillcolor = 'white', color = '#F57C00', width = 2.0, height = 0.4]
   }
   
   # ==== MULTIPLE IMPUTATION ====
@@ -122,9 +123,9 @@ digraph gwArsenicR_joss {
     style = 'rounded,filled'
     color = '#7B1FA2'
     fillcolor = '#F3E5F5'
-    margin = 8
+    margin = 4
     
-    impute [label = 'impute_arsenic_exposure()\\nimpute_additional_variables()', fillcolor = 'white', color = '#7B1FA2', width = 2.2, height = 0.5]
+    impute [label = 'impute_arsenic_exposure()\nimpute_additional_variables()', fillcolor = 'white', color = '#7B1FA2', width = 2.0, height = 0.4]
   }
   
   # ==== STATISTICAL MODELING ====
@@ -137,37 +138,36 @@ digraph gwArsenicR_joss {
     style = 'rounded,filled'
     color = '#C62828'
     fillcolor = '#FFEBEE'
-    margin = 8
+    margin = 4
     
-    model [label = 'regression_analysis()\\npool_estimates_by_term()', fillcolor = 'white', color = '#C62828', width = 2.2, height = 0.5]
+    model [label = 'regression_analysis()\npool_estimates_by_term()', fillcolor = 'white', color = '#C62828', width = 2.0, height = 0.4]
   }
   
   # ==== OUTPUT ====
   subgraph cluster_output {
     label = 'Outputs'
     labelloc = 't'
-    labeljust = 'l'
+    labeljust = 'c'
     fontname = 'Arial Bold'
     fontsize = 9
     fontcolor = '#37474F'
     style = 'rounded,filled'
     color = '#455A64'
     fillcolor = '#ECEFF1'
-    margin = 8
+    margin = 4
     
-    output [label = 'Imputed Datasets\\nPooled Estimates (beta, SE, CI, p)\\nSensitivity Analysis Results', fillcolor = 'white', color = '#455A64', width = 2.4, height = 0.6]
+    output [label = 'Imputed Datasets\nPooled Estimates (β, SE, CI, p)\nSensitivity Analysis Results', fillcolor = 'white', color = '#455A64', width = 2.2, height = 0.5]
   }
   
-  # ==== EDGES - Simple vertical flow ====
-  usgs -> ingest [tailport = s, headport = nw]
-  epa -> ingest [tailport = s, headport = n]
-  wells -> ingest [tailport = s, headport = n]
-  health -> ingest [tailport = s, headport = ne]
-  
-  ingest -> convert
-  convert -> impute
-  impute -> model
-  model -> output
+  # ==== EDGES - Connect to cluster boundaries ====
+  usgs -> ingest [ltail = usgs, lhead = cluster_ingest]
+  epa -> ingest [ltail = epa, lhead = cluster_ingest]
+  wells -> ingest [ltail = wells, lhead = cluster_ingest]
+  health -> ingest [ltail = health, lhead = cluster_ingest]  
+  ingest -> convert [ltail = cluster_ingest, lhead = cluster_integrate]
+  convert -> impute [ltail = cluster_integrate, lhead = cluster_impute]
+  impute -> model [ltail = cluster_impute, lhead = cluster_model]
+  model -> output [ltail = cluster_model, lhead = cluster_output]
 }
 ")
 
@@ -179,8 +179,8 @@ digraph gwArsenicR_joss {
 svg_joss <- export_svg(joss_workflow)
 svg_content <- as.character(svg_joss)
 
-# Save as PNG - 600 DPI for JOSS (3.5 inch width * 600 = 2100 px, 5.5 inch height * 600 = 3300 px)
-rsvg_png(charToRaw(svg_content), "workflow.png", width = 2100, height = 3300)
+# Save as PNG - 600 DPI for JOSS (3.0 inch width * 600 = 1800 px, 4.5 inch height * 600 = 2700 px)
+rsvg_png(charToRaw(svg_content), "workflow.png", width = 1800, height = 2700)
 cat("Saved: workflow.png (600 DPI)\n")
 
 cat("\n✓ All figures generated successfully!\n")
