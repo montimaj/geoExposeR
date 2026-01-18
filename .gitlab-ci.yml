@@ -17,10 +17,10 @@ variables:
   before_script:
     - mkdir -p /tmp/R-libs
     - export R_LIBS_USER="/tmp/R-libs"
-    - echo 'options(repos = c(CRAN = "https://packagemanager.posit.co/cran/__linux__/jammy/latest"))' > ~/.Rprofile
-    - echo 'options(HTTPUserAgent = sprintf("R/%s R (%s)", getRversion(), paste(getRversion(), R.version$platform, R.version$arch, R.version$os)))' >> ~/.Rprofile
+    - R -e "cat('R version:', as.character(getRversion()), '\n')"
+    - echo 'options(repos = c(CRAN = "https://cloud.r-project.org"))' > ~/.Rprofile
     - echo 'options(warn = 1)' >> ~/.Rprofile
-    - R -e "install.packages(c('remotes', 'devtools'), quiet = TRUE)"
+    - R -e "install.packages(c('remotes', 'devtools'), Ncpus = 4)"
 
 # Test job template
 .test_template: &test_template
@@ -31,7 +31,7 @@ variables:
     - R -e "install.packages(c('Amelia', 'data.table', 'dplyr', 'exactextractr', 'Hmisc', 'lme4', 'broom.mixed', 'mice', 'rlang', 'rms', 'sf', 'terra', 'testthat', 'rcmdcheck', 'rmarkdown', 'knitr'), Ncpus = 4)"
     - R -e "remotes::install_deps(dependencies = TRUE)"
     - R -e "devtools::load_all(); devtools::test()"
-  timeout: 20m
+  timeout: 45m
   artifacts:
     when: on_failure
     paths:
@@ -99,7 +99,7 @@ coverage:
         cat("SUCCESS: Coverage meets threshold\n")
       }
       '
-  timeout: 25m
+  timeout: 45m
   artifacts:
     paths:
       - coverage/
@@ -118,7 +118,7 @@ docs:
     - R -e "install.packages(c('roxygen2', 'devtools'), Ncpus = 4)"
     - R -e "remotes::install_deps(dependencies = TRUE)"
     - R -e "devtools::document()"
-  timeout: 10m
+  timeout: 30m
   rules:
     - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
     - if: '$CI_COMMIT_BRANCH == "main"'
@@ -136,7 +136,7 @@ pages:
     - R -e "remotes::install_deps(dependencies = TRUE)"
     - R -e "pkgdown::build_site()"
     - mv docs public
-  timeout: 30m
+  timeout: 60m
   artifacts:
     paths:
       - public
