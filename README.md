@@ -333,10 +333,10 @@ gwArsenicR/
 │   ├── run_gwArsenicR_example.R        # Basic CSV workflow example
 │   ├── run_gwArsenicR_from_geotiff.R   # GeoTIFF raster workflow
 │   ├── run_gwArsenicR_data_pipeline.R  # Data ingestion functions demo
-│   └── input_data/                     # Example input data files
-│       ├── USGS_dom.csv                # Sample USGS arsenic probability data
-│       ├── EPA_dom.csv                 # Sample EPA arsenic concentration data
-│       └── Demographics_dom.txt        # Sample demographics/health data (dummy*)
+│   ├── input_data/                     # Example input data files
+│   │   ├── USGS_dom.csv                # Sample USGS arsenic probability data
+│   │   ├── EPA_dom.csv                 # Sample EPA arsenic concentration data
+│   │   └── Demographics_dom.txt        # Sample demographics/health data (dummy*)
 ├── tests/
 │   ├── testthat/
 │   │   └── test-gwArsenic.R            # Comprehensive test suite (476 tests)
@@ -348,7 +348,9 @@ gwArsenicR/
 ├── paper/                              # JOSS paper files
 │   ├── paper.md                        # Paper manuscript
 │   ├── paper.bib                       # References
-│   └── joss.txt                        # JOSS submission metadata
+│   ├── generate_workflow_figure.R      # Script to generate workflow diagram
+│   ├── workflow.png                    # Workflow diagram (600 DPI)
+├── docs/                               # pkgdown generated website
 ├── .gitlab-ci.yml                      # GitLab CI/CD pipeline configuration
 ├── .gitignore                          # Git ignore patterns
 ├── .Rbuildignore                       # R build ignore patterns

@@ -63,6 +63,10 @@ By providing this accessible tool, gwArsenicR lowers the barrier to entry for co
 
 # Design and Implementation
 
+\autoref{fig:workflow} illustrates the complete analytical workflow implemented in gwArsenicR. The pipeline begins with four primary input data sources: USGS arsenic probability rasters, EPA public water system data, private well population estimates, and health outcome data. These inputs flow through a data ingestion stage that leverages geospatial packages (terra, sf, exactextractr) for raster extraction and data.table for efficient data manipulation. The probability integration stage converts EPA lognormal parameters to multinomial distributions compatible with USGS probability categories, then creates population-weighted probability matrices reflecting actual water source usage. Multiple imputation generates replicate datasets with probabilistically assigned arsenic exposure levels, with optional MICE imputation for missing covariates. Finally, mixed-effects regression models are fit to each imputed dataset and results are pooled according to Rubin's Rules to produce final estimates with proper uncertainty quantification.
+
+![gwArsenicR analytical workflow showing the data processing pipeline from input sources through statistical modeling to pooled estimates. Packages used at each stage are indicated in brackets. \label{fig:workflow}](workflow.png)
+
 ## Software Architecture
 
 gwArsenicR follows a modular design philosophy centered around the main exported function `perform_sensitivity_analysis()`, which orchestrates the complete analytical workflow. The package architecture consists of six main modules:
