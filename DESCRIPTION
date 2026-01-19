@@ -1,5 +1,5 @@
 Package: gwArsenicR
-Title: Modeling and Estimating Arsenic Exposure from Groundwater
+Title: An R package for modeling health effects of groundwater arsenic exposure
 Version: 1.0.0
 Authors@R: c(
        person(given = "Sayantan",

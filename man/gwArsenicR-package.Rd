@@ -4,7 +4,7 @@
 \name{gwArsenicR-package}
 \alias{gwArsenicR}
 \alias{gwArsenicR-package}
-\title{gwArsenicR: Modeling and Estimating Arsenic Exposure from Groundwater}
+\title{gwArsenicR: An R package for modeling health effects of groundwater arsenic exposure}
 \description{
 The exposure of fetuses to arsenic concentrations greater than 50 ug/L in drinking water during pregnancy is linked to unfavorable birth outcomes, while the evidence for concentrations below 50 ug/L is not conclusive. To investigate this issue, Lombard et al. (2021) utilized machine learning model estimates to determine the arsenic concentrations in private wells, which are not regulated by the federal government for drinking water contaminants. The study then assessed the relationship between these arsenic concentrations and birth outcomes across the contiguous United States.
 }
