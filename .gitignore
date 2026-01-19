@@ -66,3 +66,4 @@ examples/output*
 joss.txt
 /doc/
 /Meta/
+*.docx

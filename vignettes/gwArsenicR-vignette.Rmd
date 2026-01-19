@@ -540,10 +540,40 @@ This example demonstrates:
 
 ## References
 
-Bulka, C. M., et al. (2022). Arsenic in private well water and birth outcomes in the United States. *Environment International*, 163, 107176.
+### Foundational Studies
 
-Lombard, M. A., et al. (2021). Machine learning models of arsenic in private wells throughout the conterminous United States as a tool for exposure assessment in human health studies. *Environmental science & technology*, 55(8), 5012-5023.
+Bulka, C.M., Bryan, M.S., Lombard, M.A., Bartell, S.M., Jones, D.K., Bradley, P.M., Vieira, V.M., Silverman, D.T., Focazio, M., Toccalino, P.L., Daniel, J., Backer, L.C., Ayotte, J.D., Gribble, M.O., and Argos, M., 2022, Arsenic in private well water and birth outcomes in the United States: Environment International, v. 163, article 107176, https://doi.org/10.1016/j.envint.2022.107176.
 
-Rubin, D. B. (1987). *Multiple Imputation for Nonresponse in Surveys*. John Wiley & Sons.
+Lombard, M.A., Bryan, M.S., Jones, D.K., Bulka, C., Bradley, P.M., Backer, L.C., Focazio, M.J., Silverman, D.T., Toccalino, P., Argos, M., Gribble, M.O., and Ayotte, J.D., 2021, Machine learning models of arsenic in private wells throughout the conterminous United States as a tool for exposure assessment in human health studies: Environmental Science & Technology, v. 55, no. 8, p. 5012–5023, https://doi.org/10.1021/acs.est.0c05239.
 
-van Buuren, S., & Groothuis-Oudshoorn, K. (2011). mice: Multivariate Imputation by Chained Equations in R. *Journal of Statistical Software*, 45(3), 1–67.
+### Statistical Methods
+
+Rubin, D.B., 1987, Multiple imputation for nonresponse in surveys: New York, John Wiley & Sons, https://doi.org/10.1002/9780470316696.
+
+van Buuren, S., and Groothuis-Oudshoorn, K., 2011, mice—Multivariate imputation by chained equations in R: Journal of Statistical Software, v. 45, no. 3, p. 1–67, https://doi.org/10.18637/jss.v045.i03.
+
+Honaker, J., King, G., and Blackwell, M., 2011, Amelia II—A program for missing data: Journal of Statistical Software, v. 45, no. 7, p. 1–47, https://doi.org/10.18637/jss.v045.i07.
+
+Bates, D., Mächler, M., Bolker, B., and Walker, S., 2015, Fitting linear mixed-effects models using lme4: Journal of Statistical Software, v. 67, no. 1, p. 1–48, https://doi.org/10.18637/jss.v067.i01.
+
+### Data Sources
+
+Lombard, M.A., 2021, Data used to model and map arsenic concentration exceedances in private wells throughout the conterminous United States for human health studies: U.S. Geological Survey data release, https://doi.org/10.5066/P90RBJXS.
+
+Johnson, T.D., and Belitz, K., 2019, Domestic well locations and populations served in the contiguous U.S.—Datasets for decadal years 2000 and 2010: U.S. Geological Survey data release, https://doi.org/10.5066/P9FSLU3B.
+
+DeSimone, L.A., McMahon, P.B., and Rosen, M.R., 2014, The quality of our Nation's waters—Water quality in principal aquifers of the United States, 1991–2010: U.S. Geological Survey Circular 1360, 151 p., https://pubs.usgs.gov/circ/1360/.
+
+### R Packages and Resources
+
+R Core Team, 2024, R: A language and environment for statistical computing: Vienna, Austria, R Foundation for Statistical Computing, https://www.R-project.org/.
+
+Wickham, H., and Bryan, J., 2023, R packages (2nd ed.): Sebastopol, California, O'Reilly Media, https://r-pkgs.org/.
+
+Barrett, T., Dowle, M., Srinivasan, A., Gorecki, J., Chirico, M., Hocking, T., Schwendinger, B., and Krylov, I., 2025, data.table—Extension of data.frame: R package version 1.17.99, https://r-datatable.com.
+
+Hijmans, R.J., 2024, terra—Spatial data analysis: R package version 1.7-78, https://CRAN.R-project.org/package=terra.
+
+Pebesma, E., and Bivand, R., 2024, sf—Simple features for R: R package version 1.0-16, https://CRAN.R-project.org/package=sf.
+
+Baston, D., 2024, exactextractr—Fast extraction from raster datasets using polygons: R package version 0.10.0, https://CRAN.R-project.org/package=exactextractr.
