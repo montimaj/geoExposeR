@@ -172,6 +172,51 @@ The complete package documentation, including detailed function references, vign
 
 This website is automatically generated and updated whenever changes are made to the main branch, ensuring you always have access to the latest documentation.
 
+### Local Installation from Downloaded ZIP
+
+If you downloaded the repository as a ZIP file (e.g., from GitLab or GitHub), you can install the package locally:
+
+1. **Extract the ZIP file** to a directory of your choice.
+
+2. **Install from the extracted folder:**
+
+```r
+# Install devtools if not already installed
+if (!require("devtools")) install.packages("devtools")
+
+# Install from the local directory
+# Replace the path with the actual path to the extracted folder
+devtools::install_local(
+  path = "/path/to/gwArsenicR",  # Path to the extracted package folder
+  build_vignettes = TRUE,
+  dependencies = TRUE
+)
+
+# Load the package
+library(gwArsenicR)
+```
+
+**Alternative: Install from the ZIP file directly (without extracting):**
+
+```r
+# Install directly from the ZIP file
+devtools::install_local(
+  path = "/path/to/gwArsenicR.zip",  # Path to the downloaded ZIP file
+  build_vignettes = TRUE,
+  dependencies = TRUE
+)
+```
+
+**Using RStudio:**
+
+You can also install the package using RStudio's GUI:
+1. Go to **Tools > Install Packages...**
+2. In the "Install from:" dropdown, select **Package Archive File (.zip; .tar.gz)**
+3. Click **Browse** and navigate to the downloaded ZIP or tarball file
+4. Click **Install**
+
+> **Note:** Building vignettes requires [Pandoc](https://pandoc.org/installing.html). If you encounter issues, you can skip vignette building by setting `build_vignettes = FALSE`.
+
 ### Modifying the R Package
 If you want to customize this package, run the following using R after you have modified the codes.
 ```
