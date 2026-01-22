@@ -115,7 +115,7 @@ For each imputed dataset and each health outcome target, the package fits a line
 
 $$Y_{ij} = \beta_0 + \beta_1 \text{AsLevel}_{ij} + \mathbf{X}_{ij}\boldsymbol{\gamma} + u_j + \varepsilon_{ij}$$
 
-where $Y_{ij}$ is the health outcome for individual $i$ in geographic unit $j$, $\text{AsLevel}$ is the imputed arsenic category, $\mathbf{X}$ contains covariates, $u_j$ is the random intercept for geographic unit $j$ (typically indexed by the GEOID), and $\varepsilon_{ij}$ is the residual error. The random intercept accounts for within-area correlation among individuals sharing the same geographic identifier, providing proper standard errors for clustered data.
+where $Y_{ij}$ is the health outcome for individual $i$ in geographic unit $j$, $\text{AsLevel}$ is the imputed arsenic category, $\mathbf{X}$ contains covariates, $\boldsymbol{\gamma}$ is the vector of regression coefficients for the covariates, $u_j$ is the random intercept for geographic unit $j$ (typically indexed by the GEOID), and $\varepsilon_{ij}$ is the residual error. The random effects and residuals are assumed to be normally distributed: $u_j \sim N(0, \sigma_u^2)$ and $\varepsilon_{ij} \sim N(0, \sigma^2)$, with $u_j$ and $\varepsilon_{ij}$ independent. The random intercept accounts for within-area correlation among individuals sharing the same geographic identifier, providing proper standard errors for clustered data.
 
 ### Step 7: Pooling Results via Rubin's Rules
 
