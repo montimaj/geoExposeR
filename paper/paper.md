@@ -1,5 +1,5 @@
 ---
-title: 'gwArsenicR: An R package for modeling health effects of groundwater arsenic exposure'
+title: 'gwArsenicR: An R package for modeling health effects of drinking water arsenic exposure'
 tags:
   - R
   - arsenic
@@ -45,7 +45,7 @@ bibliography: paper.bib
 
 # Summary
 
-gwArsenicR is an R package [@R-base] that provides a streamlined workflow for epidemiologists and public health researchers to estimate arsenic exposure from private and public well water and to assess its association with various health outcomes. The package implements a sophisticated statistical approach that combines geospatial arsenic prediction models with a multiple imputation framework to account for exposure uncertainty. The core functionality integrates predicted arsenic concentration probabilities from U.S. Geological Survey (USGS) models for private wells [@Lombard-USGS-2021] with U.S. Environmental Protection Agency (EPA) data for public water systems. It then uses a weighting scheme based on the proportion of the population served by each water source [@Johnson-USGS-2019] to create a unified, county-level exposure probability distribution. By encapsulating these complex methodologies into a single, user-friendly function, gwArsenicR makes this type of analysis more accessible, reproducible, and standardized.
+gwArsenicR is an R package [@R-base] that provides a streamlined workflow for epidemiologists and public health researchers to estimate arsenic exposure from private and public well water and to assess its association with various health outcomes. The package implements a sophisticated statistical approach that combines geospatial arsenic prediction models with a multiple imputation framework to account for exposure uncertainty. The core functionality integrates predicted arsenic concentration probabilities from U.S. Geological Survey (USGS) models for private wells [@Lombard-USGS-2021] with U.S. Environmental Protection Agency (EPA) data for public water systems. It then uses a weighting scheme based on the proportion of the population served by each water source [@Johnson-USGS-2019] to create a unified, county-level exposure probability distribution. By encapsulating these complex methodologies into a single, user-friendly function, gwArsenicR makes this type of analysis more accessible, reproducible, and standardized. While designed for drinking water arsenic exposure assessments, the underlying statistical framework is broadly applicable to other environmental contaminants, such as nitrate, uranium, manganese, per- and polyfluoroalkyl substances (PFAS), or air pollutants like particulate matter (PM~2.5~), where spatially-predicted exposure probabilities and health outcome data are available.
 
 # Statement of Need
 
@@ -66,6 +66,72 @@ By providing this accessible tool, gwArsenicR lowers the barrier to entry for co
 \autoref{fig:workflow} illustrates the complete analytical workflow implemented in gwArsenicR. The pipeline begins with four primary input data sources: USGS arsenic probability rasters [@Lombard-USGS-2021], EPA public water system data, private well population estimates [@Johnson-USGS-2019], and health outcome data. These inputs flow through a data ingestion stage that leverages geospatial packages (terra, sf, exactextractr) [@terra-2024; @sf-2024; @exactextractr-2024] for raster extraction and data.table [@data.table-2025] for efficient data manipulation. The probability integration stage converts EPA lognormal parameters to multinomial distributions compatible with USGS probability categories, then creates population-weighted probability matrices reflecting actual water source usage. Multiple imputation generates replicate datasets with probabilistically assigned arsenic exposure levels, with optional Multivariate Imputation by Chained Equations (MICE) imputation [@mice-2011] for missing covariates. Finally, mixed-effects regression models [@lme4-2015] are fit to each imputed dataset and results are pooled according to Rubin's Rules to produce final estimates with proper uncertainty quantification.
 
 ![gwArsenicR analytical workflow showing the data processing pipeline from input sources through statistical modeling to pooled estimates. Packages used at each stage are indicated in brackets. Pooled estimates include regression coefficients ($\beta$), standard errors (SE), 95% confidence intervals (CI), and p-values, all computed using Rubin's Rules to properly account for imputation uncertainty. \label{fig:workflow}](workflow.png)
+
+## Methods
+
+The gwArsenicR package implements the following analytical workflow:
+
+### Step 1: Data Ingestion and Validation
+
+The package loads three input datasets and validates their structure:
+
+1. **USGS probability data** — Multinomial probabilities for arsenic concentration categories (e.g., <5, 5–10, ≥10 µg/L) in private wells, derived from machine learning models [@Lombard-2021; @Lombard-USGS-2021]
+2. **EPA lognormal parameters** — Mean and standard deviation (log-scale) of arsenic concentrations in public water systems, plus the percentage of the population using private wells
+3. **Health outcome data** — Individual or aggregated health records with geographic identifiers and covariates
+
+A common geographic identifier (e.g., county FIPS code, census tract ID, or participant-specific ID) links all three datasets. This identifier serves as the key for merging arsenic exposure probabilities with health records and defines the geographic unit at which exposure is characterized.
+
+### Step 2: EPA Lognormal-to-Multinomial Conversion
+
+EPA arsenic concentrations are characterized by lognormal distributions. If raw concentration values are provided instead of pre-calculated lognormal parameters, the package automatically computes them using the transformation $\mu = \log(\text{concentration} + 0.1)$ with a configurable default standard deviation ($\sigma = 1.0$ by default). The package then converts these continuous distributions into multinomial probabilities matching the USGS categories by computing:
+
+$$P(\text{As} < c_i) = \Phi\left(\frac{\log(c_i) - \mu}{\sigma}\right)$$
+
+where $\mu$ and $\sigma$ are the lognormal parameters (meanlog, sdlog), $c_i$ are the concentration cutoffs, and $\Phi$ is the standard normal CDF.
+
+### Step 3: Probability Integration via Population Weighting
+
+For each geographic unit, the package creates a unified exposure probability distribution by weighting USGS (private well) and EPA (public water) probabilities according to the population served:
+
+$$P_{\text{combined}}(k) = w \cdot P_{\text{USGS}}(k) + (1-w) \cdot P_{\text{EPA}}(k)$$
+
+where $w$ is the proportion of the population using private wells and $k$ indexes arsenic categories.
+
+### Step 4: Multiple Imputation of Arsenic Exposure
+
+Rather than assigning a single exposure category, the package generates $m$ imputed datasets, where $m$ is controlled by the `ndraws` parameter (default = 10). The arsenic concentration cutoffs defining exposure categories are customizable via the `epa_cutoffs` parameter (default: 5 and 10 µg/L, yielding three categories: <5, 5–10, and ≥10 µg/L).
+
+The arsenic imputation uses a domain-specific probabilistic sampling approach. For each geographic unit, the package retrieves the combined probability distribution $P_{\text{combined}}(k)$ from the weighted USGS+EPA matrix. When multiple raster cells exist within a geographic unit, a population-weighted average of probabilities is computed. The package then samples from this multinomial distribution using R's `sample.int()` function, generating all $m$ draws for each geographic unit simultaneously. Each health record is subsequently merged with its geographic unit's sampled arsenic category based on the matching identifier. Importantly, all individuals within the same geographic unit receive the same arsenic category within a given imputed dataset, but different imputed datasets may assign different categories to the same unit. This approach propagates exposure uncertainty from the underlying geospatial models through all subsequent analyses.
+
+### Step 5: Covariate Imputation (Optional)
+
+If covariates contain missing values, the package applies Multiple Imputation by Chained Equations (MICE) to impute missing data within each arsenic-imputed dataset, using the mice package [@mice-2011] with user-specified parameters.
+
+Unlike the arsenic imputation which draws from pre-computed external probability distributions, MICE imputation operates at the individual level and leverages internal data relationships. The method constructs regression models using available covariates and imputes missing values based on the observed data patterns. MICE iteratively cycles through variables with missing data, drawing from the posterior predictive distribution of each variable conditional on all other variables. Users can configure the number of MICE imputations (`mice_m`), maximum iterations for convergence (`mice_maxit`), and the imputation method (e.g., predictive mean matching via `mice_method = "pmm"`). This two-stage imputation strategy—first arsenic exposure from external probability models, then covariates from internal data relationships—ensures that all sources of uncertainty are properly propagated through the analysis.
+
+### Step 6: Mixed-Effects Regression
+
+For each imputed dataset and each health outcome target, the package fits a linear mixed-effects regression model using lme4 [@lme4-2015]:
+
+$$Y_{ij} = \beta_0 + \beta_1 \text{AsLevel}_{ij} + \mathbf{X}_{ij}\boldsymbol{\gamma} + u_j + \varepsilon_{ij}$$
+
+where $Y_{ij}$ is the health outcome for individual $i$ in geographic unit $j$, $\text{AsLevel}$ is the imputed arsenic category, $\mathbf{X}$ contains covariates, $u_j$ is the random intercept for geographic unit $j$ (typically indexed by the GEOID), and $\varepsilon_{ij}$ is the residual error. The random intercept accounts for within-area correlation among individuals sharing the same geographic identifier, providing proper standard errors for clustered data.
+
+### Step 7: Pooling Results via Rubin's Rules
+
+Regression estimates from all imputed datasets are combined using Rubin's Rules [@Rubin-1987] to obtain final pooled estimates with proper variance that accounts for both within-imputation and between-imputation uncertainty:
+
+$$\bar{Q} = \frac{1}{m}\sum_{i=1}^{m} \hat{Q}_i$$
+
+$$B = \frac{1}{m-1}\sum_{i=1}^{m} (\hat{Q}_i - \bar{Q})^2$$
+
+$$T = \bar{U} + \left(1 + \frac{1}{m}\right)B$$
+
+where $\bar{Q}$ is the pooled estimate, $\bar{U}$ is the mean within-imputation variance, $B$ is the between-imputation variance, $T$ is the total variance, and $m$ is the number of imputations (i.e., `ndraws`). Confidence intervals and p-values are computed using the appropriate degrees of freedom adjustment.
+
+### Step 8: Output Generation
+
+The package returns pooled regression coefficients ($\beta$), standard errors, 95% confidence intervals, and p-values for each exposure category and health outcome, along with optional saved intermediate datasets for diagnostics and reproducibility.
 
 ## Software Architecture
 
@@ -114,6 +180,10 @@ By simplifying a complex analytical workflow, gwArsenicR can accelerate and broa
 * **Serve as a Methodological Template**: The package framework can be adapted to study other environmental contaminants where exposure data is uncertain and requires integration from multiple sources.
 
 Ultimately, gwArsenicR empowers a wider research community to contribute to our understanding of the health risks posed by groundwater contaminants, fostering more timely and impactful science.
+
+# Broader Applicability
+
+While gwArsenicR is designed for arsenic exposure assessment, the underlying framework is scale-agnostic and contaminant-agnostic, making it adaptable to a wide range of environmental epidemiology applications. The package operates at any geographic scale—county, census tract, ZIP code, or even individual participant level—provided that identifiers match across input datasets. This flexibility enables analyses ranging from national-scale studies using county FIPS codes to fine-grained urban analyses using census tracts. Beyond arsenic, the core methodology can be applied to other groundwater contaminants (e.g., uranium, nitrate, manganese, PFAS), air quality exposures (e.g., PM2.5, ozone, wildfire smoke), or any environmental exposure assessment problem that shares similar characteristics: probabilistic exposure estimates from multiple data sources, population-weighted integration of those sources, and the need to propagate uncertainty through statistical inference. Users adapting the framework to new domains would prepare analogous probability and distributional parameter datasets for their contaminant of interest, modify the concentration cutoffs to match relevant exposure thresholds, and adjust the regression formula for appropriate health outcomes. By providing a generalizable template for integrating uncertain exposure data with health outcomes, gwArsenicR can serve as a foundation for rigorous, reproducible environmental health research across multiple domains.
 
 # Availability
 

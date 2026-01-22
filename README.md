@@ -1,5 +1,5 @@
 # gwArsenicR
-An R package for modeling health effects of groundwater arsenic exposure, based on epidemiological studies and existing concentration models.
+An R package for modeling health effects of drinking water arsenic exposure, based on epidemiological studies and existing concentration models.
 
 <!-- Package Info -->
 [![Version](https://img.shields.io/badge/version-1.0.0-blue.svg)](https://code.usgs.gov/envirohealth/gwArsenicR)
@@ -41,13 +41,13 @@ An R package for modeling health effects of groundwater arsenic exposure, based 
 If you use gwArsenicR in your research, please cite:
 
 > Majumdar, S., Bartell, S. M., Lombard, M. A., Smith, R. G., & Gribble, M. O. (2026). 
-> gwArsenicR: An R package for modeling health effects of groundwater arsenic exposure. 
+> gwArsenicR: An R package for modeling health effects of drinking water arsenic exposure. 
 > *Journal of Open Source Software* (under review).
 
 **BibTeX:**
 ```bibtex
 @article{majumdar2026gwarsenic,
-  title={gwArsenicR: An R package for modeling health effects of groundwater arsenic exposure},
+  title={gwArsenicR: An R package for modeling health effects of drinking water arsenic exposure},
   author={Majumdar, Sayantan and Bartell, Scott M and Lombard, Melissa A and Smith, Ryan G and Gribble, Matthew O},
   journal={Journal of Open Source Software},
   year={2026},

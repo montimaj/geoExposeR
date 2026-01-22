@@ -1,10 +1,10 @@
 ---
-title: "Using gwArsenicR to Model Health Effects of Groundwater Arsenic Exposure"
+title: "Using gwArsenicR to Model Health Effects of Drinking Water Arsenic Exposure"
 author: "Sayantan Majumdar, Scott M. Bartell, Melissa A. Lombard, Ryan G. Smith, and Matthew O. Gribble"
 date: "`r Sys.Date()`"
 output: rmarkdown::html_vignette
 vignette: >
-  %\VignetteIndexEntry{Using gwArsenicR to Model Health Effects of Groundwater Arsenic Exposure}
+  %\VignetteIndexEntry{Using gwArsenicR to Model Health Effects of Drinking Water Arsenic Exposure}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
 ---

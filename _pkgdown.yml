@@ -5,8 +5,8 @@ template:
   bootswatch: flatly
 
 home:
-  title: "gwArsenicR: Groundwater Arsenic Exposure Modeling"
-  description: "An R package for modeling health effects of groundwater arsenic exposure, featuring data ingestion from GeoTIFF rasters, EPA data processing, multiple imputation for exposure uncertainty, and mixed-effects regression with Rubin's Rules pooling."
+  title: "gwArsenicR: Drinking Water Arsenic Exposure Modeling"
+  description: "An R package for modeling health effects of drinking water arsenic exposure, featuring data ingestion from GeoTIFF rasters, EPA data processing, multiple imputation for exposure uncertainty, and mixed-effects regression with Rubin's Rules pooling."
   strip_header: false  # Keep the README header with badges
   
   # Custom sidebar with badges
