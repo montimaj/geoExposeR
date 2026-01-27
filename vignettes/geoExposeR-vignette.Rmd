@@ -24,7 +24,7 @@ Welcome to the `geoExposeR` package vignette. This document provides a comprehen
 
 While originally developed for **groundwater arsenic exposure assessment**, the `geoExposeR` framework is generalizable to any environmental exposure where probabilistic models and measured concentration data are available. Applications include other drinking water contaminants (nitrate, uranium, PFAS, manganese), air quality (PM2.5, ozone), and other spatially-varying exposures.
 
-The core methodology implemented in this package is based on the approaches used in foundational epidemiological studies by [Bulka et al. (2022)](https://doi.org/10.1016/j.envint.2022.107176) and [Lombard et al. (2021)](https://doi.org/10.1021/acs.est.0c05239).
+The core methodology implemented in this package is based on the approaches used in foundational epidemiological studies by [Bulka and others (2022)](https://doi.org/10.1016/j.envint.2022.107176), [Lombard and others (2021)](https://doi.org/10.1021/acs.est.0c05239), [Angley and others (2026)](https://doi.org/10.1016/j.envres.2026.123768), and [Nigra and others (2025)](https://doi.org/10.1001/jamanetworkopen.2025.14084).
 
 ### Package Features
 
@@ -61,7 +61,7 @@ This vignette will cover:
 The primary challenge in studying the health effects of arsenic in private wells is the uncertainty in exposure assessment. Private wells are not federally regulated, and direct measurements for large populations are often unavailable. `geoExposeR` addresses this by implementing a multi-stage approach:
 
 1.  **Probabilistic Exposure Modeling**: The package combines two sources of arsenic prediction data:
-    * **USGS Models**: Machine learning models (Lombard et al., 2021) that provide a multinomial probability for arsenic concentration falling into one of three categories (`<5`, `5-10`, `>10` µg/L) for grid cells across the U.S.
+    * **USGS Models**: Machine learning models (Lombard and others, 2021) that provide a multinomial probability for arsenic concentration falling into one of three categories (`<5`, `5-10`, `>10` µg/L) for grid cells across the U.S.
     * **EPA Data**: County-level estimates of arsenic concentrations from public supply wells.
     These are combined, weighted by the proportion of the population using private vs. public wells, to create a county-specific probability distribution of arsenic exposure.
 
@@ -639,6 +639,10 @@ Bulka, C.M., Bryan, M.S., Lombard, M.A., Bartell, S.M., Jones, D.K., Bradley, P.
 
 Lombard, M.A., Bryan, M.S., Jones, D.K., Bulka, C., Bradley, P.M., Backer, L.C., Focazio, M.J., Silverman, D.T., Toccalino, P., Argos, M., Gribble, M.O., and Ayotte, J.D., 2021, Machine learning models of arsenic in private wells throughout the conterminous United States as a tool for exposure assessment in human health studies: Environmental Science & Technology, v. 55, no. 8, p. 5012–5023, https://doi.org/10.1021/acs.est.0c05239.
 
+Nigra, A. E., Bloomquist, T. R., Rajeev, T., Burjak, M., Casey, J. A., Goin, D. E., Herbstman, J. B., Ornelas Van Horne, Y., Wylie, B. J., Cerna-Turoff, I., Braun, J. M., McArthur, K. L., Karagas, M. R., Ames, J. L., Sherris, A. R., Bulka, C. M., Padula, A. M., Howe, C. G., Fry, R. C., … Smith, L. M., 2025, Public Water Arsenic and Birth Outcomes in the Environmental Influences on Child Health Outcomes Cohort, JAMA Network Open, 8(6), e2514084, https://doi.org/10.1001/jamanetworkopen.2025.14084.
+
+Angley, M., Zhang, Y., Nigra, A. E., Lombard, M. A., Gribble, M. O., Lu, L., Unverzagt, F. W., McClure, L. A., Judd, S. E., Cushman, M., Brockman, J., and Kahe, K., 2026, Drinking water arsenic, urinary arsenic biomarkers, and cognitive impairment in the REGARDS Study, Environmental Research, 123768, https://doi.org/10.1016/j.envres.2026.123768.
+
 ### Statistical Methods
 
 Rubin, D.B., 1987, Multiple imputation for nonresponse in surveys: New York, John Wiley & Sons, https://doi.org/10.1002/9780470316696.
@@ -656,6 +660,8 @@ Lombard, M.A., 2021, Data used to model and map arsenic concentration exceedance
 Johnson, T.D., and Belitz, K., 2019, Domestic well locations and populations served in the contiguous U.S.—Datasets for decadal years 2000 and 2010: U.S. Geological Survey data release, https://doi.org/10.5066/P9FSLU3B.
 
 DeSimone, L.A., McMahon, P.B., and Rosen, M.R., 2014, The quality of our Nation's waters—Water quality in principal aquifers of the United States, 1991–2010: U.S. Geological Survey Circular 1360, 151 p., https://pubs.usgs.gov/circ/1360/.
+
+Ravalli, F., Yu, Y., Bostick, B. C., Chillrud, S. N., Schilling, K., Basu, A., Navas-Acien, A., Nigra, A. E., 2022, Sociodemographic inequalities in uranium and other metals in community water systems across the USA, 2006-11: a cross-sectional study: a cross-sectional study. The Lancet Planetary Health, 6(4), e320–e330. https://doi.org/10.1016/S2542-5196(22)00043-2
 
 ### R Packages and Resources
 

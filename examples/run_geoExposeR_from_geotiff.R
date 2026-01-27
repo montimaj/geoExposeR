@@ -10,6 +10,11 @@
 #'   exceedances in private wells throughout the conterminous United States
 #'   for human health studies: U.S. Geological Survey data release,
 #'   https://doi.org/10.5066/P90RBJXS.
+#'   Ravalli, F., Yu, Y., Bostick, B. C., Chillrud, S. N., Schilling, K., Basu, A., 
+#'   Navas-Acien, A., Nigra, A. E., 2022, Sociodemographic inequalities in uranium and other metals 
+#'   in community water systems across the USA, 2006-11: a cross-sectional study: a cross-sectional study. 
+#'   The Lancet Planetary Health, 6(4), e320–e330.
+#'   https://doi.org/10.1016/S2542-5196(22)00043-2
 #' 
 #' The workflow includes:
 #'   1. Creating mock GeoTIFF rasters (simulating USGS probability surfaces)

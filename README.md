@@ -46,7 +46,7 @@ If you use geoExposeR in your research, please cite:
 
 **BibTeX:**
 ```bibtex
-@article{majumdar2026gwarsenic,
+@article{majumdar2026geoExposeR,
   title={geoExposeR: An R package for modeling health effects of environmental exposures},
   author={Majumdar, Sayantan and Bartell, Scott M and Lombard, Melissa A and Smith, Ryan G and Gribble, Matthew O},
   journal={Journal of Open Source Software},
@@ -78,9 +78,21 @@ If you use geoExposeR in your research, please cite:
 
 ## Statement of Need
 
-geoExposeR is an R package that provides a streamlined workflow for epidemiologists and public health researchers to estimate arsenic exposure from private and public well water and to assess its association with various health outcomes. The package implements a sophisticated statistical approach that combines geospatial arsenic prediction models with a multiple imputation framework to account for exposure uncertainty. The core functionality integrates predicted arsenic concentration probabilities from U.S. Geological Survey (USGS) models for private wells with U.S. Environmental Protection Agency (EPA) data for public water systems. It then uses a weighting scheme based on the proportion of the population served by each water source to create a unified, county-level exposure probability distribution. By encapsulating these complex methodologies into a single, user-friendly function, geoExposeR makes this type of analysis more accessible, reproducible, and standardized.
+Environmental epidemiologists face a fundamental challenge: exposure to environmental contaminants is rarely measured directly for study participants. Instead, researchers must estimate exposures using predictive models, monitoring data, or biomarkers—each with inherent uncertainty. Failing to account for this uncertainty can lead to biased effect estimates and misleading conclusions about health risks.
 
-**While designed for drinking water arsenic exposure assessments, the underlying statistical framework is broadly applicable to other environmental contaminants** (nitrate, uranium, manganese, PFAS) and air pollutants (PM2.5, ozone) where spatially-predicted exposure probabilities and health outcome data are available. See the [Broader Applicability](#broader-applicability) section and example scripts for guidance on adapting the package to other domains.
+This challenge is particularly acute for drinking water contaminants like arsenic, where an estimated 40 million Americans rely on unregulated private wells. Foundational studies developed sophisticated methods to address exposure uncertainty by combining U.S. Geological Survey (USGS) machine learning predictions with U.S. Environmental Protection Agency (EPA) monitoring data through population-weighted integration and multiple imputation. However, implementing these methods requires specialized expertise in geospatial analysis, statistical modeling, and R programming—presenting a significant barrier for many researchers.
+
+geoExposeR directly addresses this need by packaging the complete analytical pipeline into accessible R functions. The package automates:
+
+1. Integration of probabilistic exposure estimates from multiple data sources
+2. Population-weighted combination of exposure probabilities
+3. Multiple imputation to propagate exposure uncertainty
+4. Mixed-effects regression modeling with proper clustering adjustment
+5. Result pooling via Rubin's Rules with appropriate variance estimation
+
+**While designed for drinking water arsenic exposure assessments, the underlying statistical framework is broadly applicable to other environmental contaminants** (nitrate, uranium, manganese, PFAS) and air pollutants (PM2.5, ozone) where probabilistic exposure estimates and health outcome data are available. The package includes worked examples for nitrate (infant methemoglobinemia), uranium (kidney function), and PM2.5 (respiratory outcomes), demonstrating how the framework generalizes to other contaminants and health endpoints. See the [Broader Applicability](#broader-applicability) section and example scripts for guidance on adapting the package to other domains.
+
+By lowering technical barriers to rigorous uncertainty quantification, geoExposeR promotes reproducibility and enables wider application of state-of-the-art methods in environmental epidemiology.
 
 ## Workflow
 
@@ -101,7 +113,7 @@ The figure below illustrates the complete analytical workflow implemented in geo
 | **Statistical Analysis** | Multiple imputation (MICE); mixed-effects regression; Rubin's Rules pooling |
 | **Quality Assurance** | 100% test coverage; comprehensive input validation; reproducible workflows |
 
-Existing methods from studies like _Bulka et al. (2022)_ and _Lombard et al. (2021)_ provide robust statistical frameworks but require complex implementation involving:
+Existing methods from studies like _Bulka and others (2022)_ and _Lombard and others (2021)_ provide robust statistical frameworks but require complex implementation involving:
 - Integration of multiple probabilistic models (USGS and EPA)
 - Multiple imputation techniques for uncertain exposures
 - Mixed-effects regression with proper pooling of results
@@ -783,7 +795,7 @@ Set `format_ids = FALSE` to skip formatting and use identifiers as-is.
 
 #### USGS Arsenic Probability Data
 
-The USGS data contains multinomial probabilities for arsenic concentration categories derived from machine learning models (Lombard et al., 2021).
+The USGS data contains multinomial probabilities for arsenic concentration categories derived from machine learning models (Lombard, 2021).
 
 | Column Name | Description | Required |
 |-------------|-------------|----------|
@@ -859,7 +871,7 @@ This section describes how to prepare input files for geoExposeR from raw data s
 |-----------|---------------|--------|-------------|
 | USGS Arsenic Probabilities | [USGS ScienceBase](https://doi.org/10.5066/P90RBJXS) | GeoTIFF | Predicted probabilities of arsenic exceeding thresholds in private wells |
 | Domestic Well Locations | [USGS ScienceBase](https://doi.org/10.5066/P9FSLU3B) | Various | Domestic well locations and populations served for 2000 and 2010 |
-| EPA Public Water Data | [EPA SDWIS](https://www.epa.gov/ground-water-and-drinking-water/safe-drinking-water-information-system-sdwis-federal-reporting) | Various | Arsenic concentrations in public water systems |
+| EPA Public Water Data | [Columbia University Drinking Water Dashboard](https://doi.org/10.1016/S2542-5196(22)00043-2) ([Ravalli and others, 2022](https://doi.org/10.1016/S2542-5196(22)00043-2))| Various | Arsenic concentrations in public water systems |
 | Health Outcomes | CDC, State Health Departments, Research Data | CSV/TXT | Health outcomes linked to any matching identifier |
 | Population Data | [U.S. Census Bureau](https://www.census.gov/) | Various | County-level population and water source statistics |
 
@@ -952,6 +964,7 @@ EPA data provides arsenic concentrations in public water systems, which serves p
 #### 2.1 Obtain EPA Data
 
 Download arsenic monitoring data from:
+- [Columbia University Drinking Water Dashboard](https://msph.shinyapps.io/drinking-water-dashboard/) ([Ravalli and others, 2022](https://doi.org/10.1016/S2542-5196(22)00043-2))
 - [EPA SDWIS Federal Reports](https://www.epa.gov/ground-water-and-drinking-water/safe-drinking-water-information-system-sdwis-federal-reporting)
 - [EPA Envirofacts](https://enviro.epa.gov/)
 - State environmental agency databases
@@ -1493,6 +1506,10 @@ Bulka, C.M., Bryan, M.S., Lombard, M.A., Bartell, S.M., Jones, D.K., Bradley, P.
 
 Lombard, M.A., Bryan, M.S., Jones, D.K., Bulka, C., Bradley, P.M., Backer, L.C., Focazio, M.J., Silverman, D.T., Toccalino, P., Argos, M., Gribble, M.O., and Ayotte, J.D., 2021, Machine learning models of arsenic in private wells throughout the conterminous United States as a tool for exposure assessment in human health studies: Environmental Science & Technology, v. 55, no. 8, p. 5012–5023, https://doi.org/10.1021/acs.est.0c05239.
 
+Nigra, A. E., Bloomquist, T. R., Rajeev, T., Burjak, M., Casey, J. A., Goin, D. E., Herbstman, J. B., Ornelas Van Horne, Y., Wylie, B. J., Cerna-Turoff, I., Braun, J. M., McArthur, K. L., Karagas, M. R., Ames, J. L., Sherris, A. R., Bulka, C. M., Padula, A. M., Howe, C. G., Fry, R. C., … Smith, L. M., 2025, Public Water Arsenic and Birth Outcomes in the Environmental Influences on Child Health Outcomes Cohort, JAMA Network Open, 8(6), e2514084, https://doi.org/10.1001/jamanetworkopen.2025.14084.
+
+Angley, M., Zhang, Y., Nigra, A. E., Lombard, M. A., Gribble, M. O., Lu, L., Unverzagt, F. W., McClure, L. A., Judd, S. E., Cushman, M., Brockman, J., and Kahe, K., 2026, Drinking water arsenic, urinary arsenic biomarkers, and cognitive impairment in the REGARDS Study, Environmental Research, 123768, https://doi.org/10.1016/j.envres.2026.123768.
+
 ### Statistical Methods
 
 Rubin, D.B., 1987, Multiple imputation for nonresponse in surveys: New York, John Wiley & Sons, https://doi.org/10.1002/9780470316696.
@@ -1510,6 +1527,8 @@ Lombard, M.A., 2021, Data used to model and map arsenic concentration exceedance
 Johnson, T.D., and Belitz, K., 2019, Domestic well locations and populations served in the contiguous U.S.—Datasets for decadal years 2000 and 2010: U.S. Geological Survey data release, https://doi.org/10.5066/P9FSLU3B.
 
 DeSimone, L.A., McMahon, P.B., and Rosen, M.R., 2014, The quality of our Nation's waters—Water quality in principal aquifers of the United States, 1991–2010: U.S. Geological Survey Circular 1360, 151 p., https://pubs.usgs.gov/circ/1360/.
+
+Ravalli, F., Yu, Y., Bostick, B. C., Chillrud, S. N., Schilling, K., Basu, A., Navas-Acien, A., Nigra, A. E., 2022, Sociodemographic inequalities in uranium and other metals in community water systems across the USA, 2006-11: a cross-sectional study: a cross-sectional study. The Lancet Planetary Health, 6(4), e320–e330. https://doi.org/10.1016/S2542-5196(22)00043-2
 
 ### R Packages and Resources
 
