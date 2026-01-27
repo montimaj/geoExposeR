@@ -1,8 +1,8 @@
 [
   {
-    "name": "gwArsenicR",
+    "name": "geoExposeR",
     "organization": "U.S. Geological Survey",
-    "description": "gwArsenicR is a package for analyzing groundwater arsenic data in the United States. It provides tools for data cleaning, analysis, and visualization, specifically tailored for arsenic concentration data in groundwater samples.",
+    "description": "geoExposeR is a package for analyzing groundwater arsenic data in the United States. It provides tools for data cleaning, analysis, and visualization, specifically tailored for arsenic concentration data in groundwater samples.",
     "version": "1.0.0",
     "status": "production",
     "permissions": {
@@ -10,14 +10,14 @@
       "licenses": [
         {
           "name": "Public Domain, CC0-1.0",
-          "URL": "https://code.usgs.gov/envirohealth/gwArsenicR/-/raw/1.0.0/LICENSE.md"
+          "URL": "https://code.usgs.gov/envirohealth/geoExposeR/-/raw/1.0.0/LICENSE.md"
         }
       ]
     },
-    "homepageURL": "https://code.usgs.gov/envirohealth/gwArsenicR/",
-    "downloadURL": "https://code.usgs.gov/envirohealth/gwArsenicR/-/archive/1.0.0/gwArsenicR-1.0.0.zip",
-    "disclaimerURL": "https://code.usgs.gov/envirohealth/gwArsenicR/-/raw/1.0.0/DISCLAIMER.md",
-    "repositoryURL": "https://code.usgs.gov/envirohealth/gwArsenicR.git",
+    "homepageURL": "https://code.usgs.gov/envirohealth/geoExposeR/",
+    "downloadURL": "https://code.usgs.gov/envirohealth/geoExposeR/-/archive/1.0.0/geoExposeR-1.0.0.zip",
+    "disclaimerURL": "https://code.usgs.gov/envirohealth/geoExposeR/-/raw/1.0.0/DISCLAIMER.md",
+    "repositoryURL": "https://code.usgs.gov/envirohealth/geoExposeR.git",
     "vcs": "git",
     "laborHours": 0,
     "tags": [

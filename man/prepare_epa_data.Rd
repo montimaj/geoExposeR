@@ -58,7 +58,7 @@ EPA_AS_sdlog, and optionally PWELL_private_pct.
 }
 \description{
 Processes EPA public water system arsenic data and converts concentrations
-to lognormal distribution parameters required by gwArsenicR.
+to lognormal distribution parameters required by geoExposeR.
 }
 \details{
 The function converts arithmetic mean and standard deviation to lognormal

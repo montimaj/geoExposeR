@@ -1,8 +1,8 @@
 #' =============================================================================
-#' Example: Running gwArsenicR from GeoTIFF Rasters
+#' Example: Running geoExposeR from GeoTIFF Rasters
 #' =============================================================================
 #' 
-#' This script demonstrates the complete workflow for running gwArsenicR
+#' This script demonstrates the complete workflow for running geoExposeR
 #' starting from raw GeoTIFF rasters containing USGS arsenic probability data.
 #' 
 #' Data Citation:
@@ -18,7 +18,7 @@
 #'   4. Formatting health data using format_health_data()
 #'   5. Running the sensitivity analysis
 #' 
-#' This example uses the same underlying data as run_gwArsenicR_example.R
+#' This example uses the same underlying data as run_geoExposeR_example.R
 #' but demonstrates the GeoTIFF → CSV conversion workflow.
 #' 
 #' Author: Dr. Sayantan Majumdar (sayantan.majumdar@dri.edu)
@@ -28,19 +28,19 @@
 # Step 1: Load Required Packages
 # ==============================================================================
 
-# Load gwArsenicR - use devtools::load_all() if running from source
+# Load geoExposeR - use devtools::load_all() if running from source
 if (requireNamespace("devtools", quietly = TRUE) && 
     file.exists(file.path(getwd(), "DESCRIPTION"))) {
   devtools::load_all()
 } else {
-  library(gwArsenicR)
+  library(geoExposeR)
 }
 
 # Load spatial packages
 library(terra)
 library(sf)
 
-cat("=== gwArsenicR GeoTIFF Workflow Example ===\n\n")
+cat("=== geoExposeR GeoTIFF Workflow Example ===\n\n")
 
 # ==============================================================================
 # Step 2: Set Up Directories and Paths

@@ -2,7 +2,7 @@
 % Please edit documentation in R/data-ingestion.R
 \name{format_health_data}
 \alias{format_health_data}
-\title{Format Health Outcome Data for gwArsenicR}
+\title{Format Health Outcome Data for geoExposeR}
 \usage{
 format_health_data(
   health_data,
@@ -42,7 +42,7 @@ A data.table with properly formatted health outcome data.
 }
 \description{
 Formats and validates health outcome data to ensure compatibility with
-gwArsenicR's requirements.
+geoExposeR's requirements.
 }
 \details{
 The function performs the following operations:

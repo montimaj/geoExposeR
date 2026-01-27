@@ -2,6 +2,6 @@
 # It tells R CMD check to run the tests in the testthat/ subdirectory.
 
 library(testthat)
-library(gwArsenicR)
+library(geoExposeR)
 
-test_check("gwArsenicR")
+test_check("geoExposeR")

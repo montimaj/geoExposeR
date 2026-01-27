@@ -1,10 +1,10 @@
 ---
-title: "Using gwArsenicR to Model Health Effects of Drinking Water Arsenic Exposure"
+title: "Using geoExposeR to Model Health Effects of Environmental Exposures"
 author: "Sayantan Majumdar, Scott M. Bartell, Melissa A. Lombard, Ryan G. Smith, and Matthew O. Gribble"
 date: "`r Sys.Date()`"
 output: rmarkdown::html_vignette
 vignette: >
-  %\VignetteIndexEntry{Using gwArsenicR to Model Health Effects of Drinking Water Arsenic Exposure}
+  %\VignetteIndexEntry{Using geoExposeR to Model Health Effects of Environmental Exposures}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
 ---
@@ -20,13 +20,15 @@ knitr::opts_chunk$set(
 
 ## Introduction
 
-Welcome to the `gwArsenicR` package vignette. This document provides a comprehensive guide to using the package for estimating arsenic exposure from private well water and assessing its association with health outcomes.
+Welcome to the `geoExposeR` package vignette. This document provides a comprehensive guide to using the package for estimating environmental exposures and assessing their association with health outcomes.
+
+While originally developed for **groundwater arsenic exposure assessment**, the `geoExposeR` framework is generalizable to any environmental exposure where probabilistic models and measured concentration data are available. Applications include other drinking water contaminants (nitrate, uranium, PFAS, manganese), air quality (PM2.5, ozone), and other spatially-varying exposures.
 
 The core methodology implemented in this package is based on the approaches used in foundational epidemiological studies by [Bulka et al. (2022)](https://doi.org/10.1016/j.envint.2022.107176) and [Lombard et al. (2021)](https://doi.org/10.1021/acs.est.0c05239).
 
 ### Package Features
 
-`gwArsenicR` provides two main categories of functionality:
+`geoExposeR` provides two main categories of functionality:
 
 **1. Data Ingestion Functions** - Prepare raw data for analysis:
 
@@ -52,10 +54,11 @@ This vignette will cover:
 3.  Data preparation workflow using data ingestion functions.
 4.  A complete, step-by-step example from data preparation to results interpretation.
 5.  Working with GeoTIFF rasters and other data formats.
+6.  Broader applications beyond arsenic (nitrate, uranium, PM2.5, and more).
 
 ## Conceptual Framework
 
-The primary challenge in studying the health effects of arsenic in private wells is the uncertainty in exposure assessment. Private wells are not federally regulated, and direct measurements for large populations are often unavailable. `gwArsenicR` addresses this by implementing a multi-stage approach:
+The primary challenge in studying the health effects of arsenic in private wells is the uncertainty in exposure assessment. Private wells are not federally regulated, and direct measurements for large populations are often unavailable. `geoExposeR` addresses this by implementing a multi-stage approach:
 
 1.  **Probabilistic Exposure Modeling**: The package combines two sources of arsenic prediction data:
     * **USGS Models**: Machine learning models (Lombard et al., 2021) that provide a multinomial probability for arsenic concentration falling into one of three categories (`<5`, `5-10`, `>10` µg/L) for grid cells across the U.S.
@@ -103,7 +106,7 @@ A CSV file containing the EPA model data.
 
 #### Automatic Lognormal Conversion
 
-Alternatively, if your EPA data contains raw arsenic concentrations instead of pre-calculated lognormal parameters, you can use the `epa_as_conc_col` parameter to have gwArsenicR automatically convert them:
+Alternatively, if your EPA data contains raw arsenic concentrations instead of pre-calculated lognormal parameters, you can use the `epa_as_conc_col` parameter to have geoExposeR automatically convert them:
 
 * **Alternative Required Columns** (when using `epa_as_conc_col`):
     * A column with raw arsenic concentration values (specified by `epa_as_conc_col`)
@@ -148,7 +151,7 @@ results <- perform_sensitivity_analysis(
 
 ## Data Preparation Workflow
 
-The `gwArsenicR` package provides a suite of data ingestion functions to help prepare raw data for analysis. These functions are particularly useful when working with GeoTIFF rasters from USGS, raw EPA measurements, or health data in various formats.
+The `geoExposeR` package provides a suite of data ingestion functions to help prepare raw data for analysis. These functions are particularly useful when working with GeoTIFF rasters from USGS, raw EPA measurements, or health data in various formats.
 
 ### Data Ingestion Functions Overview
 
@@ -296,13 +299,13 @@ Let's walk through a full example.
 First, load the necessary libraries.
 
 ```{r}
-library(gwArsenicR)
-library(lme4) # Loaded by gwArsenicR, but good practice for clarity
+library(geoExposeR)
+library(lme4) # Loaded by geoExposeR, but good practice for clarity
 ```
 
 ### Step 2: Load Example Data
 
-The `gwArsenicR` package includes example data files in the `examples/input_data/` folder. These files demonstrate the expected data formats:
+The `geoExposeR` package includes example data files in the `examples/input_data/` folder. These files demonstrate the expected data formats:
  
 - **USGS_dom.csv**: USGS model-based multinomial probabilities of arsenic levels
 - **EPA_dom.csv**: EPA arsenic data with raw concentration values
@@ -444,15 +447,15 @@ unlink(output_dir, recursive = TRUE)
 
 ## Additional Examples
 
-The `gwArsenicR` package includes three complete working examples in the `examples/` folder:
+The `geoExposeR` package includes several complete working examples in the `examples/` folder demonstrating both the core arsenic analysis workflow and broader applications to other environmental exposures.
 
-### 1. Basic CSV Workflow (`run_gwArsenicR_example.R`)
+### 1. Basic CSV Workflow (`run_geoExposeR_example.R`)
 
 The standard example using pre-formatted CSV data:
 
 ```{r, eval=FALSE}
 # Run from package directory
-source("examples/run_gwArsenicR_example.R")
+source("examples/run_geoExposeR_example.R")
 ```
 
 This example demonstrates:
@@ -461,13 +464,13 @@ This example demonstrates:
 - Running the complete sensitivity analysis
 - Interpreting pooled regression results
 
-### 2. GeoTIFF Workflow (`run_gwArsenicR_from_geotiff.R`)
+### 2. GeoTIFF Workflow (`run_geoExposeR_from_geotiff.R`)
 
 A complete workflow starting from GeoTIFF raster data:
 
 ```{r, eval=FALSE}
 # Run from package directory
-source("examples/run_gwArsenicR_from_geotiff.R")
+source("examples/run_geoExposeR_from_geotiff.R")
 ```
 
 This example demonstrates:
@@ -479,13 +482,13 @@ This example demonstrates:
 - Using `validate_prepared_inputs()` for quality control
 - Running the complete analysis pipeline
 
-### 3. Data Pipeline Demo (`run_gwArsenicR_data_pipeline.R`)
+### 3. Data Pipeline Demo (`run_geoExposeR_data_pipeline.R`)
 
 A comprehensive demonstration of all data ingestion functions:
 
 ```{r, eval=FALSE}
 # Run from package directory
-source("examples/run_gwArsenicR_data_pipeline.R")
+source("examples/run_geoExposeR_data_pipeline.R")
 ```
 This example demonstrates:
 - `prepare_epa_data()` with both raw and summary input types
@@ -497,6 +500,134 @@ This example demonstrates:
 
 - `subset_by_geography()` for filtering by state or GEOID
 - `validate_prepared_inputs()` for comprehensive validation
+
+## Broader Applications
+
+While `geoExposeR` was originally developed for groundwater arsenic exposure assessment, its framework is generalizable to **any environmental exposure** where:
+
+1. You have **probabilistic exposure estimates** from models or spatial predictions
+2. You have **measured concentration data** from monitoring systems
+3. You want to assess **health outcomes** while accounting for exposure uncertainty
+
+The package includes three additional examples demonstrating these broader applications:
+
+### 4. Nitrate and Infant Methemoglobinemia (`run_geoExposeR_nitrate.R`)
+
+Demonstrates analyzing nitrate contamination in drinking water and its association with infant methemoglobinemia (blue baby syndrome):
+
+```{r, eval=FALSE}
+# Run from package directory
+source("examples/run_geoExposeR_nitrate.R")
+```
+
+**Key adaptations:**
+
+- **Exposure cutoffs**: `c(5, 10)` mg/L NO₃-N (EPA MCL = 10 mg/L)
+- **Health outcome**: Methemoglobin percentage in infants
+- **Data sources**:
+  - `USGS_nitrate.csv`: Modeled nitrate probability distributions
+  - `EPA_nitrate.csv`: Public water system nitrate measurements
+  - `Health_nitrate.txt`: Infant health records with methemoglobin levels
+
+```{r, eval=FALSE}
+# Example parameter configuration for nitrate
+nitrate_cutoffs <- c(5, 10)  # mg/L NO3-N
+as_cat_labels <- c("NO3<5", "NO3_5-10", "NO3_10+")
+targets <- c("methemoglobin_pct")
+
+results <- perform_sensitivity_analysis(
+  epa_cutoffs = nitrate_cutoffs,
+  as_cat_label = as_cat_labels,
+  targets = targets,
+  epa_as_conc_col = "weighted_nitrate",
+  epa_default_sdlog = 0.8,
+  # ... other parameters
+)
+```
+
+### 5. Uranium and Kidney Function (`run_geoExposeR_uranium.R`)
+
+Demonstrates analyzing uranium exposure and its nephrotoxic effects on kidney function (eGFR):
+
+```{r, eval=FALSE}
+# Run from package directory
+source("examples/run_geoExposeR_uranium.R")
+```
+
+**Key adaptations:**
+
+- **Exposure cutoffs**: `c(15, 30)` µg/L (EPA MCL = 30 µg/L)
+- **Health outcome**: Estimated Glomerular Filtration Rate (eGFR)
+- **Expected relationship**: Negative coefficients (higher uranium → lower eGFR)
+
+```{r, eval=FALSE}
+# Example parameter configuration for uranium
+uranium_cutoffs <- c(15, 30)  # µg/L
+as_cat_labels <- c("U<15", "U_15-30", "U_30+")
+targets <- c("eGFR")
+
+results <- perform_sensitivity_analysis(
+  epa_cutoffs = uranium_cutoffs,
+  as_cat_label = as_cat_labels,
+  targets = targets,
+  epa_as_conc_col = "weighted_uranium",
+  epa_default_sdlog = 0.9,
+  # ... other parameters
+)
+```
+
+### 6. PM2.5 Air Quality and Respiratory Function (`run_geoExposeR_pm25.R`)
+
+Demonstrates extending the framework beyond groundwater to **air quality** exposures:
+
+```{r, eval=FALSE}
+# Run from package directory
+source("examples/run_geoExposeR_pm25.R")
+```
+
+**Key adaptations:**
+
+- **Exposure cutoffs**: `c(9, 35)` µg/m³ (EPA annual standard = 9 µg/m³; 24-hour standard = 35 µg/m³)
+- **Health outcome**: FEV1 % predicted (lung function)
+- **Data sources reinterpreted**:
+  - "USGS" parameter → Satellite/hybrid model predictions
+  - "EPA" parameter → Ground monitoring station measurements
+
+```{r, eval=FALSE}
+# Example parameter configuration for PM2.5
+pm25_cutoffs <- c(9, 35)  # µg/m³
+as_cat_labels <- c("PM25<9", "PM25_9-35", "PM25_35+")
+targets <- c("FEV1_pct_predicted")
+
+results <- perform_sensitivity_analysis(
+  epa_cutoffs = pm25_cutoffs,
+  as_cat_label = as_cat_labels,
+  targets = targets,
+  epa_as_conc_col = "weighted_pm25",
+  epa_default_sdlog = 0.5,  # Lower variance for air quality
+  # ... other parameters
+)
+```
+
+### Adapting to Other Exposures
+
+The framework can be adapted to any exposure with the following data structure:
+
+| geoExposeR Parameter | Original Use | Generalized Use |
+|---------------------|--------------|-----------------|
+| `as_usgs_prob_csv` | USGS arsenic model | Any probabilistic exposure model |
+| `as_epa_prob_csv` | EPA drinking water data | Any measured concentration data |
+| `epa_cutoffs` | Arsenic thresholds (5, 10 µg/L) | Any health-relevant thresholds |
+| `as_cat_label` | Arsenic category names | Custom exposure category labels |
+| `targets` | Birth outcomes | Any health outcome variables |
+
+**Potential applications include:**
+
+- **Other groundwater contaminants**: Manganese, fluoride, radium, PFAS
+- **Air quality**: Ozone, NO₂, SO₂
+- **Soil contamination**: Lead, heavy metals
+- **Noise exposure**: Traffic noise and cardiovascular outcomes
+- **Heat exposure**: Temperature and mortality/morbidity
 
 ---
 

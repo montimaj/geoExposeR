@@ -1,6 +1,6 @@
-# Contributing to gwArsenicR
+# Contributing to geoExposeR
 
-Thank you for your interest in contributing to gwArsenicR! This document provides guidelines for contributing to the project.
+Thank you for your interest in contributing to geoExposeR! This document provides guidelines for contributing to the project.
 
 ## Table of Contents
 - [Code of Conduct](#code-of-conduct)
@@ -53,8 +53,8 @@ install.packages(c("data.table", "dplyr", "lme4", "mice", "broom.mixed"))
 1. **Fork the repository** on GitLab
 2. **Clone your fork** locally:
    ```bash
-   git clone https://code.usgs.gov/YOUR_USERNAME/gwArsenicR.git
-   cd gwArsenicR
+   git clone https://code.usgs.gov/YOUR_USERNAME/geoExposeR.git
+   cd geoExposeR
    ```
 
 3. **Set up the development environment**:
@@ -116,7 +116,7 @@ When reporting issues, please include:
 4. **System information**:
    ```r
    sessionInfo()
-   packageVersion("gwArsenicR")
+   packageVersion("geoExposeR")
    ```
 5. **Data**: If possible, provide sample data that reproduces the issue
 
@@ -199,9 +199,9 @@ calculate_arsenic_exposure <- function(data, method = "weighted") {
 
 ### Package Structure
 ```
-gwArsenicR/
+geoExposeR/
 ├── R/
-│   ├── gwArsenic.R           # Main exported function
+│   ├── geoExposeR.R          # Main exported function
 │   ├── data-loading.R        # Data loading functions
 │   ├── imputation.R          # Imputation functions
 │   ├── regression.R          # Analysis functions
@@ -344,7 +344,7 @@ Contributors will be acknowledged in:
 - `README.md` contributors section
 - Release notes for their contributions
 
-Thank you for contributing to gwArsenicR! Your efforts help advance arsenic exposure research and public health.
+Thank you for contributing to geoExposeR! Your efforts help advance arsenic exposure research and public health.
 
 ---
 

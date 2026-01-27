@@ -1,8 +1,8 @@
-# gwArsenicR 1.0.0
+# geoExposeR 1.0.0
 
 ## First Stable Release
 
-This is the first stable release of gwArsenicR, a feature-complete R package for modeling health effects of drinking water arsenic exposure based on epidemiological studies and existing concentration models.
+This is the first stable release of geoExposeR, a feature-complete R package for modeling health effects of environmental exposures, with a primary focus on groundwater contaminants. Based on epidemiological studies and existing concentration models.
 
 ### Highlights
 * **100% test coverage** with 476 comprehensive tests
@@ -129,4 +129,4 @@ This work was supported by the National Heart, Lung, and Blood Institute (R21HL1
 
 ## Citation
 
-Majumdar, S., Bartell, S. M., Lombard, M. A., Smith, R. G., & Gribble, M. O. (2026). gwArsenicR: An R package for modeling health effects of drinking water arsenic exposure. *Journal of Open Source Software* (under review).
+Majumdar, S., Bartell, S. M., Lombard, M. A., Smith, R. G., & Gribble, M. O. (2026). geoExposeR: An R package for modeling health effects of environmental exposures. *Journal of Open Source Software* (under review).

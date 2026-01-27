@@ -1,12 +1,12 @@
-url: https://envirohealth.code-pages.usgs.gov/gwArsenicR/
+url: https://envirohealth.code-pages.usgs.gov/geoExposeR/
 
 template:
   bootstrap: 5
   bootswatch: flatly
 
 home:
-  title: "gwArsenicR: Drinking Water Arsenic Exposure Modeling"
-  description: "An R package for modeling health effects of drinking water arsenic exposure, featuring data ingestion from GeoTIFF rasters, EPA data processing, multiple imputation for exposure uncertainty, and mixed-effects regression with Rubin's Rules pooling."
+  title: "geoExposeR: Environmental Exposure Health Modeling"
+  description: "An R package for modeling health effects of environmental exposures, featuring data ingestion from GeoTIFF rasters, EPA data processing, multiple imputation for exposure uncertainty, and mixed-effects regression with Rubin's Rules pooling. Applicable to groundwater contaminants (arsenic, nitrate, uranium) and air quality (PM2.5)."
   strip_header: false  # Keep the README header with badges
   
   # Custom sidebar with badges
@@ -15,9 +15,9 @@ home:
     
   links:
   - text: Browse source code
-    href: https://code.usgs.gov/envirohealth/gwArsenicR
+    href: https://code.usgs.gov/envirohealth/geoExposeR
   - text: Report a bug
-    href: https://code.usgs.gov/envirohealth/gwArsenicR/-/issues
+    href: https://code.usgs.gov/envirohealth/geoExposeR/-/issues
 
 navbar:
   structure:
@@ -38,7 +38,7 @@ navbar:
       href: news/
     gitlab:
       icon: fab-gitlab
-      href: https://code.usgs.gov/envirohealth/gwArsenicR
+      href: https://code.usgs.gov/envirohealth/geoExposeR
       aria-label: GitLab
 
 # Configure reference documentation
@@ -62,7 +62,7 @@ articles:
   - title: "Getting Started"
     navbar: "Getting Started"
     contents:
-    - gwArsenicR-vignette
+    - geoExposeR-vignette
 
 authors:
   Sayantan Majumdar:

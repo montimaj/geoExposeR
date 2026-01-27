@@ -1,9 +1,9 @@
 #' =============================================================================
-#' Example: Running gwArsenicR with Data Ingestion Pipeline
+#' Example: Running geoExposeR with Data Ingestion Pipeline
 #' =============================================================================
 #' 
 #' This script demonstrates a complete data ingestion pipeline using all
-#' the data preparation functions in gwArsenicR:
+#' the data preparation functions in geoExposeR:
 #' 
 #'   - prepare_usgs_data(): Extract probabilities from GeoTIFF rasters
 #'   - prepare_epa_data(): Convert EPA arsenic data to lognormal parameters
@@ -22,12 +22,12 @@
 # Step 1: Load Required Packages
 # ==============================================================================
 
-# Load gwArsenicR - use devtools::load_all() if running from source
+# Load geoExposeR - use devtools::load_all() if running from source
 if (requireNamespace("devtools", quietly = TRUE) && 
     file.exists(file.path(getwd(), "DESCRIPTION"))) {
   devtools::load_all()
 } else {
-  library(gwArsenicR)
+  library(geoExposeR)
 }
 
 # Load other packages
@@ -35,7 +35,7 @@ library(terra)
 library(sf)
 library(data.table)
 
-cat("=== gwArsenicR Data Ingestion Pipeline Example ===\n\n")
+cat("=== geoExposeR Data Ingestion Pipeline Example ===\n\n")
 
 # ==============================================================================
 # Step 2: Set Up Environment

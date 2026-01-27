@@ -10,8 +10,8 @@
 ^_pkgdown\.yml$
 ^code\.json$
 ^\.github$
-^gwArsenicR\.Rcheck$
-^gwArsenicR.*\.tar\.gz$
+^geoExposeR\.Rcheck$
+^geoExposeR.*\.tar\.gz$
 ^README\.Rmd$
 ^doc$
 ^Meta$

@@ -2,7 +2,7 @@
 % Please edit documentation in R/data-ingestion.R
 \name{data-ingestion}
 \alias{data-ingestion}
-\title{Data Ingestion Functions for gwArsenicR}
+\title{Data Ingestion Functions for geoExposeR}
 \description{
 Functions for preparing input data from raw sources including:
 USGS GeoTIFF probability rasters, EPA public water system data,

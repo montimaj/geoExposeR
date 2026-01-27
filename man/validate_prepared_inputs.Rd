@@ -44,7 +44,7 @@ A list with validation results including:
 }
 \description{
 Performs comprehensive validation of prepared input files to ensure they
-are ready for use with gwArsenicR.
+are ready for use with geoExposeR.
 }
 \examples{
 \dontrun{

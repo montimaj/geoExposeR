@@ -1,0 +1,198 @@
+#' =============================================================================
+#' Example: Running geoExposeR for Uranium Exposure Analysis
+#' =============================================================================
+#' 
+#' This script demonstrates how to adapt geoExposeR for analyzing uranium
+#' exposure effects on kidney function (estimated Glomerular Filtration Rate).
+#' 
+#' BACKGROUND:
+#' Uranium is a naturally occurring radioactive element found in groundwater,
+#' particularly in areas with certain geological formations. Chronic uranium
+#' exposure is associated with nephrotoxicity (kidney damage), measured by
+#' decreased eGFR (estimated Glomerular Filtration Rate).
+#' 
+#' ADAPTATION NOTES:
+#' - The geoExposeR framework uses "EPA" and "USGS" terminology internally,
+#'   but these can represent ANY two probability data sources
+#' - "EPA" data = concentration measurements from monitored water systems
+#' - "USGS" data = model-predicted probability distributions (any source)
+#' - Cutoffs are customized for uranium: <15, 15-30, >=30 µg/L
+#' 
+#' DATA FILES:
+#'   - USGS_uranium.csv: Multinomial probabilities of uranium concentration categories
+#'   - EPA_uranium.csv: Uranium concentration data with lognormal parameters
+#'   - Health_uranium.txt: Kidney function data (eGFR measurements)
+#' 
+#' Author: Dr. Sayantan Majumdar (sayantan.majumdar@dri.edu)
+#' =============================================================================
+
+# ==============================================================================
+# Step 1: Load Required Packages
+# ==============================================================================
+if (file.exists("DESCRIPTION")) {
+  devtools::load_all()
+} else {
+  library(geoExposeR)
+}
+
+# ==============================================================================
+# Step 2: Define File Paths
+# ==============================================================================
+pkg_dir <- getwd()
+
+# Data files for uranium analysis
+usgs_data_path <- file.path(pkg_dir, "examples", "input_data", "USGS_uranium.csv")
+epa_data_path <- file.path(pkg_dir, "examples", "input_data", "EPA_uranium.csv")
+health_data_path <- file.path(pkg_dir, "examples", "input_data", "Health_uranium.txt")
+
+# Output directory
+output_dir <- file.path(pkg_dir, "examples", "output_uranium")
+if (!dir.exists(output_dir)) {
+  dir.create(output_dir, recursive = TRUE)
+}
+
+# Verify files exist
+stopifnot(
+  "USGS data file not found" = file.exists(usgs_data_path),
+  "EPA data file not found" = file.exists(epa_data_path),
+  "Health data file not found" = file.exists(health_data_path)
+)
+
+cat("=== Uranium Exposure Analysis ===\n\n")
+cat("Data files:\n")
+cat("  Probability data (USGS):", usgs_data_path, "\n")
+cat("  Concentration data (EPA):", epa_data_path, "\n")
+cat("  Health outcomes:", health_data_path, "\n\n")
+
+# ==============================================================================
+# Step 3: Define Uranium-Specific Parameters
+# ==============================================================================
+
+# Uranium concentration cutoffs (µg/L)
+# Category 1: <15 µg/L (below half of MCL)
+# Category 2: 15-30 µg/L (approaching MCL)
+# Category 3: >=30 µg/L (exceeds MCL)
+uranium_cutoffs <- c(15, 30)
+
+# Number of imputed datasets
+ndraws <- 5
+
+# Target health outcome
+# eGFR = estimated Glomerular Filtration Rate (mL/min/1.73m²)
+# Lower eGFR indicates worse kidney function
+targets <- c("eGFR")
+
+# Column containing uranium concentration in EPA data
+conc_col <- "weighted_uranium"
+
+# Regression formula
+# Model eGFR as function of uranium level
+# Using sex as random effect (categorical variable)
+as_level_col <- "AsLevel"  # This column name is used internally by geoExposeR
+regression_formula <- paste0(
+  "~ as.factor(", as_level_col, ") + ",
+  "(1 | sex)"
+)
+
+# Category labels for uranium levels (matching 3 categories from cutoffs)
+as_cat_labels <- c("U<15", "U_15-30", "U_30+")
+
+# Reference category for regression (lowest exposure)
+drop_as_cat_label_reg <- c("U<15")
+
+cat("Analysis parameters:\n")
+cat("  Uranium cutoffs:", paste(uranium_cutoffs, collapse = ", "), "µg/L\n")
+cat("  Categories: <15 (low), 15-30 (moderate), >=30 (exceeds MCL)\n")
+cat("  Target outcome: eGFR (kidney function)\n")
+cat("  Number of imputations:", ndraws, "\n\n")
+
+# ==============================================================================
+# Step 4: Run the Analysis
+# ==============================================================================
+
+cat("Running sensitivity analysis...\n\n")
+
+results <- perform_sensitivity_analysis(
+  # Number of imputed datasets
+  ndraws = ndraws,
+  
+  # Data file paths (using EPA/USGS terminology for any data sources)
+  as_usgs_prob_csv = usgs_data_path,
+  as_epa_prob_csv = epa_data_path,
+  birth_data_txt = health_data_path,
+  
+  # EPA data configuration - auto-convert concentration to lognormal
+  epa_as_conc_col = conc_col,
+  epa_default_sdlog = 0.9,  # Uranium typically shows moderate variance
+  
+  # Custom cutoffs for uranium
+  epa_cutoffs = uranium_cutoffs,
+  
+  # Category labels for results display
+  as_cat_label = as_cat_labels,
+  drop_as_cat_label_reg = drop_as_cat_label_reg,
+  
+  # Column name mappings (adapting package parameters for uranium data)
+  id_col = "id",                                    # ID column in USGS/EPA data
+  as_conc_cols = c("RFCprobC1", "RFCprobC2", "RFCprobC3"),  # Probability columns
+  pop_well_col = "pub_water_pop",                   # Population column
+  record_id_col = "id",                             # ID column in health data
+  epa_pwell_col = "Dom_Pop_Percent",                # Private well percentage
+  
+  # Regression configuration
+  regression_formula = regression_formula,
+  as_level_col = as_level_col,
+  targets = targets,
+  
+  # Output configuration
+  output_dir = output_dir,
+  
+  # Identifier formatting
+  format_ids = TRUE,
+  
+  # Imputation settings
+  seed = 12345,
+  mice_m = 1,
+  mice_maxit = 5,
+  mice_method = "pmm",
+  apply_imputation_fallback = TRUE
+)
+
+# ==============================================================================
+# Step 5: Display Results
+# ==============================================================================
+
+cat("\n=== Analysis Complete ===\n\n")
+cat("Pooled regression results for eGFR (kidney function):\n\n")
+
+# Access results by target name (not 'pooled_results')
+if (!is.null(results) && length(results) > 0 && targets[1] %in% names(results)) {
+  print(results[[targets[1]]])
+  
+  cat("\n\nInterpretation:\n")
+  cat("- 'U_15-30' = Effect of uranium 15-30 µg/L vs <15 µg/L\n")
+  cat("- 'U_30+' = Effect of uranium >=30 µg/L vs <15 µg/L\n")
+  cat("- NEGATIVE coefficients indicate decreased kidney function (worse outcome)\n")
+  cat("- eGFR <60 indicates chronic kidney disease (CKD)\n")
+} else {
+  cat("No pooled results generated. Check the output directory for details.\n")
+}
+
+cat("\nResults saved to:", output_dir, "\n")
+
+# ==============================================================================
+# Step 6: Summary Statistics
+# ==============================================================================
+
+cat("\n=== Summary Statistics ===\n")
+cat("Exposure categories based on uranium cutoffs:\n")
+cat("  Category 1 (Low): <", uranium_cutoffs[1], " µg/L\n")
+cat("  Category 2 (Moderate): ", uranium_cutoffs[1], "-", uranium_cutoffs[2], " µg/L\n")
+cat("  Category 3 (High): >=", uranium_cutoffs[2], " µg/L (exceeds EPA MCL)\n\n")
+cat("EPA Maximum Contaminant Level (MCL) for Uranium: 30 µg/L\n")
+cat("eGFR Categories:\n")
+cat("  >=90: Normal kidney function\n")
+cat("  60-89: Mildly decreased\n")
+cat("  30-59: Moderately decreased (CKD Stage 3)\n")
+cat("  15-29: Severely decreased (CKD Stage 4)\n")
+cat("  <15: Kidney failure (CKD Stage 5)\n")

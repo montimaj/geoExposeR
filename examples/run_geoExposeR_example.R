@@ -1,8 +1,8 @@
 #' =============================================================================
-#' Example: Running gwArsenicR with Dominion Data
+#' Example: Running geoExposeR with Dominion Data
 #' =============================================================================
 #' 
-#' This script demonstrates how to use the gwArsenicR package to perform
+#' This script demonstrates how to use the geoExposeR package to perform
 #' a sensitivity analysis for arsenic exposure effects on systolic blood
 #' pressure (SBP) using data from the examples/input_data/ folder.
 #' 
@@ -21,14 +21,14 @@
 if (file.exists("DESCRIPTION")) {
   devtools::load_all()
 } else {
-  library(gwArsenicR)
+  library(geoExposeR)
 }
 
 # ==============================================================================
 # Step 2: Define File Paths
 # ==============================================================================
 
-# Get the package root directory (assumes running from gwArsenicR folder)
+# Get the package root directory (assumes running from geoExposeR folder)
 # If running from a different directory, update this path accordingly
 pkg_dir <- getwd()
 
@@ -59,7 +59,7 @@ cat("  Demographics data:", demographics_data_path, "\n\n")
 # Step 3: EPA Data - Automatic Lognormal Conversion
 # ==============================================================================
 # 
-# The gwArsenicR package now supports automatic conversion of raw arsenic
+# The geoExposeR package now supports automatic conversion of raw arsenic
 # concentration values to lognormal parameters. Simply specify:
 #   - epa_as_conc_col: The column containing raw arsenic concentrations
 #   - epa_default_sdlog: Default sdlog value (optional, defaults to 1.0)
@@ -90,7 +90,7 @@ targets <- c("SBP")
 
 # Define the regression formula
 # This models SBP as a function of arsenic level and age decade
-# gwArsenicR uses mixed-effects models (lme4::lmer), so we need a random effect
+# geoExposeR uses mixed-effects models (lme4::lmer), so we need a random effect
 # Here we use age_decade as a random effect for demonstration purposes
 # In real studies, you would typically use geographic grouping (e.g., county, state)
 as_level_col <- "AsLevel"

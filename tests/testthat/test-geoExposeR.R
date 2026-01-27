@@ -1,6 +1,6 @@
 # Load the testthat library
 library(testthat)
-library(gwArsenicR)
+library(geoExposeR)
 
 # Helper function to create dummy data for testing
 # This function generates a complete set of dummy data files required to
@@ -263,7 +263,7 @@ test_that("Function handles single target variable", {
 test_that("validate_inputs validates required parameters correctly", {
   # Test missing birth_data_txt
   expect_error(
-    gwArsenicR:::validate_all_inputs(
+    geoExposeR:::validate_all_inputs(
       birth_data_txt = NULL,
       as_usgs_prob_csv = "usgs.csv",
       as_epa_prob_csv = "epa.csv"
@@ -273,7 +273,7 @@ test_that("validate_inputs validates required parameters correctly", {
 
   # Test missing as_usgs_prob_csv
   expect_error(
-    gwArsenicR:::validate_all_inputs(
+    geoExposeR:::validate_all_inputs(
       birth_data_txt = "birth.txt",
       as_usgs_prob_csv = NULL,
       as_epa_prob_csv = "epa.csv"
@@ -283,7 +283,7 @@ test_that("validate_inputs validates required parameters correctly", {
 
   # Test missing as_epa_prob_csv
   expect_error(
-    gwArsenicR:::validate_all_inputs(
+    geoExposeR:::validate_all_inputs(
       birth_data_txt = "birth.txt",
       as_usgs_prob_csv = "usgs.csv",
       as_epa_prob_csv = NULL
@@ -295,7 +295,7 @@ test_that("validate_inputs validates required parameters correctly", {
 test_that("validate_inputs validates file path formats", {
   # Test non-character birth_data_txt
   expect_error(
-    gwArsenicR:::validate_all_inputs(
+    geoExposeR:::validate_all_inputs(
       birth_data_txt = 123,
       as_usgs_prob_csv = "usgs.csv",
       as_epa_prob_csv = "epa.csv"
@@ -305,7 +305,7 @@ test_that("validate_inputs validates file path formats", {
 
   # Test multiple values for birth_data_txt
   expect_error(
-    gwArsenicR:::validate_all_inputs(
+    geoExposeR:::validate_all_inputs(
       birth_data_txt = c("file1.txt", "file2.txt"),
       as_usgs_prob_csv = "usgs.csv",
       as_epa_prob_csv = "epa.csv"
@@ -315,7 +315,7 @@ test_that("validate_inputs validates file path formats", {
 
   # Test non-character as_usgs_prob_csv
   expect_error(
-    gwArsenicR:::validate_all_inputs(
+    geoExposeR:::validate_all_inputs(
       birth_data_txt = "birth.txt",
       as_usgs_prob_csv = 123,
       as_epa_prob_csv = "epa.csv"
@@ -325,7 +325,7 @@ test_that("validate_inputs validates file path formats", {
 
   # Test non-character as_epa_prob_csv
   expect_error(
-    gwArsenicR:::validate_all_inputs(
+    geoExposeR:::validate_all_inputs(
       birth_data_txt = "birth.txt",
       as_usgs_prob_csv = "usgs.csv",
       as_epa_prob_csv = 123
@@ -337,7 +337,7 @@ test_that("validate_inputs validates file path formats", {
 test_that("validate_inputs validates file existence", {
   # Test non-existent files
   expect_error(
-    gwArsenicR:::validate_all_inputs(
+    geoExposeR:::validate_all_inputs(
       birth_data_txt = "nonexistent_birth.txt",
       as_usgs_prob_csv = "usgs.csv",
       as_epa_prob_csv = "epa.csv"
@@ -360,7 +360,7 @@ test_that("validate_inputs validates file existence", {
 
   # Test with existing files (should not error)
   expect_no_error(
-    gwArsenicR:::validate_all_inputs(
+    geoExposeR:::validate_all_inputs(
       birth_data_txt = birth_file,
       as_usgs_prob_csv = usgs_file,
       as_epa_prob_csv = epa_file
@@ -370,7 +370,7 @@ test_that("validate_inputs validates file existence", {
   # Test when the EPA file does not exist
   unlink(epa_file)  # Remove EPA file
   expect_error(
-    gwArsenicR:::validate_all_inputs(
+    geoExposeR:::validate_all_inputs(
       birth_data_txt = birth_file,
       as_usgs_prob_csv = usgs_file,
       as_epa_prob_csv = epa_file
@@ -382,7 +382,7 @@ test_that("validate_inputs validates file existence", {
   writeLines("test", epa_file)  # Restore EPA file
   unlink(usgs_file)  # Remove USGS file
   expect_error(
-    gwArsenicR:::validate_all_inputs(
+    geoExposeR:::validate_all_inputs(
       birth_data_txt = birth_file,
       as_usgs_prob_csv = usgs_file,
       as_epa_prob_csv = epa_file
@@ -407,7 +407,7 @@ test_that("validate_inputs validates ndraws parameter", {
 
   # Test non-numeric ndraws
   expect_error(
-    gwArsenicR:::validate_all_inputs(
+    geoExposeR:::validate_all_inputs(
       birth_data_txt = birth_file,
       as_usgs_prob_csv = usgs_file,
       as_epa_prob_csv = epa_file,
@@ -418,7 +418,7 @@ test_that("validate_inputs validates ndraws parameter", {
 
   # Test multiple values for ndraws
   expect_error(
-    gwArsenicR:::validate_all_inputs(
+    geoExposeR:::validate_all_inputs(
       birth_data_txt = birth_file,
       as_usgs_prob_csv = usgs_file,
       as_epa_prob_csv = epa_file,
@@ -429,7 +429,7 @@ test_that("validate_inputs validates ndraws parameter", {
 
   # Test zero ndraws
   expect_error(
-    gwArsenicR:::validate_all_inputs(
+    geoExposeR:::validate_all_inputs(
       birth_data_txt = birth_file,
       as_usgs_prob_csv = usgs_file,
       as_epa_prob_csv = epa_file,
@@ -440,7 +440,7 @@ test_that("validate_inputs validates ndraws parameter", {
 
   # Test negative ndraws
   expect_error(
-    gwArsenicR:::validate_all_inputs(
+    geoExposeR:::validate_all_inputs(
       birth_data_txt = birth_file,
       as_usgs_prob_csv = usgs_file,
       as_epa_prob_csv = epa_file,
@@ -451,7 +451,7 @@ test_that("validate_inputs validates ndraws parameter", {
 
   # Test decimal ndraws
   expect_error(
-    gwArsenicR:::validate_all_inputs(
+    geoExposeR:::validate_all_inputs(
       birth_data_txt = birth_file,
       as_usgs_prob_csv = usgs_file,
       as_epa_prob_csv = epa_file,
@@ -462,7 +462,7 @@ test_that("validate_inputs validates ndraws parameter", {
 
   # Test very large ndraws (should warn)
   expect_warning(
-    gwArsenicR:::validate_all_inputs(
+    geoExposeR:::validate_all_inputs(
       birth_data_txt = birth_file,
       as_usgs_prob_csv = usgs_file,
       as_epa_prob_csv = epa_file,
@@ -488,7 +488,7 @@ test_that("validate_inputs validates regression_formula parameter", {
 
   # Test non-character, non-formula regression_formula
   expect_error(
-    gwArsenicR:::validate_all_inputs(
+    geoExposeR:::validate_all_inputs(
       birth_data_txt = birth_file,
       as_usgs_prob_csv = usgs_file,
       as_epa_prob_csv = epa_file,
@@ -499,7 +499,7 @@ test_that("validate_inputs validates regression_formula parameter", {
 
   # Test multiple character values
   expect_error(
-    gwArsenicR:::validate_all_inputs(
+    geoExposeR:::validate_all_inputs(
       birth_data_txt = birth_file,
       as_usgs_prob_csv = usgs_file,
       as_epa_prob_csv = epa_file,
@@ -510,7 +510,7 @@ test_that("validate_inputs validates regression_formula parameter", {
 
   # Test empty regression_formula
   expect_error(
-    gwArsenicR:::validate_all_inputs(
+    geoExposeR:::validate_all_inputs(
       birth_data_txt = birth_file,
       as_usgs_prob_csv = usgs_file,
       as_epa_prob_csv = epa_file,
@@ -521,7 +521,7 @@ test_that("validate_inputs validates regression_formula parameter", {
 
   # Test whitespace-only regression_formula
   expect_error(
-    gwArsenicR:::validate_all_inputs(
+    geoExposeR:::validate_all_inputs(
       birth_data_txt = birth_file,
       as_usgs_prob_csv = usgs_file,
       as_epa_prob_csv = epa_file,
@@ -532,7 +532,7 @@ test_that("validate_inputs validates regression_formula parameter", {
 
   # Test invalid formula syntax
   expect_error(
-    gwArsenicR:::validate_all_inputs(
+    geoExposeR:::validate_all_inputs(
       birth_data_txt = birth_file,
       as_usgs_prob_csv = usgs_file,
       as_epa_prob_csv = epa_file,
@@ -543,7 +543,7 @@ test_that("validate_inputs validates regression_formula parameter", {
 
   # Test valid character formula
   expect_no_error(
-    gwArsenicR:::validate_all_inputs(
+    geoExposeR:::validate_all_inputs(
       birth_data_txt = birth_file,
       as_usgs_prob_csv = usgs_file,
       as_epa_prob_csv = epa_file,
@@ -553,7 +553,7 @@ test_that("validate_inputs validates regression_formula parameter", {
 
   # Test valid formula object
   expect_no_error(
-    gwArsenicR:::validate_all_inputs(
+    geoExposeR:::validate_all_inputs(
       birth_data_txt = birth_file,
       as_usgs_prob_csv = usgs_file,
       as_epa_prob_csv = epa_file,
@@ -578,7 +578,7 @@ test_that("validate_inputs validates targets parameter", {
 
   # Test non-character targets
   expect_error(
-    gwArsenicR:::validate_all_inputs(
+    geoExposeR:::validate_all_inputs(
       birth_data_txt = birth_file,
       as_usgs_prob_csv = usgs_file,
       as_epa_prob_csv = epa_file,
@@ -589,7 +589,7 @@ test_that("validate_inputs validates targets parameter", {
 
   # Test empty targets
   expect_error(
-    gwArsenicR:::validate_all_inputs(
+    geoExposeR:::validate_all_inputs(
       birth_data_txt = birth_file,
       as_usgs_prob_csv = usgs_file,
       as_epa_prob_csv = epa_file,
@@ -600,7 +600,7 @@ test_that("validate_inputs validates targets parameter", {
 
   # Test targets with NA
   expect_error(
-    gwArsenicR:::validate_all_inputs(
+    geoExposeR:::validate_all_inputs(
       birth_data_txt = birth_file,
       as_usgs_prob_csv = usgs_file,
       as_epa_prob_csv = epa_file,
@@ -611,7 +611,7 @@ test_that("validate_inputs validates targets parameter", {
 
   # Test targets with empty string
   expect_error(
-    gwArsenicR:::validate_all_inputs(
+    geoExposeR:::validate_all_inputs(
       birth_data_txt = birth_file,
       as_usgs_prob_csv = usgs_file,
       as_epa_prob_csv = epa_file,
@@ -622,7 +622,7 @@ test_that("validate_inputs validates targets parameter", {
 
   # Test duplicate targets
   expect_error(
-    gwArsenicR:::validate_all_inputs(
+    geoExposeR:::validate_all_inputs(
       birth_data_txt = birth_file,
       as_usgs_prob_csv = usgs_file,
       as_epa_prob_csv = epa_file,
@@ -633,7 +633,7 @@ test_that("validate_inputs validates targets parameter", {
 
   # Test valid targets
   expect_no_error(
-    gwArsenicR:::validate_all_inputs(
+    geoExposeR:::validate_all_inputs(
       birth_data_txt = birth_file,
       as_usgs_prob_csv = usgs_file,
       as_epa_prob_csv = epa_file,
@@ -658,7 +658,7 @@ test_that("validate_inputs validates impute_vars parameter", {
 
   # Test non-character impute_vars
   expect_error(
-    gwArsenicR:::validate_all_inputs(
+    geoExposeR:::validate_all_inputs(
       birth_data_txt = birth_file,
       as_usgs_prob_csv = usgs_file,
       as_epa_prob_csv = epa_file,
@@ -669,7 +669,7 @@ test_that("validate_inputs validates impute_vars parameter", {
 
   # Test empty impute_vars (should suggest NULL)
   expect_error(
-    gwArsenicR:::validate_all_inputs(
+    geoExposeR:::validate_all_inputs(
       birth_data_txt = birth_file,
       as_usgs_prob_csv = usgs_file,
       as_epa_prob_csv = epa_file,
@@ -680,7 +680,7 @@ test_that("validate_inputs validates impute_vars parameter", {
 
   # Test impute_vars with NA
   expect_error(
-    gwArsenicR:::validate_all_inputs(
+    geoExposeR:::validate_all_inputs(
       birth_data_txt = birth_file,
       as_usgs_prob_csv = usgs_file,
       as_epa_prob_csv = epa_file,
@@ -691,7 +691,7 @@ test_that("validate_inputs validates impute_vars parameter", {
 
   # Test valid impute_vars
   expect_no_error(
-    gwArsenicR:::validate_all_inputs(
+    geoExposeR:::validate_all_inputs(
       birth_data_txt = birth_file,
       as_usgs_prob_csv = usgs_file,
       as_epa_prob_csv = epa_file,
@@ -701,7 +701,7 @@ test_that("validate_inputs validates impute_vars parameter", {
 
   # Test NULL impute_vars (should be valid)
   expect_no_error(
-    gwArsenicR:::validate_all_inputs(
+    geoExposeR:::validate_all_inputs(
       birth_data_txt = birth_file,
       as_usgs_prob_csv = usgs_file,
       as_epa_prob_csv = epa_file,
@@ -726,7 +726,7 @@ test_that("validate_inputs validates output_dir parameter", {
 
   # Test non-character output_dir
   expect_error(
-    gwArsenicR:::validate_all_inputs(
+    geoExposeR:::validate_all_inputs(
       birth_data_txt = birth_file,
       as_usgs_prob_csv = usgs_file,
       as_epa_prob_csv = epa_file,
@@ -737,7 +737,7 @@ test_that("validate_inputs validates output_dir parameter", {
 
   # Test empty output_dir
   expect_error(
-    gwArsenicR:::validate_all_inputs(
+    geoExposeR:::validate_all_inputs(
       birth_data_txt = birth_file,
       as_usgs_prob_csv = usgs_file,
       as_epa_prob_csv = epa_file,
@@ -748,7 +748,7 @@ test_that("validate_inputs validates output_dir parameter", {
 
   # Test output_dir with non-existent parent
   expect_error(
-    gwArsenicR:::validate_all_inputs(
+    geoExposeR:::validate_all_inputs(
       birth_data_txt = birth_file,
       as_usgs_prob_csv = usgs_file,
       as_epa_prob_csv = epa_file,
@@ -760,7 +760,7 @@ test_that("validate_inputs validates output_dir parameter", {
   # Test valid output_dir
   valid_output_dir <- file.path(temp_dir, "output")
   expect_no_error(
-    gwArsenicR:::validate_all_inputs(
+    geoExposeR:::validate_all_inputs(
       birth_data_txt = birth_file,
       as_usgs_prob_csv = usgs_file,
       as_epa_prob_csv = epa_file,
@@ -785,7 +785,7 @@ test_that("validate_inputs validates MICE parameters", {
 
   # Test invalid mice_m
   expect_error(
-    gwArsenicR:::validate_all_inputs(
+    geoExposeR:::validate_all_inputs(
       birth_data_txt = birth_file,
       as_usgs_prob_csv = usgs_file,
       as_epa_prob_csv = epa_file,
@@ -795,7 +795,7 @@ test_that("validate_inputs validates MICE parameters", {
   )
 
   expect_error(
-    gwArsenicR:::validate_all_inputs(
+    geoExposeR:::validate_all_inputs(
       birth_data_txt = birth_file,
       as_usgs_prob_csv = usgs_file,
       as_epa_prob_csv = epa_file,
@@ -806,7 +806,7 @@ test_that("validate_inputs validates MICE parameters", {
 
   # Test non-numeric mice_m
   expect_error(
-    gwArsenicR:::validate_all_inputs(
+    geoExposeR:::validate_all_inputs(
       birth_data_txt = birth_file,
       as_usgs_prob_csv = usgs_file,
       as_epa_prob_csv = epa_file,
@@ -817,7 +817,7 @@ test_that("validate_inputs validates MICE parameters", {
 
   # Test large mice_m (should warn)
   expect_warning(
-    gwArsenicR:::validate_all_inputs(
+    geoExposeR:::validate_all_inputs(
       birth_data_txt = birth_file,
       as_usgs_prob_csv = usgs_file,
       as_epa_prob_csv = epa_file,
@@ -828,7 +828,7 @@ test_that("validate_inputs validates MICE parameters", {
 
   # Test invalid mice_maxit
   expect_error(
-    gwArsenicR:::validate_all_inputs(
+    geoExposeR:::validate_all_inputs(
       birth_data_txt = birth_file,
       as_usgs_prob_csv = usgs_file,
       as_epa_prob_csv = epa_file,
@@ -838,7 +838,7 @@ test_that("validate_inputs validates MICE parameters", {
   )
 
   expect_error(
-    gwArsenicR:::validate_all_inputs(
+    geoExposeR:::validate_all_inputs(
       birth_data_txt = birth_file,
       as_usgs_prob_csv = usgs_file,
       as_epa_prob_csv = epa_file,
@@ -849,7 +849,7 @@ test_that("validate_inputs validates MICE parameters", {
 
   # Test invalid mice_method
   expect_error(
-    gwArsenicR:::validate_all_inputs(
+    geoExposeR:::validate_all_inputs(
       birth_data_txt = birth_file,
       as_usgs_prob_csv = usgs_file,
       as_epa_prob_csv = epa_file,
@@ -860,7 +860,7 @@ test_that("validate_inputs validates MICE parameters", {
 
   # Test non-character mice_method
   expect_error(
-    gwArsenicR:::validate_all_inputs(
+    geoExposeR:::validate_all_inputs(
       birth_data_txt = birth_file,
       as_usgs_prob_csv = usgs_file,
       as_epa_prob_csv = epa_file,
@@ -871,7 +871,7 @@ test_that("validate_inputs validates MICE parameters", {
 
   # Test valid mice_method
   expect_no_error(
-    gwArsenicR:::validate_all_inputs(
+    geoExposeR:::validate_all_inputs(
       birth_data_txt = birth_file,
       as_usgs_prob_csv = usgs_file,
       as_epa_prob_csv = epa_file,
@@ -897,7 +897,7 @@ test_that("validate_inputs validates numeric parameters", {
   data.table::fwrite(dummy_epa_df, dummy_epa_csv)
 
   expect_error(
-    gwArsenicR:::perform_sensitivity_analysis(
+    geoExposeR:::perform_sensitivity_analysis(
       birth_data_txt = dummy_files$births,
       as_usgs_prob_csv = dummy_files$usgs,
       as_epa_prob_csv = dummy_epa_csv
@@ -908,7 +908,7 @@ test_that("validate_inputs validates numeric parameters", {
   dummy_epa_df$EPA_AS_sdlog1 <- "one"
   data.table::fwrite(dummy_epa_df, dummy_epa_csv)
   expect_error(
-    gwArsenicR:::perform_sensitivity_analysis(
+    geoExposeR:::perform_sensitivity_analysis(
       birth_data_txt = dummy_files$births,
       as_usgs_prob_csv = dummy_files$usgs,
       as_epa_prob_csv = dummy_epa_csv,
@@ -921,7 +921,7 @@ test_that("validate_inputs validates numeric parameters", {
   dummy_epa_df$EPA_AS_sdlog <- 15.0
   data.table::fwrite(dummy_epa_df, dummy_epa_csv)
   expect_warning(
-    gwArsenicR:::perform_sensitivity_analysis(
+    geoExposeR:::perform_sensitivity_analysis(
       birth_data_txt = dummy_files$births,
       as_usgs_prob_csv = dummy_files$usgs,
       as_epa_prob_csv = dummy_epa_csv,
@@ -932,7 +932,7 @@ test_that("validate_inputs validates numeric parameters", {
 
   # Test invalid seed
   expect_error(
-    gwArsenicR:::perform_sensitivity_analysis(
+    geoExposeR:::perform_sensitivity_analysis(
       birth_data_txt = dummy_files$births,
       as_usgs_prob_csv = dummy_files$usgs,
       as_epa_prob_csv = dummy_epa_csv,
@@ -942,7 +942,7 @@ test_that("validate_inputs validates numeric parameters", {
   )
 
   expect_error(
-    gwArsenicR:::perform_sensitivity_analysis(
+    geoExposeR:::perform_sensitivity_analysis(
       birth_data_txt = dummy_files$births,
       as_usgs_prob_csv = dummy_files$usgs,
       as_epa_prob_csv = dummy_epa_csv,
@@ -963,7 +963,7 @@ test_that("validate_inputs validates arsenic category labels", {
 
   # Test non-character as_cat_label
   expect_error(
-    gwArsenicR:::perform_sensitivity_analysis(
+    geoExposeR:::perform_sensitivity_analysis(
       birth_data_txt = dummy_files$births,
       as_usgs_prob_csv = dummy_files$usgs,
       as_epa_prob_csv = dummy_files$epa,
@@ -976,7 +976,7 @@ test_that("validate_inputs validates arsenic category labels", {
 
   # Test empty as_cat_label
   expect_error(
-    gwArsenicR:::perform_sensitivity_analysis(
+    geoExposeR:::perform_sensitivity_analysis(
       birth_data_txt = dummy_files$births,
       as_usgs_prob_csv = dummy_files$usgs,
       as_epa_prob_csv = dummy_files$epa,
@@ -988,7 +988,7 @@ test_that("validate_inputs validates arsenic category labels", {
 
   # Test as_cat_label with duplicates
   expect_error(
-    gwArsenicR:::perform_sensitivity_analysis(
+    geoExposeR:::perform_sensitivity_analysis(
       birth_data_txt = dummy_files$births,
       as_usgs_prob_csv = dummy_files$usgs,
       as_epa_prob_csv = dummy_files$epa,
@@ -1000,7 +1000,7 @@ test_that("validate_inputs validates arsenic category labels", {
 
   # Test drop_as_cat_label_reg not in as_cat_label
   expect_error(
-    gwArsenicR:::perform_sensitivity_analysis(
+    geoExposeR:::perform_sensitivity_analysis(
       birth_data_txt = dummy_files$births,
       as_usgs_prob_csv = dummy_files$usgs,
       as_epa_prob_csv = dummy_files$epa,
@@ -1012,7 +1012,7 @@ test_that("validate_inputs validates arsenic category labels", {
 
   # Test dropping all categories
   expect_error(
-    gwArsenicR:::perform_sensitivity_analysis(
+    geoExposeR:::perform_sensitivity_analysis(
       birth_data_txt = dummy_files$births,
       as_usgs_prob_csv = dummy_files$usgs,
       as_epa_prob_csv = dummy_files$epa,
@@ -1024,7 +1024,7 @@ test_that("validate_inputs validates arsenic category labels", {
 
   # Test valid category configuration
   expect_no_error(
-    gwArsenicR:::perform_sensitivity_analysis(
+    geoExposeR:::perform_sensitivity_analysis(
       birth_data_txt = dummy_files$births,
       as_usgs_prob_csv = dummy_files$usgs,
       as_epa_prob_csv = dummy_files$epa,
@@ -1068,7 +1068,7 @@ test_that("Function validates parameter values through main interface", {
 
   # Test invalid ndraws through main function
   expect_error(
-    gwArsenicR::perform_sensitivity_analysis(
+    geoExposeR::perform_sensitivity_analysis(
       birth_data_txt = dummy_files$births,
       as_usgs_prob_csv = dummy_files$usgs,
       as_epa_prob_csv = dummy_files$epa,
@@ -1158,7 +1158,7 @@ test_that("Function handles different arsenic level column names", {
   )
   as_level_col <- "ArsenicCategory"
   results <- expect_no_error(
-    gwArsenicR::perform_sensitivity_analysis(
+    geoExposeR::perform_sensitivity_analysis(
       birth_data_txt = dummy_files$births,
       as_usgs_prob_csv = dummy_files$usgs,
       as_epa_prob_csv = dummy_files$epa,
@@ -1435,7 +1435,7 @@ test_that("Function validates AsLevel requirement through main interface", {
   unlink(temp_dir, recursive = TRUE)
 })
 
-# Add this test to your test-gwArsenic.R file in the validation section
+# Additional validation tests
 
 test_that("Function handles arsenic category reference dropping edge cases", {
   temp_dir <- tempfile(pattern = "test_arsenic_ref_")
@@ -2170,7 +2170,7 @@ test_that("impute_arsenic_exposure handles basic case correctly", {
     stringsAsFactors = FALSE
   )
 
-  result <- gwArsenicR:::impute_arsenic_exposure(
+  result <- geoExposeR:::impute_arsenic_exposure(
     datmatx_usgs = datmatx_usgs,
     rasterprob_combined = rasterprob_combined,
     cellpop = cellpop,
@@ -2227,7 +2227,7 @@ test_that("impute_arsenic_exposure handles NA weights correctly", {
 
   # Should not error with NA weights
   result <- expect_no_error(
-    gwArsenicR:::impute_arsenic_exposure(
+    geoExposeR:::impute_arsenic_exposure(
       datmatx_usgs = datmatx_usgs,
       rasterprob_combined = rasterprob_combined,
       cellpop = cellpop,
@@ -2278,7 +2278,7 @@ test_that("impute_arsenic_exposure handles all-zero weights gracefully", {
   )
 
   result <- expect_no_error(
-    gwArsenicR:::impute_arsenic_exposure(
+    geoExposeR:::impute_arsenic_exposure(
       datmatx_usgs = datmatx_usgs,
       rasterprob_combined = rasterprob_combined,
       cellpop = cellpop,
@@ -2323,7 +2323,7 @@ test_that("impute_arsenic_exposure handles single cell per county", {
     stringsAsFactors = FALSE
   )
 
-  result <- gwArsenicR:::impute_arsenic_exposure(
+  result <- geoExposeR:::impute_arsenic_exposure(
     datmatx_usgs = datmatx_usgs,
     rasterprob_combined = rasterprob_combined,
     cellpop = cellpop,
@@ -2370,7 +2370,7 @@ test_that("impute_arsenic_exposure removes rows when fallback disabled", {
     stringsAsFactors = FALSE
   )
 
-  result <- gwArsenicR:::impute_arsenic_exposure(
+  result <- geoExposeR:::impute_arsenic_exposure(
     datmatx_usgs = datmatx_usgs,
     rasterprob_combined = rasterprob_combined,
     cellpop = cellpop,
@@ -2421,7 +2421,7 @@ test_that("impute_additional_variables handles basic case", {
   )
 
   result <- expect_no_error(
-    gwArsenicR:::impute_additional_variables(
+    geoExposeR:::impute_additional_variables(
       imputed_datasets = imputed_datasets,
       impute_vars = "MAGE_R",
       births = births,
@@ -2457,7 +2457,7 @@ test_that("impute_additional_variables warns when no covariates available", {
 
   # Should warn because 'pm' is not in the dataset
   expect_warning(
-    gwArsenicR:::impute_additional_variables(
+    geoExposeR:::impute_additional_variables(
       imputed_datasets = imputed_datasets,
       impute_vars = "MAGE_R",
       births = births,
@@ -2486,7 +2486,7 @@ test_that("impute_additional_variables errors on missing variables in births", {
   )
 
   expect_error(
-    gwArsenicR:::impute_additional_variables(
+    geoExposeR:::impute_additional_variables(
       imputed_datasets = imputed_datasets,
       impute_vars = "MAGE_R",  # Not in births
       births = births,
@@ -2520,7 +2520,7 @@ test_that("impute_additional_variables skips variables without NAs", {
     stringsAsFactors = FALSE
   )
 
-  result <- gwArsenicR:::impute_additional_variables(
+  result <- geoExposeR:::impute_additional_variables(
     imputed_datasets = imputed_datasets,
     impute_vars = "MAGE_R",
     births = births,
@@ -2560,7 +2560,7 @@ test_that("validate_imputed_datasets passes valid datasets", {
   )
 
   expect_message(
-    gwArsenicR:::validate_imputed_datasets(
+    geoExposeR:::validate_imputed_datasets(
       imputed_datasets = imputed_datasets,
       as_level_col = "AsLevel",
       as_cat_label = as_cat_label
@@ -2581,7 +2581,7 @@ test_that("validate_imputed_datasets catches missing arsenic levels", {
   )
 
   expect_error(
-    gwArsenicR:::validate_imputed_datasets(
+    geoExposeR:::validate_imputed_datasets(
       imputed_datasets = imputed_datasets,
       as_level_col = "AsLevel",
       as_cat_label = as_cat_label
@@ -2602,7 +2602,7 @@ test_that("validate_imputed_datasets catches invalid arsenic levels", {
   )
 
   expect_error(
-    gwArsenicR:::validate_imputed_datasets(
+    geoExposeR:::validate_imputed_datasets(
       imputed_datasets = imputed_datasets,
       as_level_col = "AsLevel",
       as_cat_label = as_cat_label
@@ -2644,7 +2644,7 @@ test_that("impute_arsenic_exposure applies fallback with message for unmatched c
 
   # Should print message about filling NAs with most common category
   expect_message(
-    gwArsenicR:::impute_arsenic_exposure(
+    geoExposeR:::impute_arsenic_exposure(
       datmatx_usgs = datmatx_usgs,
       rasterprob_combined = rasterprob_combined,
       cellpop = cellpop,
@@ -2681,7 +2681,7 @@ test_that("impute_additional_variables handles insufficient columns for MICE", {
 
   # Should warn about insufficient variables or MICE failure
   expect_warning(
-    gwArsenicR:::impute_additional_variables(
+    geoExposeR:::impute_additional_variables(
       imputed_datasets = imputed_datasets,
       impute_vars = "MAGE_R",
       births = births,
@@ -2719,7 +2719,7 @@ test_that("impute_additional_variables handles MICE failure gracefully", {
   # Should handle gracefully (warn but not error)
   result <- expect_no_error(
     suppressWarnings(
-      gwArsenicR:::impute_additional_variables(
+      geoExposeR:::impute_additional_variables(
         imputed_datasets = imputed_datasets,
         impute_vars = "MAGE_R",
         births = births,
@@ -2757,7 +2757,7 @@ test_that("impute_additional_variables skips birth column check when disabled", 
 
   # Should not error when check_birth_cols = FALSE
   result <- expect_no_error(
-    gwArsenicR:::impute_additional_variables(
+    geoExposeR:::impute_additional_variables(
       imputed_datasets = imputed_datasets,
       impute_vars = "MAGE_R",
       births = births,
@@ -2790,7 +2790,7 @@ test_that("load_usgs_data errors on missing columns", {
   data.table::fwrite(usgs_df, usgs_file)
 
   expect_error(
-    gwArsenicR:::load_usgs_data(
+    geoExposeR:::load_usgs_data(
       as_usgs_prob_csv = usgs_file,
       as_conc_cols = c("RFC3_C1v2", "RFC3_C2v2", "RFC3_C3v2"),
       pop_well_col = "Wells_2010"
@@ -2806,7 +2806,7 @@ test_that("validate_data_alignment errors on row count mismatch", {
   epa_df <- data.frame(GEOID10 = 1:5)  # Different row count
 
   expect_error(
-    gwArsenicR:::validate_data_alignment(usgs_df, epa_df),
+    geoExposeR:::validate_data_alignment(usgs_df, epa_df),
     "different numbers of rows"
   )
 })
@@ -2827,7 +2827,7 @@ test_that("load_and_process_birth_data handles column selection", {
   data.table::fwrite(births_df, births_file, sep = "\t")
 
   # Should select only specified columns
-  result <- gwArsenicR:::load_and_process_birth_data(
+  result <- geoExposeR:::load_and_process_birth_data(
     birth_data_txt = births_file,
     columns_to_select = c("FIPS", "BWT"),
     rucc_col = NULL,
@@ -2854,7 +2854,7 @@ test_that("load_and_process_birth_data creates rural indicator", {
   births_file <- file.path(temp_dir, "births_rucc.txt")
   data.table::fwrite(births_df, births_file, sep = "\t")
 
-  result <- gwArsenicR:::load_and_process_birth_data(
+  result <- geoExposeR:::load_and_process_birth_data(
     birth_data_txt = births_file,
     columns_to_select = NULL,
     rucc_col = "RUCC",
@@ -2888,7 +2888,7 @@ test_that("create_weighted_prob_matrix handles NA in EPA data", {
     PWELL_private_pct = c(50, 50, 50)
   )
 
-  result <- gwArsenicR:::create_weighted_prob_matrix(
+  result <- geoExposeR:::create_weighted_prob_matrix(
     rasterprob_usgs = rasterprob_usgs,
     rasterprob_epa = rasterprob_epa,
     datmatx_epa = datmatx_epa,
@@ -2904,24 +2904,24 @@ test_that("create_weighted_prob_matrix handles NA in EPA data", {
 test_that("validate_epa_cutoffs validates properly with validate_cutoffs=TRUE", {
   # Non-numeric cutoffs
   expect_error(
-    gwArsenicR:::validate_epa_cutoffs(c("5", "10"), validate_cutoffs = TRUE),
+    geoExposeR:::validate_epa_cutoffs(c("5", "10"), validate_cutoffs = TRUE),
     "must be numeric"
   )
 
   # Unsorted cutoffs
   expect_error(
-    gwArsenicR:::validate_epa_cutoffs(c(10, 5), validate_cutoffs = TRUE),
+    geoExposeR:::validate_epa_cutoffs(c(10, 5), validate_cutoffs = TRUE),
     "must be in ascending order"
   )
 
   # Negative cutoffs
   expect_error(
-    gwArsenicR:::validate_epa_cutoffs(c(-5, 10), validate_cutoffs = TRUE),
+    geoExposeR:::validate_epa_cutoffs(c(-5, 10), validate_cutoffs = TRUE),
     "cannot contain negative values"
   )
 
   # Valid cutoffs
-  result <- gwArsenicR:::validate_epa_cutoffs(c(5, 10), validate_cutoffs = TRUE)
+  result <- geoExposeR:::validate_epa_cutoffs(c(5, 10), validate_cutoffs = TRUE)
   expect_equal(result$cutoffs, c(5, 10))
   expect_equal(result$n_categories, 3)
 })
@@ -2958,7 +2958,7 @@ test_that("load_and_process_arsenic_data uses auto-generated cutoffs", {
 
   # Should auto-generate cutoffs when epa_cutoffs = NULL
   expect_message(
-    gwArsenicR:::load_and_process_arsenic_data(
+    geoExposeR:::load_and_process_arsenic_data(
       as_usgs_prob_csv = usgs_file,
       as_epa_prob_csv = epa_file,
       as_conc_cols = c("RFC3_C1v2", "RFC3_C2v2", "RFC3_C3v2"),
@@ -2986,7 +2986,7 @@ test_that("regression_analysis errors on missing .id column", {
   # No .id column
 
   expect_error(
-    gwArsenicR:::regression_analysis(
+    geoExposeR:::regression_analysis(
       births = births,
       targets = "BWT",
       as_cat_label = c("As5-10", "As10+"),
@@ -3007,7 +3007,7 @@ test_that("regression_analysis errors on missing target variables", {
   )
 
   expect_error(
-    gwArsenicR:::regression_analysis(
+    geoExposeR:::regression_analysis(
       births = births,
       targets = c("BWT", "NONEXISTENT"),
       as_cat_label = c("As5-10", "As10+"),
@@ -3036,7 +3036,7 @@ test_that("pool_estimates_by_term handles empty term data", {
   )
   mock_model <- lme4::lmer(y ~ x + (1|group), data = mock_data)
 
-  result <- gwArsenicR:::pool_estimates_by_term(
+  result <- geoExposeR:::pool_estimates_by_term(
     combined_results = combined_results,
     arsenic_terms = c("as.factor(AsLevel)As5-10"),  # Won't match any rows
     reference_model = mock_model
@@ -3047,7 +3047,7 @@ test_that("pool_estimates_by_term handles empty term data", {
 })
 
 test_that("pool_single_estimate handles single imputation", {
-  result <- gwArsenicR:::pool_single_estimate(
+  result <- geoExposeR:::pool_single_estimate(
     estimates = c(1.5),
     std_errors = c(0.5),
     df = 100
@@ -3059,7 +3059,7 @@ test_that("pool_single_estimate handles single imputation", {
 })
 
 test_that("pool_single_estimate applies Rubin's Rules for multiple imputations", {
-  result <- gwArsenicR:::pool_single_estimate(
+  result <- geoExposeR:::pool_single_estimate(
     estimates = c(1.0, 1.2, 0.8, 1.1, 0.9),
     std_errors = c(0.3, 0.35, 0.28, 0.32, 0.31),
     df = 100
@@ -3076,7 +3076,7 @@ test_that("pool_single_estimate applies Rubin's Rules for multiple imputations",
 
 test_that("pool_single_estimate handles df adjustment", {
   # This tests when b > 0 and finite df
-  result <- gwArsenicR:::pool_single_estimate(
+  result <- geoExposeR:::pool_single_estimate(
     estimates = c(2.0, 2.5, 1.8, 2.2, 2.1),
     std_errors = c(0.2, 0.25, 0.18, 0.22, 0.21),
     df = 50
@@ -3099,7 +3099,7 @@ test_that("regression_analysis handles model fitting errors", {
 
   # Model will fail because arsenic level has only one level
   expect_error(
-    gwArsenicR:::regression_analysis(
+    geoExposeR:::regression_analysis(
       births = births,
       targets = "BWT",
       as_cat_label = c("As5-10", "As10+"),
@@ -4809,7 +4809,7 @@ test_that("calculate_epa_lognormal_params auto-calculates from concentration", {
   )
 
   # Call the internal function
-  result <- gwArsenicR:::calculate_epa_lognormal_params(
+  result <- geoExposeR:::calculate_epa_lognormal_params(
     datmatx_epa = epa_data,
     epa_as_mean_col = "EPA_AS_meanlog",
     epa_as_sd_col = "EPA_AS_sdlog",
@@ -4840,7 +4840,7 @@ test_that("calculate_epa_lognormal_params returns data unchanged when cols exist
   )
 
   # Call the internal function
-  result <- gwArsenicR:::calculate_epa_lognormal_params(
+  result <- geoExposeR:::calculate_epa_lognormal_params(
     datmatx_epa = epa_data,
     epa_as_mean_col = "EPA_AS_meanlog",
     epa_as_sd_col = "EPA_AS_sdlog",
@@ -4860,7 +4860,7 @@ test_that("calculate_epa_lognormal_params handles NA in concentration", {
     PWELL_private_pct = c(20, 35, 45)
   )
 
-  result <- gwArsenicR:::calculate_epa_lognormal_params(
+  result <- geoExposeR:::calculate_epa_lognormal_params(
     datmatx_epa = epa_data,
     epa_as_mean_col = "EPA_AS_meanlog",
     epa_as_sd_col = "EPA_AS_sdlog",
@@ -4882,7 +4882,7 @@ test_that("calculate_epa_lognormal_params errors when conc col not provided and 
   )
 
   expect_error(
-    gwArsenicR:::calculate_epa_lognormal_params(
+    geoExposeR:::calculate_epa_lognormal_params(
       datmatx_epa = epa_data,
       epa_as_mean_col = "EPA_AS_meanlog",
       epa_as_sd_col = "EPA_AS_sdlog",
@@ -4895,17 +4895,17 @@ test_that("calculate_epa_lognormal_params errors when conc col not provided and 
 
 test_that("validate_epa_default_sdlog validates input correctly", {
   # Valid values should not error
-  expect_no_error(gwArsenicR:::validate_epa_default_sdlog(1.0))
-  expect_no_error(gwArsenicR:::validate_epa_default_sdlog(0.5))
+  expect_no_error(geoExposeR:::validate_epa_default_sdlog(1.0))
+  expect_no_error(geoExposeR:::validate_epa_default_sdlog(0.5))
 
   # Invalid values should error
-  expect_error(gwArsenicR:::validate_epa_default_sdlog("1.0"), "must be a single numeric")
-  expect_error(gwArsenicR:::validate_epa_default_sdlog(c(1.0, 2.0)), "must be a single numeric")
-  expect_error(gwArsenicR:::validate_epa_default_sdlog(-1.0), "must be positive")
-  expect_error(gwArsenicR:::validate_epa_default_sdlog(0), "must be positive")
+  expect_error(geoExposeR:::validate_epa_default_sdlog("1.0"), "must be a single numeric")
+  expect_error(geoExposeR:::validate_epa_default_sdlog(c(1.0, 2.0)), "must be a single numeric")
+  expect_error(geoExposeR:::validate_epa_default_sdlog(-1.0), "must be positive")
+  expect_error(geoExposeR:::validate_epa_default_sdlog(0), "must be positive")
 
   # Large values should warn
-  expect_warning(gwArsenicR:::validate_epa_default_sdlog(15.0), "very large")
+  expect_warning(geoExposeR:::validate_epa_default_sdlog(15.0), "very large")
 })
 
 # =============================================================================
@@ -4919,7 +4919,7 @@ test_that("format_ids_func applies zero-padding for numeric FIPS codes", {
     value = c(10, 20, 30, 40)
   )
   
-  result <- gwArsenicR:::format_ids_func(df, "id")
+  result <- geoExposeR:::format_ids_func(df, "id")
   
   # Check that IDs are zero-padded to 5 digits
 
@@ -4934,7 +4934,7 @@ test_that("format_ids_func preserves longer numeric codes without padding", {
     value = c(10, 20, 30)
   )
   
-  result <- gwArsenicR:::format_ids_func(df, "id")
+  result <- geoExposeR:::format_ids_func(df, "id")
   
   # Check that IDs are converted to character without padding
   expect_equal(result$id, c("6001001234", "6001005678", "12345678901"))
@@ -4949,7 +4949,7 @@ test_that("format_ids_func preserves alphanumeric IDs unchanged", {
     stringsAsFactors = FALSE
   )
   
-  result <- gwArsenicR:::format_ids_func(df, "id")
+  result <- geoExposeR:::format_ids_func(df, "id")
   
   # Check that IDs are unchanged
   expect_equal(result$id, c("PTD001", "PTD002", "CA-001", "NV-123"))
@@ -4963,7 +4963,7 @@ test_that("format_ids_func handles NA values correctly", {
     value = c(10, 20, 30, 40, 50)
   )
   
-  result <- gwArsenicR:::format_ids_func(df, "id")
+  result <- geoExposeR:::format_ids_func(df, "id")
   
   # Check that non-NA values are formatted correctly
   # Note: sprintf converts NA to "   NA" string, not actual NA
@@ -4981,7 +4981,7 @@ test_that("format_ids_func handles mixed character IDs", {
     stringsAsFactors = FALSE
   )
   
-  result <- gwArsenicR:::format_ids_func(df, "id")
+  result <- geoExposeR:::format_ids_func(df, "id")
   
   # Check that character IDs are preserved
   expect_equal(result$id, c("06001", "06002", "ABC123"))
@@ -4995,7 +4995,7 @@ test_that("format_ids_func handles edge case of exactly 99999", {
     value = c(10, 20)
   )
   
-  result <- gwArsenicR:::format_ids_func(df, "id")
+  result <- geoExposeR:::format_ids_func(df, "id")
   
   # 99999 should be padded (within FIPS range)
   # 100000 is outside range so whole vector gets as.character() treatment
@@ -5011,7 +5011,7 @@ test_that("format_ids_func handles decimal numbers as non-FIPS", {
     value = c(10, 20, 30)
   )
   
-  result <- gwArsenicR:::format_ids_func(df, "id")
+  result <- geoExposeR:::format_ids_func(df, "id")
   
   # Decimals should be converted to character without padding
   expect_equal(result$id, c("1.5", "2.7", "3"))
@@ -5021,7 +5021,7 @@ test_that("format_ids_func handles decimal numbers as non-FIPS", {
 test_that("format_ids_func handles single row data frame", {
   df <- data.frame(id = 6001, value = 10)
   
-  result <- gwArsenicR:::format_ids_func(df, "id")
+  result <- geoExposeR:::format_ids_func(df, "id")
   
   expect_equal(result$id, "06001")
 })
@@ -5029,7 +5029,7 @@ test_that("format_ids_func handles single row data frame", {
 test_that("format_ids_func handles empty data frame", {
   df <- data.frame(id = numeric(0), value = numeric(0))
   
-  result <- gwArsenicR:::format_ids_func(df, "id")
+  result <- geoExposeR:::format_ids_func(df, "id")
   
   expect_equal(nrow(result), 0)
   expect_type(result$id, "character")
@@ -5111,7 +5111,7 @@ test_that("load_and_process_arsenic_data respects format_ids parameter", {
   dummy_files <- create_dummy_data(file_dir = temp_dir)
   
   # Test with format_ids = TRUE
-  result_formatted <- gwArsenicR:::load_and_process_arsenic_data(
+  result_formatted <- geoExposeR:::load_and_process_arsenic_data(
     as_usgs_prob_csv = dummy_files$usgs,
     as_epa_prob_csv = dummy_files$epa,
     as_conc_cols = c("RFC3_C1v2", "RFC3_C2v2", "RFC3_C3v2"),
@@ -5127,7 +5127,7 @@ test_that("load_and_process_arsenic_data respects format_ids parameter", {
   )
   
   # Test with format_ids = FALSE
-  result_unformatted <- gwArsenicR:::load_and_process_arsenic_data(
+  result_unformatted <- geoExposeR:::load_and_process_arsenic_data(
     as_usgs_prob_csv = dummy_files$usgs,
     as_epa_prob_csv = dummy_files$epa,
     as_conc_cols = c("RFC3_C1v2", "RFC3_C2v2", "RFC3_C3v2"),
@@ -5171,7 +5171,7 @@ test_that("load_and_process_birth_data respects format_ids parameter", {
   data.table::fwrite(birth_data, birth_file, sep = "\t")
   
   # Test with format_ids = TRUE
-  result_formatted <- gwArsenicR:::load_and_process_birth_data(
+  result_formatted <- geoExposeR:::load_and_process_birth_data(
     birth_data_txt = birth_file,
     columns_to_select = NULL,
     rucc_col = NULL,
@@ -5180,7 +5180,7 @@ test_that("load_and_process_birth_data respects format_ids parameter", {
   )
   
   # Test with format_ids = FALSE
-  result_unformatted <- gwArsenicR:::load_and_process_birth_data(
+  result_unformatted <- geoExposeR:::load_and_process_birth_data(
     birth_data_txt = birth_file,
     columns_to_select = NULL,
     rucc_col = NULL,
@@ -5216,7 +5216,7 @@ test_that("format_ids parameter handles alphanumeric IDs correctly", {
   data.table::fwrite(birth_data, birth_file, sep = "\t")
   
   # Test with format_ids = TRUE (should preserve alphanumeric)
-  result <- gwArsenicR:::load_and_process_birth_data(
+  result <- geoExposeR:::load_and_process_birth_data(
     birth_data_txt = birth_file,
     columns_to_select = NULL,
     rucc_col = NULL,
@@ -5238,39 +5238,39 @@ test_that("format_ids parameter handles alphanumeric IDs correctly", {
 test_that("validate_usgs_columns_param handles edge cases", {
   # Test non-character input
   expect_error(
-    gwArsenicR:::validate_usgs_columns_param(123),
+    geoExposeR:::validate_usgs_columns_param(123),
     "usgs_columns must be a character vector"
   )
   
   # Test empty vector
   expect_error(
-    gwArsenicR:::validate_usgs_columns_param(character(0)),
+    geoExposeR:::validate_usgs_columns_param(character(0)),
     "usgs_columns cannot be empty"
   )
   
   # Test NA values
   expect_error(
-    gwArsenicR:::validate_usgs_columns_param(c("col1", NA)),
+    geoExposeR:::validate_usgs_columns_param(c("col1", NA)),
     "usgs_columns cannot contain NA or empty strings"
   )
   
   # Test empty strings
   expect_error(
-    gwArsenicR:::validate_usgs_columns_param(c("col1", "")),
+    geoExposeR:::validate_usgs_columns_param(c("col1", "")),
     "usgs_columns cannot contain NA or empty strings"
   )
   
   # Test duplicate column names
   expect_error(
-    gwArsenicR:::validate_usgs_columns_param(c("col1", "col1")),
+    geoExposeR:::validate_usgs_columns_param(c("col1", "col1")),
     "usgs_columns cannot contain duplicate column names"
   )
   
   # Test NULL (should pass silently)
-  expect_silent(gwArsenicR:::validate_usgs_columns_param(NULL))
+  expect_silent(geoExposeR:::validate_usgs_columns_param(NULL))
   
   # Test valid input
-  expect_silent(gwArsenicR:::validate_usgs_columns_param(c("col1", "col2")))
+  expect_silent(geoExposeR:::validate_usgs_columns_param(c("col1", "col2")))
 })
 
 test_that("validate_epa_sd_values handles non-finite and non-positive values", {
@@ -5288,7 +5288,7 @@ test_that("validate_epa_sd_values handles non-finite and non-positive values", {
   data.table::fwrite(epa_data_inf, epa_file_inf)
   
   expect_error(
-    gwArsenicR:::validate_epa_sd_values(epa_file_inf, "EPA_AS_sdlog"),
+    geoExposeR:::validate_epa_sd_values(epa_file_inf, "EPA_AS_sdlog"),
     "must contain only finite numeric values"
   )
   
@@ -5303,7 +5303,7 @@ test_that("validate_epa_sd_values handles non-finite and non-positive values", {
   data.table::fwrite(epa_data_neg, epa_file_neg)
   
   expect_error(
-    gwArsenicR:::validate_epa_sd_values(epa_file_neg, "EPA_AS_sdlog"),
+    geoExposeR:::validate_epa_sd_values(epa_file_neg, "EPA_AS_sdlog"),
     "must contain only positive values"
   )
   
@@ -5325,7 +5325,7 @@ test_that("validate_epa_lognormal_input handles missing columns", {
   
   # Test missing meanlog without concentration column
   expect_error(
-    gwArsenicR:::validate_epa_lognormal_input(
+    geoExposeR:::validate_epa_lognormal_input(
       epa_file, "EPA_AS_meanlog", "EPA_AS_sdlog", NULL
     ),
     "not found in data"
@@ -5333,7 +5333,7 @@ test_that("validate_epa_lognormal_input handles missing columns", {
   
   # Test with non-existent concentration column
   expect_error(
-    gwArsenicR:::validate_epa_lognormal_input(
+    geoExposeR:::validate_epa_lognormal_input(
       epa_file, "EPA_AS_meanlog", "EPA_AS_sdlog", "arsenic_conc"
     ),
     "not found in the data"
@@ -5378,7 +5378,7 @@ test_that("validate_file_contents handles file read errors", {
   
   # Test that valid files pass validation
   expect_silent(
-    gwArsenicR:::validate_file_contents(
+    geoExposeR:::validate_file_contents(
       birth_data_txt = birth_file,
       as_usgs_prob_csv = usgs_file,
       as_epa_prob_csv = epa_file,
@@ -5414,7 +5414,7 @@ test_that("calculate_epa_lognormal_params handles missing epa_as_conc_col", {
   datmatx_epa <- data.table::fread(epa_file)
   
   # Test with valid concentration column (auto-conversion)
-  result <- gwArsenicR:::calculate_epa_lognormal_params(
+  result <- geoExposeR:::calculate_epa_lognormal_params(
     datmatx_epa = data.table::copy(datmatx_epa),  # Use copy to avoid modifying original
     epa_as_mean_col = "EPA_AS_meanlog",
     epa_as_sd_col = "EPA_AS_sdlog",
@@ -5428,7 +5428,7 @@ test_that("calculate_epa_lognormal_params handles missing epa_as_conc_col", {
   # Test error when concentration column doesn't exist (reload fresh data)
   datmatx_epa_fresh <- data.table::fread(epa_file)
   expect_error(
-    gwArsenicR:::calculate_epa_lognormal_params(
+    geoExposeR:::calculate_epa_lognormal_params(
       datmatx_epa = datmatx_epa_fresh,
       epa_as_mean_col = "EPA_AS_meanlog",
       epa_as_sd_col = "EPA_AS_sdlog",
@@ -5445,7 +5445,7 @@ test_that("calculate_epa_lognormal_params handles missing epa_as_conc_col", {
   ))
   
   expect_error(
-    gwArsenicR:::calculate_epa_lognormal_params(
+    geoExposeR:::calculate_epa_lognormal_params(
       datmatx_epa = epa_data_no_cols,
       epa_as_mean_col = "EPA_AS_meanlog",
       epa_as_sd_col = "EPA_AS_sdlog",
@@ -5464,7 +5464,7 @@ test_that("impute_arsenic_exposure handles edge cases", {
 
   # The edge cases (single cell per county, NA weights) are covered by integration tests
   # Here we just verify the function exists and has correct signature
-  expect_true(is.function(gwArsenicR:::impute_arsenic_exposure))
+  expect_true(is.function(geoExposeR:::impute_arsenic_exposure))
 })
 
 test_that("impute_additional_variables handles no MICE covariates", {
@@ -5482,7 +5482,7 @@ test_that("impute_additional_variables handles no MICE covariates", {
   
   # Should produce a warning about no MICE covariates
   expect_warning(
-    gwArsenicR:::impute_additional_variables(
+    geoExposeR:::impute_additional_variables(
       imputed_datasets = imputed_datasets,
       impute_vars = "var_to_impute",
       births = births,
@@ -5513,7 +5513,7 @@ test_that("regression_analysis handles case with insufficient factor levels", {
   
   # Should produce error about contrasts (only one factor level present)
   expect_error(
-    gwArsenicR:::regression_analysis(
+    geoExposeR:::regression_analysis(
       births = births_data,
       targets = "BWT",
       as_cat_label = c("As5-10", "As10+"),  # Non-reference categories
@@ -5545,7 +5545,7 @@ test_that("pool_estimates_by_term handles missing terms", {
   mock_model <- lme4::lmer(y ~ x + (1|group), data = mock_data)
   
   # Pool with both As5-10 and As10+ (one missing)
-  result <- gwArsenicR:::pool_estimates_by_term(
+  result <- geoExposeR:::pool_estimates_by_term(
     combined_results = combined_results,
     arsenic_terms = c("As5-10", "As10+"),  # As10+ not in combined_results
     reference_model = mock_model
@@ -5561,7 +5561,7 @@ test_that("pool_single_estimate handles edge case with zero between-imputation v
   estimates <- rep(0.5, 5)  # Identical estimates
   std_errors <- rep(0.1, 5)   # Identical SE values
   
-  result <- gwArsenicR:::pool_single_estimate(
+  result <- geoExposeR:::pool_single_estimate(
     estimates = estimates,
     std_errors = std_errors,
     df = 100
@@ -5602,7 +5602,7 @@ test_that("validate_prepared_inputs handles unreadable health file", {
   writeLines(c("malformed data without proper columns", "just random text"), health_file)
   
   # Should handle the read error gracefully
-  result <- gwArsenicR::validate_prepared_inputs(
+  result <- geoExposeR::validate_prepared_inputs(
     usgs_file = usgs_file,
     epa_file = epa_file,
     health_file = health_file
@@ -5643,7 +5643,7 @@ test_that("prepare_usgs_data handles less than 2 probability rasters", {
   # Test with single raster (should error)
   expect_error(
     suppressWarnings(
-      gwArsenicR::prepare_usgs_data(
+      geoExposeR::prepare_usgs_data(
         prob_rasters = list(gt5 = raster_file),
         boundaries = boundaries,
         id_col = "GEOID"
@@ -5673,7 +5673,7 @@ test_that("regression_analysis handles no arsenic terms in results", {
   
   # This should run successfully (and cover lines 78-82 when arsenic terms exist)
   result <- suppressWarnings(
-    gwArsenicR:::regression_analysis(
+    geoExposeR:::regression_analysis(
       births = births_data,
       targets = "BWT",
       as_cat_label = c("As5-10", "As10+"),
@@ -5705,7 +5705,7 @@ test_that("pool_estimates_by_term handles df extraction error", {
   
   # Should produce warning about degrees of freedom and use Inf
   expect_warning(
-    gwArsenicR:::pool_estimates_by_term(
+    geoExposeR:::pool_estimates_by_term(
       combined_results = combined_results,
       arsenic_terms = c("As5-10"),
       reference_model = mock_model
@@ -5746,7 +5746,7 @@ test_that("validate_file_contents detects missing columns", {
   
   # Should error due to missing USGS columns
   expect_error(
-    gwArsenicR:::validate_file_contents(
+    geoExposeR:::validate_file_contents(
       birth_data_txt = birth_file,
       as_usgs_prob_csv = usgs_file,
       as_epa_prob_csv = epa_file,
@@ -5796,7 +5796,7 @@ test_that("validate_prepared_inputs handles health file read error path", {
   health_file <- file.path(temp_dir, "nonexistent.txt")
   
   # Should handle missing file
-  result <- gwArsenicR::validate_prepared_inputs(
+  result <- geoExposeR::validate_prepared_inputs(
     usgs_file = usgs_file,
     epa_file = epa_file,
     health_file = health_file
@@ -5813,7 +5813,7 @@ test_that("validate_prepared_inputs handles health file read error path", {
 test_that("validate_epa_lognormal_input handles NULL and invalid files", {
   # Test with NULL
   expect_silent(
-    gwArsenicR:::validate_epa_lognormal_input(
+    geoExposeR:::validate_epa_lognormal_input(
       as_epa_prob_csv = NULL,
       epa_as_mean_col = "EPA_AS_meanlog",
       epa_as_sd_col = "EPA_AS_sdlog",
@@ -5823,7 +5823,7 @@ test_that("validate_epa_lognormal_input handles NULL and invalid files", {
   
   # Test with non-existent file
   expect_silent(
-    gwArsenicR:::validate_epa_lognormal_input(
+    geoExposeR:::validate_epa_lognormal_input(
       as_epa_prob_csv = "/nonexistent/path/file.csv",
       epa_as_mean_col = "EPA_AS_meanlog",
       epa_as_sd_col = "EPA_AS_sdlog",
@@ -5836,7 +5836,7 @@ test_that("validate_epa_lognormal_input handles NULL and invalid files", {
 test_that("impute_arsenic_exposure handles county not in lookup", {
   # This edge case is covered implicitly through integration tests
   # The function handles counties with no matching cells by skipping them
-  expect_true(is.function(gwArsenicR:::impute_arsenic_exposure))
+  expect_true(is.function(geoExposeR:::impute_arsenic_exposure))
 })
 
 # Test impute_arsenic_exposure with mismatched county IDs
@@ -5861,7 +5861,7 @@ test_that("impute_arsenic_exposure skips counties not in lookup", {
   
   # Run imputation - the 01003 county should be skipped
   # but since county_id_list comes from datmatx_usgs, this won't trigger the next
-  result <- gwArsenicR:::impute_arsenic_exposure(
+  result <- geoExposeR:::impute_arsenic_exposure(
     datmatx_usgs = datmatx_usgs,
     rasterprob_combined = rasterprob_combined,
     cellpop = cellpop,
@@ -5889,7 +5889,7 @@ test_that("get_file_columns rejects unsupported file format", {
   
   # Should error on unsupported format
   expect_error(
-    gwArsenicR:::get_file_columns(bad_file),
+    geoExposeR:::get_file_columns(bad_file),
     "Unsupported file format"
   )
   
@@ -5914,7 +5914,7 @@ test_that("validate_epa_sd_values returns when column not in file", {
   
   # Should return silently when column doesn't exist
   expect_silent(
-    gwArsenicR:::validate_epa_sd_values(
+    geoExposeR:::validate_epa_sd_values(
       as_epa_prob_csv = epa_file,
       epa_as_sd_col = "EPA_AS_sdlog"
     )
@@ -5941,7 +5941,7 @@ test_that("validate_epa_sd_values warns on NA values", {
   
   # Should warn about NA values
   expect_warning(
-    gwArsenicR:::validate_epa_sd_values(
+    geoExposeR:::validate_epa_sd_values(
       as_epa_prob_csv = epa_file,
       epa_as_sd_col = "EPA_AS_sdlog"
     ),
@@ -5986,7 +5986,7 @@ test_that("validate_file_contents uses concentration column when no meanlog", {
   
   # Should pass when using concentration column
   expect_silent(
-    gwArsenicR:::validate_file_contents(
+    geoExposeR:::validate_file_contents(
       birth_data_txt = birth_file,
       as_usgs_prob_csv = usgs_file,
       as_epa_prob_csv = epa_file,
@@ -6036,7 +6036,7 @@ test_that("validate_prepared_inputs handles health file read error", {
   dir.create(health_file)  # This is a directory, not a file
   
   # Should return valid = FALSE with issue message about not being able to read
-  result <- gwArsenicR::validate_prepared_inputs(
+  result <- geoExposeR::validate_prepared_inputs(
     usgs_file = usgs_file,
     epa_file = epa_file,
     health_file = health_file
@@ -6069,7 +6069,7 @@ test_that("regression_analysis warns when no arsenic terms in results", {
   # This should warn about no arsenic terms because we're asking for "As10+" and "As20+"
   # but the data only has "As<5" and "As5-10"
   result <- suppressWarnings(
-    gwArsenicR:::regression_analysis(
+    geoExposeR:::regression_analysis(
       births = births_data,
       targets = "BWT",
       as_cat_label = c("As10+", "As20+"),  # Terms that won't exist
@@ -6120,7 +6120,7 @@ test_that("impute_additional_variables warns on insufficient MICE variables", {
   # This should produce no warning since we have 2 columns (MVAR + cov1)
   # The warning is for < 2 columns, which is hard to trigger
   result <- suppressWarnings(
-    gwArsenicR:::impute_additional_variables(
+    geoExposeR:::impute_additional_variables(
       imputed_datasets = imputed_datasets2,
       impute_vars = "MVAR",
       births = births_data2,

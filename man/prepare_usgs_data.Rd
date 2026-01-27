@@ -53,7 +53,7 @@ probabilities for each arsenic category.
 \description{
 Extracts arsenic concentration probabilities from USGS GeoTIFF rasters
 and aggregates them by geographic unit (e.g., county) to create the
-CSV format required by gwArsenicR.
+CSV format required by geoExposeR.
 }
 \details{
 The function converts exceedance probabilities (P(As > threshold)) to

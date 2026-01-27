@@ -1,5 +1,5 @@
-Package: gwArsenicR
-Title: An R package for modeling health effects of drinking water arsenic exposure
+Package: geoExposeR
+Title: An R Package for Modeling Health Effects of Environmental Exposures
 Version: 1.0.0
 Authors@R: c(
        person(given = "Sayantan",
@@ -33,8 +33,8 @@ License: CC0
 Encoding: UTF-8
 Roxygen: list(markdown = TRUE)
 RoxygenNote: 7.3.3
-URL: https://envirohealth.code-pages.usgs.gov/gwArsenicR/
-BugReports: https://code.usgs.gov/envirohealth/gwArsenicR/-/issues
+URL: https://envirohealth.code-pages.usgs.gov/geoExposeR/
+BugReports: https://code.usgs.gov/envirohealth/geoExposeR/-/issues
 Imports:
     Amelia,
     data.table,

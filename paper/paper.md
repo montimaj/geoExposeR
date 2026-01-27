@@ -1,9 +1,9 @@
 ---
-title: 'gwArsenicR: An R package for modeling health effects of drinking water arsenic exposure'
+title: 'geoExposeR: An R package for modeling health effects of environmental exposures'
 tags:
   - R
-  - arsenic
-  - groundwater
+  - contaminants
+  - pollutants
   - epidemiology
   - environmental health
   - multiple imputation
@@ -39,37 +39,43 @@ affiliations:
     index: 4
   - name: Division of Occupational, Environmental, and Climate Medicine, Department of Medicine, University of California, San Francisco, CA, USA
     index: 5
-date: 17 January 2026
+date: 27 January 2026
 bibliography: paper.bib
 ---
 
 # Summary
 
-gwArsenicR is an R package [@R-base] that provides a streamlined workflow for epidemiologists and public health researchers to estimate arsenic exposure from private and public well water and to assess its association with various health outcomes. The package implements a sophisticated statistical approach that combines geospatial arsenic prediction models with a multiple imputation framework to account for exposure uncertainty. The core functionality integrates predicted arsenic concentration probabilities from U.S. Geological Survey (USGS) models for private wells [@Lombard-USGS-2021] with U.S. Environmental Protection Agency (EPA) data for public water systems. It then uses a weighting scheme based on the proportion of the population served by each water source [@Johnson-USGS-2019] to create a unified, county-level exposure probability distribution. By encapsulating these complex methodologies into a single, user-friendly function, gwArsenicR makes this type of analysis more accessible, reproducible, and standardized. While designed for drinking water arsenic exposure assessments, the underlying statistical framework is broadly applicable to other environmental contaminants, such as nitrate, uranium, manganese, per- and polyfluoroalkyl substances (PFAS), or air pollutants like particulate matter (PM~2.5~), where spatially-predicted exposure probabilities and health outcome data are available.
+geoExposeR is an R package [@R-base] that provides a streamlined workflow for epidemiologists and public health researchers to assess associations between environmental exposures and health outcomes while properly accounting for exposure uncertainty. The package implements a statistical framework that combines probabilistic exposure estimates from multiple data sources using population-weighted integration, performs multiple imputation to propagate exposure uncertainty through the analysis, fits mixed-effects regression models to health data, and pools results using Rubin's Rules [@Rubin-1987]. The package was originally developed for drinking water arsenic exposure assessment, integrating predicted arsenic concentration probabilities from U.S. Geological Survey (USGS) machine learning models for private wells [@Lombard-USGS-2021] with U.S. Environmental Protection Agency (EPA) data for public water systems. A weighting scheme based on private well usage [@Johnson-USGS-2019] creates unified exposure probability distributions at any geographic scale (e.g., county, census tract, or individual level). However, the underlying statistical framework is broadly applicable to other environmental contaminants—including nitrate, uranium, manganese, and per- and polyfluoroalkyl substances (PFAS)—as well as air pollutants like particulate matter (PM2.5), wherever probabilistic exposure estimates and health outcome data are available. By encapsulating complex data integration, imputation, and regression methodologies into user-friendly functions, geoExposeR makes rigorous environmental health research more accessible, reproducible, and standardized.
 
 # Statement of Need
 
-Chronic exposure to arsenic in drinking water is a significant public health problem, linked to a range of adverse health outcomes. Assessing this risk is challenging, particularly for the estimated 40 million Americans who rely on unregulated private wells [@DeSimone-2015]. Foundational studies by @Bulka-2022 and @Lombard-2021 have established robust methodologies for this purpose, but their implementation requires specialized expertise in data integration, statistical modeling, and computational methods. This presents a significant barrier for many environmental health researchers who may lack the necessary programming skills to replicate or adapt these complex analyses.
+Environmental epidemiologists face a fundamental challenge: exposure to environmental contaminants is rarely measured directly for study participants. Instead, researchers must estimate exposures using predictive models, monitoring data, or biomarkers—each with inherent uncertainty. Failing to account for this uncertainty can lead to biased effect estimates and misleading conclusions about health risks.
 
-gwArsenicR directly addresses this need by packaging the entire analytical pipeline into an easy-to-use R function. It automates the process of:
+This challenge is particularly acute for drinking water contaminants like arsenic, where an estimated 40 million Americans rely on unregulated private wells [@DeSimone-2014]. Foundational studies by @Bulka-2022 and @Lombard-2021 developed sophisticated methods to address exposure uncertainty by combining USGS machine learning predictions with EPA monitoring data through population-weighted integration and multiple imputation. However, implementing these methods requires specialized expertise in geospatial analysis, statistical modeling, and R programming—presenting a significant barrier for many researchers.
 
-1. Converting lognormal EPA arsenic data to a multinomial distribution.
-2. Combining USGS and EPA models based on population-use weights.
-3. Performing multiple imputation to manage exposure uncertainty.
-4. Fitting mixed-effects regression models to health data.
-5. Pooling results according to Rubin's Rules [@Rubin-1987].
+geoExposeR directly addresses this need by packaging the complete analytical pipeline into accessible R functions. The package automates:
 
-By providing this accessible tool, gwArsenicR lowers the barrier to entry for conducting high-quality research on the health impacts of groundwater contaminants, promoting reproducibility and wider application of these state-of-the-art methods in environmental epidemiology.
+1. Integration of probabilistic exposure estimates from multiple data sources
+2. Population-weighted combination of exposure probabilities
+3. Multiple imputation to propagate exposure uncertainty
+4. Mixed-effects regression modeling with proper clustering adjustment
+5. Result pooling via Rubin's Rules [@Rubin-1987] with appropriate variance estimation
+
+Beyond arsenic, researchers studying other environmental exposures face similar methodological challenges. The package includes worked examples for nitrate (infant methemoglobinemia), uranium (kidney function), and PM2.5 (respiratory outcomes), demonstrating how the framework generalizes to other contaminants and health endpoints.
+
+By lowering technical barriers to rigorous uncertainty quantification, geoExposeR promotes reproducibility and enables wider application of state-of-the-art methods in environmental epidemiology.
+
 
 # Design and Implementation
 
-\autoref{fig:workflow} illustrates the complete analytical workflow implemented in gwArsenicR. The pipeline begins with four primary input data sources: USGS arsenic probability rasters [@Lombard-USGS-2021], EPA public water system data, private well population estimates [@Johnson-USGS-2019], and health outcome data. These inputs flow through a data ingestion stage that leverages geospatial packages (terra, sf, exactextractr) [@terra-2024; @sf-2024; @exactextractr-2024] for raster extraction and data.table [@data.table-2025] for efficient data manipulation. The probability integration stage converts EPA lognormal parameters to multinomial distributions compatible with USGS probability categories, then creates population-weighted probability matrices reflecting actual water source usage. Multiple imputation generates replicate datasets with probabilistically assigned arsenic exposure levels, with optional Multivariate Imputation by Chained Equations (MICE) imputation [@mice-2011] for missing covariates. Finally, mixed-effects regression models [@lme4-2015] are fit to each imputed dataset and results are pooled according to Rubin's Rules to produce final estimates with proper uncertainty quantification.
-
-![gwArsenicR analytical workflow showing the data processing pipeline from input sources through statistical modeling to pooled estimates. Packages used at each stage are indicated in brackets. Pooled estimates include regression coefficients ($\beta$), standard errors (SE), 95% confidence intervals (CI), and p-values, all computed using Rubin's Rules to properly account for imputation uncertainty. \label{fig:workflow}](workflow.png)
+In this section, we use drinking water arsenic exposure as the primary example, as this represents the motivating use case for which geoExposeR was originally developed. However, the underlying statistical framework is general: "USGS data" can be any source of multinomial exposure probabilities (e.g., satellite-derived PM2.5 predictions, modeled groundwater nitrate concentrations), "EPA data" can be any source of continuous exposure distributions (e.g., air quality monitoring stations, public water system measurements), and the population weighting scheme can accommodate any scenario where exposures are estimated from multiple complementary data sources. Users adapting the framework to other contaminants should interpret the arsenic-specific terminology accordingly.
 
 ## Methods
 
-The gwArsenicR package implements the following analytical workflow:
+\autoref{fig:workflow} illustrates the complete analytical workflow implemented in geoExposeR. The pipeline begins with four primary input data sources: USGS arsenic probability rasters [@Lombard-USGS-2021], EPA public water system arsenic concentrations, the estimated population within a county that is reliant on private wells for drinking water [@Johnson-USGS-2019], and health outcome data. These inputs flow through a data ingestion stage that leverages geospatial packages (terra, sf, exactextractr) [@terra-2024; @sf-2024; @exactextractr-2024] for raster extraction and data.table [@data.table-2025] for efficient data manipulation. The probability integration stage converts EPA lognormal parameters describing arsenic concentration distributions to multinomial distributions compatible with USGS probability categories, then creates population-weighted probability matrices reflecting actual water source (private or public) usage. If the EPA data includes raw arsenic concentrations rather than lognormal parameters, the package automatically converts these to a lognormal distribution using a default standard deviation of 1.0 unless the user specifies a different standard deviation value. Next, multiple imputation generates replicate datasets with probabilistically assigned arsenic exposure levels, with optional Multivariate Imputation by Chained Equations (MICE) [@mice-2011] for missing covariates. Finally, mixed-effects regression models [@lme4-2015] are fit to each imputed dataset and the results are pooled according to Rubin's Rules to produce final estimates with proper uncertainty quantification. The complete step-by-step workflow is as follows:
+
+![geoExposeR analytical workflow showing the data processing pipeline from input sources through statistical modeling to pooled estimates. Packages used at each stage are indicated in brackets. Pooled estimates include regression coefficients ($\beta$), standard errors (SE), 95% confidence intervals (CI), and p-values, all computed using Rubin's Rules to properly account for imputation uncertainty. \label{fig:workflow}](workflow.png)
+
 
 ### Step 1: Data Ingestion and Validation
 
@@ -135,9 +141,9 @@ The package returns pooled regression coefficients ($\beta$), standard errors, 9
 
 ## Software Architecture
 
-gwArsenicR follows a modular design philosophy centered around the main exported function `perform_sensitivity_analysis()`, which orchestrates the complete analytical workflow. The package architecture consists of six main modules:
+geoExposeR follows a modular design philosophy centered around the main exported function `perform_sensitivity_analysis()`, which orchestrates the complete analytical workflow. The package architecture consists of six main modules:
 
-* **Main Analysis Module** (`gwArsenic.R`): Contains the primary `perform_sensitivity_analysis()` function that orchestrates the complete workflow.
+* **Main Analysis Module** (`geoExposeR.R`): Contains the primary `perform_sensitivity_analysis()` function that orchestrates the complete workflow.
 * **Data Ingestion Module** (`data-ingestion.R`): Provides six exported functions for preparing input data from raw sources, including USGS raster extraction, EPA data processing, and health data formatting.
 * **Data Loading Module** (`data-loading.R`): Handles import and preprocessing of USGS probability data, EPA lognormal parameters, and health outcome datasets with comprehensive input validation.
 * **Imputation Module** (`imputation.R`): Implements multiple imputation for arsenic exposure levels and optional MICE [@mice-2011] imputation for missing covariates.
@@ -148,7 +154,7 @@ gwArsenicR follows a modular design philosophy centered around the main exported
 
 **Flexible Data Integration**: The package accommodates the different probability structures of USGS and EPA data by converting EPA lognormal parameters to multinomial probabilities compatible with USGS discrete probability categories. Population-weighted averaging creates unified exposure probability distributions that reflect the actual water source usage patterns in each geographic area. The package supports any geographic identifier format—including county FIPS codes, census tract IDs, ZIP codes, or even participant-specific identifiers—enabling applications at multiple spatial scales. Smart identifier formatting (enabled by default via `format_ids = TRUE`) automatically detects ID types: numeric FIPS-like codes (1-5 digits) receive zero-padding for consistency, while alphanumeric identifiers (e.g., census tracts, participant IDs) are preserved unchanged. This feature can be disabled with `format_ids = FALSE`.
 
-**Automatic EPA Parameter Calculation**: For users who have raw arsenic concentration data instead of pre-calculated lognormal parameters, gwArsenicR can automatically compute meanlog and sdlog values. By specifying the `epa_as_conc_col` parameter, the package applies the transformation `meanlog = log(concentration + 0.1)` with a configurable `epa_default_sdlog` (default: 1.0), eliminating the need for manual preprocessing.
+**Automatic EPA Parameter Calculation**: For users who have raw arsenic concentration data instead of pre-calculated lognormal parameters, geoExposeR can automatically compute meanlog and sdlog values. By specifying the `epa_as_conc_col` parameter, the package applies the transformation `meanlog = log(concentration + 0.1)` with a configurable `epa_default_sdlog` (default: 1.0), eliminating the need for manual preprocessing.
 
 **Comprehensive Data Ingestion Pipeline**: The package exports seven functions total—one main analysis function and six data preparation functions:
 
@@ -160,7 +166,7 @@ gwArsenicR follows a modular design philosophy centered around the main exported
 * `subset_by_geography()`: Filters datasets by state FIPS codes, specific geographic IDs, or pattern matching.
 * `validate_prepared_inputs()`: Validates all prepared datasets for consistency, checking column alignment and identifier matching before analysis.
 
-**Robust Multiple Imputation**: gwArsenicR implements a two-stage imputation strategy. First, it performs probabilistic assignment of arsenic exposure categories based on the integrated probability distributions. Second, it optionally implements MICE [@mice-2011] for missing demographic and health covariates, ensuring that all sources of uncertainty are properly propagated through the analysis.
+**Robust Multiple Imputation**: geoExposeR implements a two-stage imputation strategy. First, it performs probabilistic assignment of arsenic exposure categories based on the integrated probability distributions. Second, it optionally implements MICE [@mice-2011] for missing demographic and health covariates, ensuring that all sources of uncertainty are properly propagated through the analysis.
 
 **Hierarchical Modeling**: The package leverages lme4 [@lme4-2015] to fit linear mixed-effects models that account for the hierarchical structure typical of population health data (e.g., individuals nested within counties, counties within states). This approach provides more accurate standard errors and better accounts for geographic clustering.
 
@@ -168,34 +174,43 @@ gwArsenicR follows a modular design philosophy centered around the main exported
 
 **Performance Optimization**: The package uses data.table [@data.table-2025] for efficient handling of large datasets and implements vectorized operations for probability calculations, making it practical for national-scale epidemiological studies.
 
-**Quality Assurance**: gwArsenicR includes comprehensive testing with 476 tests achieving 100% code coverage, automated continuous integration across multiple R versions and operating systems (macOS, Ubuntu, Windows), and extensive input validation to prevent common user errors.
+**Quality Assurance**: geoExposeR includes comprehensive testing with 476 tests achieving 100% code coverage, automated continuous integration across multiple R versions and operating systems (macOS, Ubuntu, Windows), and extensive input validation to prevent common user errors.
 
-# Research Enabled by gwArsenicR
+# Research Enabled by geoExposeR
 
-By simplifying a complex analytical workflow, gwArsenicR can accelerate and broaden the scope of research in environmental health. The package enables researchers to:
+By simplifying a complex analytical workflow, geoExposeR can accelerate and broaden the scope of research in environmental health. The package enables researchers to:
 
-* **Rapidly Test Hypotheses**: Easily investigate the health effects of arsenic exposure on a wide range of outcomes, such as birth weight, gestational age, cancer incidence, or cardiovascular disease, using large, nationally representative datasets.
-* **Conduct Subgroup Analyses**: Modify the regression formula to explore whether associations differ across specific subpopulations (e.g., by race/ethnicity, socioeconomic status, or geographic region), which can help identify vulnerable groups.
-* **Inform Public Health Policy**: Generate robust evidence that can inform policy decisions, such as establishing state-level guidelines for private well testing or targeting public health interventions in high-risk areas.
-* **Serve as a Methodological Template**: The package framework can be adapted to study other environmental contaminants where exposure data is uncertain and requires integration from multiple sources.
+* **Rapidly Test Hypotheses**: Investigate the health effects of environmental exposures on a wide range of outcomes—birth weight, gestational age, cancer incidence, cardiovascular disease, kidney function, respiratory health—using large, nationally representative datasets without extensive custom programming.
+* **Conduct Subgroup Analyses**: Modify the regression formula to explore whether associations differ across specific subpopulations (e.g., by race/ethnicity, socioeconomic status, or geographic region), helping identify vulnerable groups who may bear disproportionate exposure burdens.
+* **Perform Multi-Contaminant Studies**: Apply the same analytical framework across multiple environmental exposures (e.g., arsenic, nitrate, uranium, PM2.5) to compare effect sizes, identify co-exposure patterns, or prioritize contaminants for regulatory attention.
+* **Quantify Exposure Uncertainty**: Propagate uncertainty from probabilistic exposure models through regression analyses, providing confidence intervals that honestly reflect the limitations of indirect exposure assessment rather than treating estimated exposures as known values.
+* **Inform Public Health Policy**: Generate robust evidence that can inform policy decisions, such as establishing guidelines for private well testing, setting regulatory standards, or targeting public health interventions in high-risk areas.
 
-Ultimately, gwArsenicR empowers a wider research community to contribute to our understanding of the health risks posed by groundwater contaminants, fostering more timely and impactful science.
+Ultimately, geoExposeR empowers a wider research community to contribute to our understanding of the health risks posed by environmental contaminants, fostering more timely, rigorous, and reproducible science.
 
 # Broader Applicability
 
-While gwArsenicR is designed for arsenic exposure assessment, the underlying framework is scale-agnostic and contaminant-agnostic, making it adaptable to a wide range of environmental epidemiology applications. The package operates at any geographic scale—county, census tract, ZIP code, or even individual participant level—provided that identifiers match across input datasets. This flexibility enables analyses ranging from national-scale studies using county FIPS codes to fine-grained urban analyses using census tracts. Beyond arsenic, the core methodology can be applied to other groundwater contaminants (e.g., uranium, nitrate, manganese, PFAS), air quality exposures (e.g., PM2.5, ozone, wildfire smoke), or any environmental exposure assessment problem that shares similar characteristics: probabilistic exposure estimates from multiple data sources, population-weighted integration of those sources, and the need to propagate uncertainty through statistical inference. Users adapting the framework to new domains would prepare analogous probability and distributional parameter datasets for their contaminant of interest, modify the concentration cutoffs to match relevant exposure thresholds, and adjust the regression formula for appropriate health outcomes. By providing a generalizable template for integrating uncertain exposure data with health outcomes, gwArsenicR can serve as a foundation for rigorous, reproducible environmental health research across multiple domains.
+While geoExposeR is designed for arsenic exposure assessment, the underlying framework is scale-agnostic and contaminant-agnostic, making it adaptable to a wide range of environmental epidemiology applications. The package operates at any geographic scale—county, census tract, ZIP code, or even individual participant level—provided that identifiers match across input datasets. This flexibility enables analyses ranging from national-scale studies using county FIPS codes to fine-grained urban analyses using census tracts. Beyond arsenic, the core methodology can be applied to other groundwater contaminants (e.g., uranium, nitrate, manganese, PFAS), air quality exposures (e.g., PM2.5, ozone, wildfire smoke), or any environmental exposure assessment problem that shares similar characteristics: probabilistic exposure estimates from multiple data sources, population-weighted integration of those sources, and the need to propagate uncertainty through statistical inference.
+
+To demonstrate this broader applicability, the package includes three additional worked examples in the `examples/` directory with dummy datasets:
+
+* **Nitrate and infant methemoglobinemia** (`run_geoExposeR_nitrate.R`): Analyzes drinking water nitrate exposure using cutoffs of 5 and 10 mg/L NO3-N (EPA Maximum Contaminant Level [MCL] = 10 mg/L) and its association with infant methemoglobin levels [@EPA-DWR-2024].
+* **Uranium and kidney function** (`run_geoExposeR_uranium.R`): Assesses uranium nephrotoxicity using cutoffs of 15 and 30 µg/L (EPA MCL = 30 µg/L) with estimated glomerular filtration rate (eGFR) as the health outcome [@EPA-DWR-2024].
+* **PM2.5 air quality and respiratory function** (`run_geoExposeR_pm25.R`): Extends the framework beyond groundwater to air quality, using PM2.5 cutoffs of 9 and 35 µg/m³ (EPA annual standard = 9 µg/m³; 24-hour standard = 35 µg/m³) with FEV1 percent predicted (forced expiratory volume in 1 second as a percentage of the expected value for a healthy person of the same age, sex, and height) as the respiratory health outcome. This example demonstrates how the "USGS" and "EPA" data parameters can be reinterpreted as satellite/model predictions and ground monitoring data, respectively [@EPA-NAAQS-PM-2024].
+
+Users adapting the framework to new domains would prepare analogous probability and distributional parameter datasets for their contaminant of interest, modify the concentration cutoffs via `epa_cutoffs` to match relevant exposure thresholds (e.g., regulatory standards), customize category labels via `as_cat_label`, and adjust the regression formula for appropriate health outcomes. By providing a generalizable template for integrating uncertain exposure data with health outcomes, geoExposeR can serve as a foundation for rigorous, reproducible environmental health research across multiple domains.
 
 # Availability
 
-gwArsenicR is available on GitLab at https://code.usgs.gov/envirohealth/gwArsenicR under a CC0 1.0 Universal license. Comprehensive documentation, including a detailed vignette with worked examples and full API reference, is available at https://envirohealth.code-pages.usgs.gov/gwArsenicR/. The package requires R >= 4.4.0 and can be installed via:
+geoExposeR is available on GitLab at https://code.usgs.gov/envirohealth/geoExposeR under a CC0 1.0 Universal license. Comprehensive documentation, including a detailed vignette with worked examples and full API reference, is available at https://envirohealth.code-pages.usgs.gov/geoExposeR/. The package requires R >= 4.4.0 and can be installed via:
 
 ```r
 # Install remotes if not already installed
 install.packages("remotes")
 
-# Install gwArsenicR from GitLab (use a specific tag or branch)
+# Install geoExposeR from GitLab (use a specific tag or branch)
 remotes::install_gitlab(
-  repo = "envirohealth/gwArsenicR@v1.0.0",
+  repo = "envirohealth/geoExposeR@v1.0.0",
   host = "code.usgs.gov"
 )
 ```
@@ -205,7 +220,7 @@ remotes::install_gitlab(
 The following example demonstrates a basic analysis workflow:
 
 ```r
-library(gwArsenicR)
+library(geoExposeR)
 
 # Run sensitivity analysis with 5 imputed datasets
 results <- perform_sensitivity_analysis(
@@ -219,19 +234,19 @@ results <- perform_sensitivity_analysis(
   impute_vars = c("MAGE", "MRACE")
 )
 
-# Access pooled regression results
-results$pooled_results
+# Access pooled regression results for the first target
+results$BWT
 ```
 
-The package also provides data preparation functions for users starting with raw GeoTIFF rasters or unprocessed EPA data. Complete examples demonstrating the full data pipeline are available in the package vignette and the `examples/` directory on GitLab.
+The package also provides data preparation functions for users starting with raw GeoTIFF rasters or unprocessed EPA data. Complete examples demonstrating the full data pipeline, including additional examples for nitrate, uranium, and PM2.5 exposure assessments, are available in the package vignette and the `examples/` directory on GitLab.
 
 # Related Software
 
-While R provides excellent packages for multiple imputation [@mice-2011], mixed-effects modeling [@lme4-2015], and geospatial analysis [@terra-2024; @sf-2024], no existing package provides an integrated workflow specifically designed for arsenic exposure assessment that combines USGS and EPA data sources. General-purpose imputation packages like mice and Amelia [@Amelia-2011] handle missing data but do not address the domain-specific challenge of integrating probabilistic exposure estimates from multiple environmental models. Similarly, packages like exactextractr [@exactextractr-2024] provide efficient raster extraction but require substantial custom code to implement the full analytical pipeline described by @Bulka-2022 and @Lombard-2021. gwArsenicR fills this gap by providing a domain-specific solution that handles the unique data integration and uncertainty quantification challenges in groundwater contaminant epidemiology, reducing implementation time from weeks to hours.
+While R provides excellent packages for multiple imputation [@mice-2011], mixed-effects modeling [@lme4-2015], and geospatial analysis [@terra-2024; @sf-2024], no existing package provides an integrated workflow for environmental exposure assessment that combines geospatial probability models with public monitoring data. General-purpose imputation packages like mice and Amelia [@Amelia-2011] handle missing data but do not address the domain-specific challenge of integrating probabilistic exposure estimates from multiple environmental models. Similarly, packages like exactextractr [@exactextractr-2024] provide efficient raster extraction but require substantial custom code to implement the full analytical pipeline described by @Bulka-2022 and @Lombard-2021. geoExposeR fills this gap by providing a flexible framework that handles the unique data integration and uncertainty quantification challenges in environmental epidemiology, reducing implementation time from weeks to hours while being adaptable to diverse contaminants and exposure sources.
 
 # Limitations
 
-The current implementation has the following limitations that users should consider. First, the package is designed primarily for U.S.-based studies using USGS probability rasters and EPA public water system data; international applications would require adaptation of the data ingestion functions to accommodate different data formats and geographic coding systems. Second, the default analysis assumes arsenic exposure can be approximated at the county level using population-weighted averages; finer-scale exposure assessment (e.g., census tract or individual well level) is supported through flexible identifier handling but may require additional data preparation. Third, the mixed-effects regression framework assumes linear relationships; users investigating non-linear exposure-response relationships should consider extensions or post-hoc analyses. Finally, computational requirements scale with the number of imputed datasets and the size of the health outcome data; national-scale analyses with many imputations may require substantial memory and processing time.
+The current implementation has the following limitations that users should consider. First, while the package is designed to be flexible, the default workflows are optimized for U.S.-based studies; international applications may require adaptation of data ingestion functions to accommodate different data formats and geographic coding systems. Second, the default analysis assumes exposure can be approximated at the county or geographic unit level using population-weighted averages; finer-scale exposure assessment (e.g., census tract or individual level) is supported through flexible identifier handling but may require additional data preparation. Third, the mixed-effects regression framework assumes linear relationships between exposure categories and health outcomes; users investigating non-linear exposure-response relationships should consider extensions or post-hoc analyses. Fourth, the uncertainty quantification approach relies on multiple imputation, which assumes that missing data mechanisms are ignorable (missing at random); violations of this assumption may affect inference. Finally, computational requirements scale with the number of imputed datasets and the size of the health outcome data; large-scale analyses with many imputations may require substantial memory and processing time.
 
 # Author Contributions
 

@@ -1,4 +1,4 @@
-# GitLab CI/CD pipeline for gwArsenicR R package
+# GitLab CI/CD pipeline for geoExposeR R package
 # Optimized for USGS GitLab with pkgdown site deployment
 
 stages:
@@ -59,7 +59,7 @@ coverage:
       library(devtools)
       library(covr)
       
-      cat("=== Coverage Testing for gwArsenicR ===\n")
+      cat("=== Coverage Testing for geoExposeR ===\n")
       
       # Generate coverage
       devtools::load_all()

@@ -1,8 +1,8 @@
 # ============================================================================
-# Generate Automated Package Dependency/Workflow Graph for gwArsenicR
+# Generate Automated Package Dependency/Workflow Graph for geoExposeR
 # ============================================================================
 # This script creates a workflow diagram showing how different packages
-# integrate within the gwArsenicR analysis pipeline.
+# integrate within the geoExposeR analysis pipeline.
 #
 # Required packages: DiagrammeR, DiagrammeRsvg, rsvg
 # ============================================================================
@@ -25,7 +25,7 @@ library(rsvg)
 # Optimized for JOSS single-column format (~6.5 inch width, narrow aspect ratio)
 
 joss_workflow <- grViz("
-digraph gwArsenicR_joss {
+digraph geoExposeR_joss {
   
   # Graph attributes - tight vertical layout
   graph [

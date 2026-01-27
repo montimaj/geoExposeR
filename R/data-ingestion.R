@@ -1,4 +1,4 @@
-#' Data Ingestion Functions for gwArsenicR
+#' Data Ingestion Functions for geoExposeR
 #'
 #' Functions for preparing input data from raw sources including:
 #' USGS GeoTIFF probability rasters, EPA public water system data,
@@ -19,7 +19,7 @@ utils::globalVariables(c(
 #'
 #' Extracts arsenic concentration probabilities from USGS GeoTIFF rasters
 #' and aggregates them by geographic unit (e.g., county) to create the
-#' CSV format required by gwArsenicR.
+#' CSV format required by geoExposeR.
 #'
 #' @param prob_rasters A named list of file paths to GeoTIFF rasters containing
 #'   exceedance probabilities. Names should indicate thresholds (e.g.,
@@ -269,7 +269,7 @@ prepare_usgs_data <- function(
 #' Prepare EPA Arsenic Data with Lognormal Parameters
 #'
 #' Processes EPA public water system arsenic data and converts concentrations
-#' to lognormal distribution parameters required by gwArsenicR.
+#' to lognormal distribution parameters required by geoExposeR.
 #'
 #' @param epa_data A data frame containing EPA arsenic measurements. Can be
 #'   raw measurements or summary statistics.
@@ -476,10 +476,10 @@ prepare_epa_data <- function(
 }
 
 
-#' Format Health Outcome Data for gwArsenicR
+#' Format Health Outcome Data for geoExposeR
 #'
 #' Formats and validates health outcome data to ensure compatibility with
-#' gwArsenicR's requirements.
+#' geoExposeR's requirements.
 #'
 #' @param health_data A data frame containing health outcomes and covariates.
 #' @param id_col Character. Column name containing geographic identifiers
@@ -807,7 +807,7 @@ subset_by_geography <- function(
 #' Validate Prepared Input Files
 #'
 #' Performs comprehensive validation of prepared input files to ensure they
-#' are ready for use with gwArsenicR.
+#' are ready for use with geoExposeR.
 #'
 #' @param usgs_file Path to the prepared USGS probability CSV file.
 #' @param epa_file Path to the prepared EPA lognormal parameters CSV file.

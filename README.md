@@ -1,21 +1,21 @@
-# gwArsenicR
-An R package for modeling health effects of drinking water arsenic exposure, based on epidemiological studies and existing concentration models.
+# geoExposeR
+An R package for modeling health effects of environmental exposures, with a primary focus on groundwater contaminants. Based on epidemiological studies and existing concentration models.
 
 <!-- Package Info -->
-[![Version](https://img.shields.io/badge/version-1.0.0-blue.svg)](https://code.usgs.gov/envirohealth/gwArsenicR)
+[![Version](https://img.shields.io/badge/version-1.0.0-blue.svg)](https://code.usgs.gov/envirohealth/geoExposeR)
 [![R](https://img.shields.io/badge/R-%E2%89%A5%204.4.0-blue.svg)](https://www.r-project.org/)
 [![License](https://img.shields.io/badge/License-CC0%201.0-blue.svg)](https://creativecommons.org/publicdomain/zero/1.0/)
 
 <!-- Build Status -->
-[![Pipeline Status](https://code.usgs.gov/envirohealth/gwArsenicR/badges/main/pipeline.svg)](https://code.usgs.gov/envirohealth/gwArsenicR/-/pipelines)
+[![Pipeline Status](https://code.usgs.gov/envirohealth/geoExposeR/badges/main/pipeline.svg)](https://code.usgs.gov/envirohealth/geoExposeR/-/pipelines)
 
 <!-- Quality Metrics -->
-[![Test Coverage](https://code.usgs.gov/envirohealth/gwArsenicR/badges/main/coverage.svg)](https://code.usgs.gov/envirohealth/gwArsenicR/-/commits/main)
+[![Test Coverage](https://code.usgs.gov/envirohealth/geoExposeR/badges/main/coverage.svg)](https://code.usgs.gov/envirohealth/geoExposeR/-/commits/main)
 
 <!-- Documentation and Usage -->
-[![Documentation](https://img.shields.io/badge/docs-pkgdown-blue.svg)](https://envirohealth.code-pages.usgs.gov/gwArsenicR/)
-[![Vignettes](https://img.shields.io/badge/vignettes-available-blue.svg)](https://envirohealth.code-pages.usgs.gov/gwArsenicR/articles/)
-[![GitLab](https://img.shields.io/badge/GitLab-repository-blue.svg)](https://code.usgs.gov/envirohealth/gwArsenicR/)
+[![Documentation](https://img.shields.io/badge/docs-pkgdown-blue.svg)](https://envirohealth.code-pages.usgs.gov/geoExposeR/)
+[![Vignettes](https://img.shields.io/badge/vignettes-available-blue.svg)](https://envirohealth.code-pages.usgs.gov/geoExposeR/articles/)
+[![GitLab](https://img.shields.io/badge/GitLab-repository-blue.svg)](https://code.usgs.gov/envirohealth/geoExposeR/)
 
 <!-- Development Status -->
 [![Project Status: Active](https://www.repostatus.org/badges/latest/active.svg)](https://www.repostatus.org/#active)
@@ -23,10 +23,10 @@ An R package for modeling health effects of drinking water arsenic exposure, bas
 
 <!-- Code Quality -->
 [![Code style: tidyverse](https://img.shields.io/badge/code%20style-tidyverse-blue.svg)](https://style.tidyverse.org)
-[![Dependencies](https://img.shields.io/badge/dependencies-12-blue.svg)](https://code.usgs.gov/envirohealth/gwArsenicR/blob/main/DESCRIPTION)
+[![Dependencies](https://img.shields.io/badge/dependencies-12-blue.svg)](https://code.usgs.gov/envirohealth/geoExposeR/blob/main/DESCRIPTION)
 
 <!-- Academic -->
-[![DOI](https://img.shields.io/badge/DOI-pending-orange.svg)](https://code.usgs.gov/envirohealth/gwArsenicR)
+[![DOI](https://img.shields.io/badge/DOI-pending-orange.svg)](https://code.usgs.gov/envirohealth/geoExposeR)
 <!-- [![JOSS](https://joss.theoj.org/papers/10.21105/joss.XXXXX/status.svg)](https://joss.theoj.org/papers/10.21105/joss.XXXXX) -->
 
 <!-- USGS Software Release -->
@@ -38,21 +38,21 @@ An R package for modeling health effects of drinking water arsenic exposure, bas
 
 ## Citation
 
-If you use gwArsenicR in your research, please cite:
+If you use geoExposeR in your research, please cite:
 
 > Majumdar, S., Bartell, S. M., Lombard, M. A., Smith, R. G., & Gribble, M. O. (2026). 
-> gwArsenicR: An R package for modeling health effects of drinking water arsenic exposure. 
+> geoExposeR: An R package for modeling health effects of environmental exposures. 
 > *Journal of Open Source Software* (under review).
 
 **BibTeX:**
 ```bibtex
 @article{majumdar2026gwarsenic,
-  title={gwArsenicR: An R package for modeling health effects of drinking water arsenic exposure},
+  title={geoExposeR: An R package for modeling health effects of environmental exposures},
   author={Majumdar, Sayantan and Bartell, Scott M and Lombard, Melissa A and Smith, Ryan G and Gribble, Matthew O},
   journal={Journal of Open Source Software},
   year={2026},
   note={Under review},
-  url={https://code.usgs.gov/envirohealth/gwArsenicR}
+  url={https://code.usgs.gov/envirohealth/geoExposeR}
 }
 ```
 
@@ -78,17 +78,19 @@ If you use gwArsenicR in your research, please cite:
 
 ## Statement of Need
 
-gwArsenicR is an R package that provides a streamlined workflow for epidemiologists and public health researchers to estimate arsenic exposure from private and public well water and to assess its association with various health outcomes. The package implements a sophisticated statistical approach that combines geospatial arsenic prediction models with a multiple imputation framework to account for exposure uncertainty. The core functionality integrates predicted arsenic concentration probabilities from U.S. Geological Survey (USGS) models for private wells with U.S. Environmental Protection Agency (EPA) data for public water systems. It then uses a weighting scheme based on the proportion of the population served by each water source to create a unified, county-level exposure probability distribution. By encapsulating these complex methodologies into a single, user-friendly function, gwArsenicR makes this type of analysis more accessible, reproducible, and standardized.
+geoExposeR is an R package that provides a streamlined workflow for epidemiologists and public health researchers to estimate arsenic exposure from private and public well water and to assess its association with various health outcomes. The package implements a sophisticated statistical approach that combines geospatial arsenic prediction models with a multiple imputation framework to account for exposure uncertainty. The core functionality integrates predicted arsenic concentration probabilities from U.S. Geological Survey (USGS) models for private wells with U.S. Environmental Protection Agency (EPA) data for public water systems. It then uses a weighting scheme based on the proportion of the population served by each water source to create a unified, county-level exposure probability distribution. By encapsulating these complex methodologies into a single, user-friendly function, geoExposeR makes this type of analysis more accessible, reproducible, and standardized.
+
+**While designed for drinking water arsenic exposure assessments, the underlying statistical framework is broadly applicable to other environmental contaminants** (nitrate, uranium, manganese, PFAS) and air pollutants (PM2.5, ozone) where spatially-predicted exposure probabilities and health outcome data are available. See the [Broader Applicability](#broader-applicability) section and example scripts for guidance on adapting the package to other domains.
 
 ## Workflow
 
-The figure below illustrates the complete analytical workflow implemented in gwArsenicR. The pipeline integrates four input data sources through data ingestion, probability integration, multiple imputation, and statistical modeling stages to produce pooled estimates with proper uncertainty quantification.
+The figure below illustrates the complete analytical workflow implemented in geoExposeR. The pipeline integrates four input data sources through data ingestion, probability integration, multiple imputation, and statistical modeling stages to produce pooled estimates with proper uncertainty quantification.
 
 <p align="center">
-  <img src="paper/workflow.png" alt="gwArsenicR Workflow" width="400">
+  <img src="paper/workflow.png" alt="geoExposeR Workflow" width="400">
 </p>
 
-<p align="center"><em>gwArsenicR analytical workflow showing the data processing pipeline from input sources through statistical modeling to pooled estimates. Packages used at each stage are indicated in brackets. Pooled estimates include regression coefficients (β), standard errors (SE), 95% confidence intervals (CI), and p-values, all computed using Rubin's Rules.</em></p>
+<p align="center"><em>geoExposeR analytical workflow showing the data processing pipeline from input sources through statistical modeling to pooled estimates. Packages used at each stage are indicated in brackets. Pooled estimates include regression coefficients (β), standard errors (SE), 95% confidence intervals (CI), and p-values, all computed using Rubin's Rules.</em></p>
 
 ### Key Capabilities
 
@@ -104,7 +106,7 @@ Existing methods from studies like _Bulka et al. (2022)_ and _Lombard et al. (20
 - Multiple imputation techniques for uncertain exposures
 - Mixed-effects regression with proper pooling of results
 
-**gwArsenicR solves this** by packaging these sophisticated methods into user-friendly functions. This enables researchers to:
+**geoExposeR solves this** by packaging these sophisticated methods into user-friendly functions. This enables researchers to:
 
 - 🔬 **Focus on science**, not statistical programming
 - 📊 **Ensure reproducibility** across studies  
@@ -112,7 +114,7 @@ Existing methods from studies like _Bulka et al. (2022)_ and _Lombard et al. (20
 - 🎯 **Apply best practices** for uncertainty quantification
 - 🗺️ **Work with multiple data formats** (GeoTIFF, CSV, shapefiles)
 
-By democratizing access to these methods, gwArsenicR promotes more rigorous and comparable arsenic exposure research.
+By democratizing access to these methods, geoExposeR promotes more rigorous and comparable arsenic exposure research.
 
 ## Installation
 ### System Dependencies: Pandoc
@@ -133,15 +135,15 @@ If you do not have Pandoc, you can download and install it from the official web
 # Install devtools if not already installed
 if (!require("devtools")) install.packages("devtools")
 
-# Install gwArsenicR from USGS GitLab (specific tag or branch)
+# Install geoExposeR from USGS GitLab (specific tag or branch)
 devtools::install_gitlab(
-  repo = "envirohealth/gwArsenicR@v1.0.0",  # Replace with desired tag or branch
+  repo = "envirohealth/geoExposeR@v1.0.0",  # Replace with desired tag or branch
   host = "code.usgs.gov",
   build_vignettes = TRUE
 )
 
 # Load the package
-library(gwArsenicR)
+library(geoExposeR)
 ```
 
 **For development and testing (includes coverage tools):**
@@ -149,9 +151,9 @@ library(gwArsenicR)
 # Install additional development dependencies
 install.packages(c("devtools", "testthat", "covr", "DT", "htmltools"))
 
-# Install gwArsenicR from USGS GitLab (specific tag or branch)
+# Install geoExposeR from USGS GitLab (specific tag or branch)
 devtools::install_gitlab(
-  repo = "envirohealth/gwArsenicR@main",  # Or use a specific tag like @v1.0.0
+  repo = "envirohealth/geoExposeR@main",  # Or use a specific tag like @v1.0.0
   host = "code.usgs.gov",
   build_vignettes = TRUE
 )
@@ -160,7 +162,7 @@ devtools::install_gitlab(
 **Verify installation:**
 ```r
 # Check package version
-packageVersion("gwArsenicR")
+packageVersion("geoExposeR")
 
 # View help
 ?perform_sensitivity_analysis
@@ -168,7 +170,7 @@ packageVersion("gwArsenicR")
 
 **Package Documentation Website:**
 
-The complete package documentation, including detailed function references, vignettes, and examples, is available at: **https://envirohealth.code-pages.usgs.gov/gwArsenicR/**
+The complete package documentation, including detailed function references, vignettes, and examples, is available at: **https://envirohealth.code-pages.usgs.gov/geoExposeR/**
 
 This website is automatically generated and updated whenever changes are made to the main branch, ensuring you always have access to the latest documentation.
 
@@ -187,13 +189,13 @@ if (!require("devtools")) install.packages("devtools")
 # Install from the local directory
 # Replace the path with the actual path to the extracted folder
 devtools::install_local(
-  path = "/path/to/gwArsenicR",  # Path to the extracted package folder
+  path = "/path/to/geoExposeR",  # Path to the extracted package folder
   build_vignettes = TRUE,
   dependencies = TRUE
 )
 
 # Load the package
-library(gwArsenicR)
+library(geoExposeR)
 ```
 
 **Alternative: Install from the ZIP file directly (without extracting):**
@@ -201,7 +203,7 @@ library(gwArsenicR)
 ```r
 # Install directly from the ZIP file
 devtools::install_local(
-  path = "/path/to/gwArsenicR.zip",  # Path to the downloaded ZIP file
+  path = "/path/to/geoExposeR.zip",  # Path to the downloaded ZIP file
   build_vignettes = TRUE,
   dependencies = TRUE
 )
@@ -221,7 +223,7 @@ You can also install the package using RStudio's GUI:
 If you want to customize this package, run the following using R after you have modified the codes.
 ```
 # Set the working directory to your package directory
-setwd(<path to gwArsenicR>)
+setwd(<path to geoExposeR>)
 
 # Load devtools
 library(devtools)
@@ -239,7 +241,7 @@ install()
 ## Quick Start
 
 ```r
-library(gwArsenicR)
+library(geoExposeR)
 
 # Run sensitivity analysis with your data
 results <- perform_sensitivity_analysis(
@@ -274,54 +276,78 @@ results <- perform_sensitivity_analysis(
 )
 ```
 
-For detailed examples with dummy data, see the [vignette](vignettes/gwArsenicR-vignette.Rmd).
+For detailed examples with dummy data, see the [vignette](vignettes/geoExposeR-vignette.Rmd).
 
 ## Examples
 
-The package includes multiple working examples in the `examples/` folder that demonstrate different workflows for using gwArsenicR.
+The package includes multiple working examples in the `examples/` folder that demonstrate different workflows for using geoExposeR.
 
 ### Available Examples
 
+#### Core Arsenic Examples
+
 | Example File | Description |
 |--------------|-------------|
-| `run_gwArsenicR_example.R` | Basic example using pre-formatted CSV data |
-| `run_gwArsenicR_from_geotiff.R` | Complete GeoTIFF workflow from rasters to analysis |
-| `run_gwArsenicR_data_pipeline.R` | Demonstrates all data ingestion functions |
+| `run_geoExposeR_example.R` | Basic example using pre-formatted CSV data |
+| `run_geoExposeR_from_geotiff.R` | Complete GeoTIFF workflow from rasters to analysis |
+| `run_geoExposeR_data_pipeline.R` | Demonstrates all data ingestion functions |
+
+#### Broader Application Examples
+
+These examples demonstrate how geoExposeR can be adapted for other environmental contaminants and exposures:
+
+| Example File | Contaminant | Health Outcome | Description |
+|--------------|-------------|----------------|-------------|
+| `run_geoExposeR_nitrate.R` | Nitrate | Methemoglobinemia | Groundwater nitrate effects on infant health |
+| `run_geoExposeR_uranium.R` | Uranium | Kidney function (eGFR) | Groundwater uranium nephrotoxicity |
+| `run_geoExposeR_pm25.R` | PM2.5 | Respiratory function (FEV1) | Air quality effects on lung function |
 
 ### Running the Examples
 
 ```bash
-# From the gwArsenicR directory
-cd /path/to/gwArsenicR
+# From the geoExposeR directory
+cd /path/to/geoExposeR
 
 # Basic example (CSV workflow)
-Rscript examples/run_gwArsenicR_example.R
+Rscript examples/run_geoExposeR_example.R
 
 # GeoTIFF workflow example
-Rscript examples/run_gwArsenicR_from_geotiff.R
+Rscript examples/run_geoExposeR_from_geotiff.R
 
 # Data pipeline example (all ingestion functions)
-Rscript examples/run_gwArsenicR_data_pipeline.R
+Rscript examples/run_geoExposeR_data_pipeline.R
+
+# Broader application examples
+Rscript examples/run_geoExposeR_nitrate.R
+Rscript examples/run_geoExposeR_uranium.R
+Rscript examples/run_geoExposeR_pm25.R
 ```
 
 Or in R/RStudio:
 ```r
 # Set working directory to package root
-setwd("/path/to/gwArsenicR")
+setwd("/path/to/geoExposeR")
 
 # Run basic example
-source("examples/run_gwArsenicR_example.R")
+source("examples/run_geoExposeR_example.R")
 
 # Run GeoTIFF workflow
-source("examples/run_gwArsenicR_from_geotiff.R")
+source("examples/run_geoExposeR_from_geotiff.R")
 
 # Run data pipeline demo
-source("examples/run_gwArsenicR_data_pipeline.R")
+source("examples/run_geoExposeR_data_pipeline.R")
+
+# Run broader application examples
+source("examples/run_geoExposeR_nitrate.R")
+source("examples/run_geoExposeR_uranium.R")
+source("examples/run_geoExposeR_pm25.R")
 ```
 
 ### Example Data Files
 
 The examples use data files from the `examples/input_data/` folder:
+
+#### Core Arsenic Data
 
 | File | Description |
 |------|-------------|
@@ -329,9 +355,23 @@ The examples use data files from the `examples/input_data/` folder:
 | `EPA_dom.csv` | EPA arsenic concentration data (50 rows) |
 | `Demographics_dom.txt` | Demographics data with health outcomes - SBP (50 rows) |
 
-> **⚠️ Note on Example Data:** The `*_dom.*` files are **simulated dummy data** created for demonstration and testing purposes only. These files contain 50 synthetic records with realistic column structures but randomly generated values. The actual research data cannot be shared publicly due to data use agreements and privacy restrictions. The dummy data preserves the structure and format of the real data to allow users to understand the workflow and test the package functionality.
+#### Broader Application Data
 
-### Example 1: Basic CSV Workflow (`run_gwArsenicR_example.R`)
+| File | Description |
+|------|-------------|
+| `USGS_nitrate.csv` | Nitrate probability data for infant health example (50 rows) |
+| `EPA_nitrate.csv` | Nitrate concentration measurements (50 rows) |
+| `Health_nitrate.txt` | Infant methemoglobin and birth weight data (50 rows) |
+| `USGS_uranium.csv` | Uranium probability data for kidney function example (50 rows) |
+| `EPA_uranium.csv` | Uranium concentration measurements (50 rows) |
+| `Health_uranium.txt` | Kidney function (eGFR) and demographic data (50 rows) |
+| `Model_pm25.csv` | Satellite/model PM2.5 probability estimates (50 rows) |
+| `EPA_pm25.csv` | Ground monitor PM2.5 measurements (50 rows) |
+| `Health_pm25.txt` | Respiratory function (FEV1) and smoking data (50 rows) |
+
+> **⚠️ Note on Example Data:** All example data files are **simulated dummy data** created for demonstration and testing purposes only. These files contain 50 synthetic records with realistic column structures but randomly generated values. The actual research data cannot be shared publicly due to data use agreements and privacy restrictions. The dummy data preserves the structure and format of the real data to allow users to understand the workflow and test the package functionality.
+
+### Example 1: Basic CSV Workflow (`run_geoExposeR_example.R`)
 
 Demonstrates the standard analysis workflow using pre-formatted CSV data:
 
@@ -341,7 +381,7 @@ Demonstrates the standard analysis workflow using pre-formatted CSV data:
 4. **Sensitivity Analysis**: Running multiple imputation with mixed-effects regression
 5. **Result Interpretation**: Understanding the pooled estimates and confidence intervals
 
-### Example 2: GeoTIFF Workflow (`run_gwArsenicR_from_geotiff.R`)
+### Example 2: GeoTIFF Workflow (`run_geoExposeR_from_geotiff.R`)
 
 Demonstrates processing raw GeoTIFF raster data through the complete analysis pipeline:
 
@@ -353,7 +393,7 @@ Demonstrates processing raw GeoTIFF raster data through the complete analysis pi
 6. **Validating Inputs**: Using `validate_prepared_inputs()` for quality control
 7. **Running Analysis**: Executing the full sensitivity analysis
 
-### Example 3: Data Pipeline Demo (`run_gwArsenicR_data_pipeline.R`)
+### Example 3: Data Pipeline Demo (`run_geoExposeR_data_pipeline.R`)
 
 Comprehensively demonstrates all data ingestion functions:
 
@@ -374,11 +414,11 @@ Comprehensively demonstrates all data ingestion functions:
 - Geographic subsetting by state or custom GEOID lists
 
 ## Package Structure
-The gwArsenicR package follows the standard structure for R packages:
+The geoExposeR package follows the standard structure for R packages:
 ```
-gwArsenicR/
+geoExposeR/
 ├── R/                                  # Source code
-│   ├── gwArsenic.R                     # Main exported function
+│   ├── geoExposeR.R                    # Main exported function
 │   ├── data-loading.R                  # Data loading and processing
 │   ├── data-ingestion.R                # Raw data preparation (GeoTIFF, EPA, health)
 │   ├── imputation.R                    # Multiple imputation functions
@@ -386,21 +426,33 @@ gwArsenicR/
 │   └── utils.R                         # Validation and utility functions
 ├── man/                                # Generated documentation (.Rd files)
 ├── examples/
-│   ├── run_gwArsenicR_example.R        # Basic CSV workflow example
-│   ├── run_gwArsenicR_from_geotiff.R   # GeoTIFF raster workflow
-│   ├── run_gwArsenicR_data_pipeline.R  # Data ingestion functions demo
+│   ├── run_geoExposeR_example.R        # Basic CSV workflow example
+│   ├── run_geoExposeR_from_geotiff.R   # GeoTIFF raster workflow
+│   ├── run_geoExposeR_data_pipeline.R  # Data ingestion functions demo
+│   ├── run_geoExposeR_nitrate.R        # Nitrate exposure example
+│   ├── run_geoExposeR_uranium.R        # Uranium exposure example
+│   ├── run_geoExposeR_pm25.R           # PM2.5 air quality example
 │   ├── input_data/                     # Example input data files
 │   │   ├── USGS_dom.csv                # Sample USGS arsenic probability data
 │   │   ├── EPA_dom.csv                 # Sample EPA arsenic concentration data
-│   │   └── Demographics_dom.txt        # Sample demographics/health data (dummy*)
+│   │   ├── Demographics_dom.txt        # Sample demographics/health data (dummy*)
+│   │   ├── USGS_nitrate.csv            # Sample nitrate probability data (dummy*)
+│   │   ├── EPA_nitrate.csv             # Sample nitrate concentration data (dummy*)
+│   │   ├── Health_nitrate.txt          # Sample infant health data (dummy*)
+│   │   ├── USGS_uranium.csv            # Sample uranium probability data (dummy*)
+│   │   ├── EPA_uranium.csv             # Sample uranium concentration data (dummy*)
+│   │   ├── Health_uranium.txt          # Sample kidney function data (dummy*)
+│   │   ├── Model_pm25.csv              # Sample PM2.5 model probabilities (dummy*)
+│   │   ├── EPA_pm25.csv                # Sample PM2.5 monitor data (dummy*)
+│   │   └── Health_pm25.txt             # Sample respiratory health data (dummy*)
 ├── tests/
 │   ├── testthat/
-│   │   └── test-gwArsenic.R            # Comprehensive test suite (476 tests)
+│   │   └── test-geoExposeR.R           # Comprehensive test suite (476 tests)
 │   ├── data/                           # Test data files (dummy data)
 │   ├── outputs/                        # Expected test outputs
 │   └── testthat.R                      # Test runner
 ├── vignettes/
-│   └── gwArsenicR-vignette.Rmd         # Package tutorial and examples
+│   └── geoExposeR-vignette.Rmd         # Package tutorial and examples
 ├── paper/                              # JOSS paper files
 │   ├── paper.md                        # Paper manuscript
 │   ├── paper.bib                       # References
@@ -426,7 +478,7 @@ gwArsenicR/
 
 The package uses a **modular architecture** with functionality organized across specialized files:
 
-- **`gwArsenic.R`**: Main exported function `perform_sensitivity_analysis()`
+- **`geoExposeR.R`**: Main exported function `perform_sensitivity_analysis()`
 - **`data-loading.R`**: Data loading and probability matrix processing
 - **`data-ingestion.R`**: Functions to prepare data from raw sources (GeoTIFFs, EPA, health data)
 - **`imputation.R`**: Multiple imputation using MICE framework
@@ -443,7 +495,7 @@ This approach provides several advantages:
 
 The package includes comprehensive testing with 100% code coverage:
 
-- **`tests/testthat/test-gwArsenic.R`**: Main test suite with 476 tests (includes helper functions)
+- **`tests/testthat/test-geoExposeR.R`**: Main test suite with 476 tests (includes helper functions)
 - **`tests/testthat.R`**: Standard R package test runner
 - **`.gitlab-ci.yml`**: GitLab CI/CD pipeline with automated testing and coverage reporting
 
@@ -575,6 +627,86 @@ if (validation$valid) {
 }
 ```
 
+## Broader Applicability
+
+While geoExposeR was designed for arsenic exposure assessment, **the underlying statistical framework is fully adaptable to other environmental contaminants and exposures**. The package's methodology—combining probabilistic exposure estimates with health outcome data through multiple imputation—applies to any exposure assessment problem with similar data structures.
+
+### Supported Applications
+
+| Domain | Contaminants | Example Health Outcomes |
+|--------|--------------|------------------------|
+| **Groundwater** | Arsenic, Nitrate, Uranium, Manganese, PFAS | Birth outcomes, kidney function, neurological effects |
+| **Air Quality** | PM2.5, Ozone, Wildfire smoke, NO₂ | Respiratory function, cardiovascular disease, mortality |
+| **Soil/Dust** | Lead, Heavy metals | Blood lead levels, cognitive development |
+
+### Adapting geoExposeR for Other Contaminants
+
+The package uses "EPA" and "USGS" terminology internally, but these represent **any two probability/concentration data sources**:
+
+| Package Parameter | Arsenic (Original) | Nitrate Example | PM2.5 Example |
+|-------------------|-------------------|-----------------|---------------|
+| `as_usgs_prob_csv` | USGS private well model | Nitrate model predictions | Satellite/hybrid estimates |
+| `as_epa_prob_csv` | EPA public water data | PWS nitrate measurements | Ground monitor data |
+| `epa_cutoffs` | `c(5, 10)` µg/L | `c(5, 10)` mg/L NO₃-N | `c(9, 35)` µg/m³ |
+| Health outcome | Birth weight, SBP | Methemoglobin levels | FEV1 % predicted |
+
+### Example: Adapting for Nitrate
+
+```r
+# Nitrate exposure analysis for infant methemoglobinemia
+results <- perform_sensitivity_analysis(
+  ndraws = 10,
+  as_usgs_prob_csv = "nitrate_model_probabilities.csv",
+  as_epa_prob_csv = "nitrate_pws_measurements.csv",
+  birth_data_txt = "infant_health_data.txt",
+  
+  # Nitrate-specific cutoffs (mg/L NO3-N)
+  # <5 (safe), 5-10 (elevated), >=10 (exceeds MCL)
+  epa_cutoffs = c(5, 10),
+  
+  # Auto-convert raw concentrations to lognormal parameters
+  epa_as_conc_col = "nitrate_concentration",
+  epa_default_sdlog = 0.8,
+  
+  regression_formula = "~ as.factor(AsLevel) + infant_age + (1|county)",
+  targets = c("methemoglobin_pct")
+)
+```
+
+### Example: Adapting for Air Quality (PM2.5)
+
+```r
+# PM2.5 exposure analysis for respiratory function
+results <- perform_sensitivity_analysis(
+  ndraws = 10,
+  # Satellite/model predictions serve as "USGS" data
+  as_usgs_prob_csv = "pm25_satellite_probabilities.csv",
+  # Ground monitors serve as "EPA" data  
+  as_epa_prob_csv = "pm25_ground_monitors.csv",
+  birth_data_txt = "respiratory_health_data.txt",
+  
+  # PM2.5-specific cutoffs (µg/m³)
+  # <9 (meets EPA annual standard), 9-35 (moderate), >=35 (exceeds 24-hr standard)
+  epa_cutoffs = c(9, 35),
+  
+  epa_as_conc_col = "pm25_annual_mean",
+  epa_default_sdlog = 0.5,
+  
+  regression_formula = "~ as.factor(AsLevel) + age + (1|smoking_status)",
+  targets = c("FEV1_pct_predicted")
+)
+```
+
+### Key Adaptation Steps
+
+1. **Prepare probability data** in the same format as USGS arsenic data (multinomial probabilities across categories)
+2. **Prepare concentration data** with raw measurements or lognormal parameters (EPA format)
+3. **Set appropriate cutoffs** via `epa_cutoffs` parameter based on health-relevant thresholds
+4. **Adjust regression formula** for your health outcome and covariates
+5. **Run the analysis** — the statistical methodology remains identical
+
+See the `examples/` folder for complete working examples demonstrating nitrate, uranium, and PM2.5 analyses.
+
 ## Key Features
 
 ### Core Analysis
@@ -606,7 +738,7 @@ if (validation$valid) {
 ## Documentation
 
 ### Online Documentation
-📖 **Complete documentation website**: https://envirohealth.code-pages.usgs.gov/gwArsenicR/
+📖 **Complete documentation website**: https://envirohealth.code-pages.usgs.gov/geoExposeR/
 
 The documentation website includes:
 - **Function Reference**: Detailed documentation for all package functions
@@ -618,13 +750,13 @@ The documentation website includes:
 ### Local Documentation
 ```r
 # View package help
-help(package = "gwArsenicR")
+help(package = "geoExposeR")
 
 # View main function documentation
 ?perform_sensitivity_analysis
 
 # Browse vignettes
-browseVignettes("gwArsenicR")
+browseVignettes("geoExposeR")
 ```
 
 ## Data Requirements
@@ -689,7 +821,7 @@ The EPA data provides arsenic concentration parameters for public water supplies
 | `EPA_AS_sdlog` (or custom via `epa_as_sd_col`) | Log-scale standard deviation | No (uses `epa_default_sdlog` if missing) |
 | `PWELL_private_pct` (or custom via `epa_pwell_col`) | Percentage of population using private wells (0-100) | Yes |
 
-**\*\*Alternative:** If you have raw arsenic concentrations instead of lognormal parameters, specify the concentration column via `epa_as_conc_col` and gwArsenicR will automatically convert using: `meanlog = log(concentration + 0.1)`.
+**\*\*Alternative:** If you have raw arsenic concentrations instead of lognormal parameters, specify the concentration column via `epa_as_conc_col` and geoExposeR will automatically convert using: `meanlog = log(concentration + 0.1)`.
 
 #### Health Outcome Data (birth_data)
 
@@ -719,7 +851,7 @@ results <- perform_sensitivity_analysis(
 
 ## Data Preparation Workflow
 
-This section describes how to prepare input files for gwArsenicR from raw data sources. This workflow is relevant for users who want to analyze arsenic exposure for specific states, counties, aquifers, or custom geographic areas.
+This section describes how to prepare input files for geoExposeR from raw data sources. This workflow is relevant for users who want to analyze arsenic exposure for specific states, counties, aquifers, or custom geographic areas.
 
 ### Overview of Data Sources
 
@@ -733,7 +865,7 @@ This section describes how to prepare input files for gwArsenicR from raw data s
 
 ### Step 1: Preparing USGS Probability Data
 
-The USGS provides arsenic probability models as GeoTIFF rasters. To convert these to the CSV format required by gwArsenicR:
+The USGS provides arsenic probability models as GeoTIFF rasters. To convert these to the CSV format required by geoExposeR:
 
 #### 1.1 Obtain USGS GeoTIFF Data
 
@@ -880,7 +1012,7 @@ epa_data <- epa_data %>%
 
 #### 2.4 Automatic Lognormal Conversion
 
-Alternatively, you can skip manual preprocessing entirely. If your EPA data contains raw arsenic concentrations, gwArsenicR can automatically convert them to lognormal parameters:
+Alternatively, you can skip manual preprocessing entirely. If your EPA data contains raw arsenic concentrations, geoExposeR can automatically convert them to lognormal parameters:
 
 ```r
 # Specify the concentration column - no preprocessing needed
@@ -986,7 +1118,7 @@ final_epa <- epa_data %>%
 
 ### Step 5: Quality Control Checklist
 
-Before running gwArsenicR, verify your prepared data:
+Before running geoExposeR, verify your prepared data:
 
 - [ ] **USGS Data**:
   - [ ] Probability columns sum to approximately 1.0 for each row
@@ -1025,7 +1157,7 @@ prob_rasters <- c(
 # 2. Get California county boundaries
 ca_counties <- counties(state = "CA", cb = TRUE, year = 2020)
 
-# 3. Extract probabilities and format for gwArsenicR
+# 3. Extract probabilities and format for geoExposeR
 usgs_ca <- ca_counties %>%
   mutate(
     p_gt1 = exact_extract(prob_rasters[[1]], ., "mean"),
@@ -1053,8 +1185,8 @@ epa_ca <- data.frame(
 write.csv(usgs_ca, "california_usgs_probs.csv", row.names = FALSE)
 write.csv(epa_ca, "california_epa_params.csv", row.names = FALSE)
 
-# 7. Run gwArsenicR
-library(gwArsenicR)
+# 7. Run geoExposeR
+library(geoExposeR)
 results <- perform_sensitivity_analysis(
   ndraws = 10,
   as_usgs_prob_csv = "california_usgs_probs.csv",
@@ -1081,13 +1213,13 @@ The package includes comprehensive tests to ensure reliability and correctness. 
 
 **Run all tests:**
 ```bash
-cd /path/to/gwArsenicR
+cd /path/to/geoExposeR
 Rscript -e "devtools::test()"
 ```
 
 **Run specific test file:**
 ```bash
-Rscript -e "testthat::test_file('tests/testthat/test-gwArsenic.R')"
+Rscript -e "testthat::test_file('tests/testthat/test-geoExposeR.R')"
 ```
 
 **Run tests during development (faster - no package rebuild):**
@@ -1118,7 +1250,7 @@ devtools::load_all()
 devtools::test()
 
 # Run specific test with detailed output
-testthat::test_file("tests/testthat/test-gwArsenic.R", reporter = "progress")
+testthat::test_file("tests/testthat/test-geoExposeR.R", reporter = "progress")
 
 # Check test coverage (requires covr, DT and htmltools)
 covr::report(covr::package_coverage())
@@ -1169,7 +1301,7 @@ The package includes automated testing via GitLab CI/CD:
 - **Dependency validation**: Ensures all required packages are properly declared
 - **Documentation checks**: Validates roxygen2 documentation completeness
 
-[![Pipeline Status](https://code.usgs.gov/envirohealth/gwArsenicR/badges/main/pipeline.svg)](https://code.usgs.gov/envirohealth/gwArsenicR/-/pipelines)
+[![Pipeline Status](https://code.usgs.gov/envirohealth/geoExposeR/badges/main/pipeline.svg)](https://code.usgs.gov/envirohealth/geoExposeR/-/pipelines)
 
 ### Code Coverage
 
@@ -1179,7 +1311,7 @@ The package maintains 100% test coverage across all source files:
 |------|----------|
 | R/data-ingestion.R | 100.00% |
 | R/data-loading.R | 100.00% |
-| R/gwArsenic.R | 100.00% |
+| R/geoExposeR.R | 100.00% |
 | R/imputation.R | 100.00% |
 | R/regression.R | 100.00% |
 | R/utils.R | 100.00% |
@@ -1221,7 +1353,7 @@ Rscript -e "suppressWarnings(devtools::test())"
 # Default test configuration uses ndraws = 2 for speed
 
 # For very slow systems, you can temporarily modify test parameters:
-# Edit tests/testthat/test-gwArsenic.R and change ndraws = 2 to ndraws = 1
+# Edit tests/testthat/test-geoExposeR.R and change ndraws = 2 to ndraws = 1
 
 # Or run tests with extended timeout
 Rscript -e "options(testthat.default_timeout = 600); devtools::test()"
@@ -1254,7 +1386,7 @@ When developing or modifying the package:
 We welcome contributions! Please see our [contribution guidelines](CONTRIBUTING.md) for details.
 
 **Ways to contribute:**
-- 🐛 Report bugs via [GitLab issues](https://code.usgs.gov/envirohealth/gwArsenicR/-/issues)
+- 🐛 Report bugs via [GitLab issues](https://code.usgs.gov/envirohealth/geoExposeR/-/issues)
 - 💡 Suggest features or improvements
 - 📖 Improve documentation
 - 🧪 Add tests or examples
@@ -1262,8 +1394,8 @@ We welcome contributions! Please see our [contribution guidelines](CONTRIBUTING.
 
 **Development setup:**
 ```bash
-git clone https://code.usgs.gov/envirohealth/gwArsenicR.git
-cd gwArsenicR
+git clone https://code.usgs.gov/envirohealth/geoExposeR.git
+cd geoExposeR
 Rscript -e "devtools::load_all(); devtools::test()"
 ```
 
@@ -1271,7 +1403,7 @@ Rscript -e "devtools::load_all(); devtools::test()"
 
 ### RStudio Installation Issues
 
-Some users may encounter missing dependency errors when installing or using gwArsenicR in RStudio, even after successful installation. This typically manifests as errors like:
+Some users may encounter missing dependency errors when installing or using geoExposeR in RStudio, even after successful installation. This typically manifests as errors like:
 
 ```
 Error in loadNamespace(i, c(lib.loc, .libPaths()), versionCheck = vI[[i]]) :
@@ -1286,15 +1418,15 @@ Error in loadNamespace(i, c(lib.loc, .libPaths()), versionCheck = vI[[i]]) :
 - glue
 
 **Solution:**
-Install these core dependencies manually before installing gwArsenicR:
+Install these core dependencies manually before installing geoExposeR:
 
 ```r
 # Install missing dependencies
 install.packages(c("R6", "digest", "purrr", "vctrs", "glue"))
 
-# Then install gwArsenicR from USGS GitLab
+# Then install geoExposeR from USGS GitLab
 devtools::install_gitlab(
-  repo = "envirohealth/gwArsenicR@v1.0.0",
+  repo = "envirohealth/geoExposeR@v1.0.0",
   host = "code.usgs.gov"
 )
 ```
@@ -1322,7 +1454,7 @@ This issue typically occurs when:
 3. **Install from a clean state:**
    ```r
    # Remove any partial installations
-   remove.packages("gwArsenicR")
+   remove.packages("geoExposeR")
    
    # Clear package cache
    .libPaths()  # Check library paths
@@ -1330,7 +1462,7 @@ This issue typically occurs when:
    # Reinstall dependencies and package
    install.packages(c("devtools", "R6", "digest", "purrr", "vctrs", "glue"))
    devtools::install_gitlab(
-     repo = "envirohealth/gwArsenicR@v1.0.0",
+     repo = "envirohealth/geoExposeR@v1.0.0",
      host = "code.usgs.gov"
    )
    ```
@@ -1341,7 +1473,7 @@ This issue typically occurs when:
    R.version.string
    ```
 
-If issues persist, please [report them](https://code.usgs.gov/envirohealth/gwArsenicR/-/issues) with your R version and sessionInfo().
+If issues persist, please [report them](https://code.usgs.gov/envirohealth/geoExposeR/-/issues) with your R version and sessionInfo().
 
 ## Acknowledgments
 
@@ -1349,7 +1481,7 @@ This work was supported by the National Heart, Lung, and Blood Institute (R21HL1
 
 ## License
 
-This project is in the public domain under the CC0 1.0 Universal license - see the [LICENSE](https://code.usgs.gov/envirohealth/gwArsenicR/-/blob/main/LICENSE) file for details.
+This project is in the public domain under the CC0 1.0 Universal license - see the [LICENSE](https://code.usgs.gov/envirohealth/geoExposeR/-/blob/main/LICENSE) file for details.
 
 **Version:** 1.0.0 | **Status:** Under active development
 
