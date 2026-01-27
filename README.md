@@ -325,11 +325,11 @@ The examples use data files from the `examples/input_data/` folder:
 
 | File | Description |
 |------|-------------|
-| `USGS_dom.csv` | USGS model-based multinomial probabilities of arsenic levels |
-| `EPA_dom.csv` | EPA arsenic concentration data (requires preprocessing to lognormal parameters) |
-| `Demographics_dom.txt` | Demographics data with health outcomes (SBP, etc.) |
+| `USGS_dom.csv` | USGS model-based multinomial probabilities of arsenic levels (50 rows) |
+| `EPA_dom.csv` | EPA arsenic concentration data (50 rows) |
+| `Demographics_dom.txt` | Demographics data with health outcomes - SBP (50 rows) |
 
-> **⚠️ Note on Example Data:** The `*_dom.*` files are **simulated dummy data** created for demonstration and testing purposes only. The actual research data cannot be shared publicly due to data use agreements and privacy restrictions. The dummy data preserves the structure and format of the real data to allow users to understand the workflow and test the package functionality.
+> **⚠️ Note on Example Data:** The `*_dom.*` files are **simulated dummy data** created for demonstration and testing purposes only. These files contain 50 synthetic records with realistic column structures but randomly generated values. The actual research data cannot be shared publicly due to data use agreements and privacy restrictions. The dummy data preserves the structure and format of the real data to allow users to understand the workflow and test the package functionality.
 
 ### Example 1: Basic CSV Workflow (`run_gwArsenicR_example.R`)
 

@@ -300,150 +300,112 @@ library(gwArsenicR)
 library(lme4) # Loaded by gwArsenicR, but good practice for clarity
 ```
 
-### Step 2: Generate Example Data
+### Step 2: Load Example Data
 
-For this vignette to be self-contained, we'll first define and then use a helper function to generate dummy data files. In a real analysis, you would load your own data.
+The `gwArsenicR` package includes example data files in the `examples/input_data/` folder. These files demonstrate the expected data formats:
+ 
+- **USGS_dom.csv**: USGS model-based multinomial probabilities of arsenic levels
+- **EPA_dom.csv**: EPA arsenic data with raw concentration values
+- **Demographics_dom.txt**: Demographics data with health outcomes (SBP)
 
-```{r, echo=FALSE}
-# This helper function creates the necessary dummy data files for the example.
-# We define it here but hide the code block in the rendered vignette
-# for clarity.
-create_dummy_data <- function(
-  file_dir = "example_data",
-  num_rows = 500, # Raster-level data
-  num_births = 2000, # Individual-level data
-  seed = 12345,
-  introduce_nas = TRUE # Whether to introduce NAs in birth data
-) {
-  # Set seed for reproducibility
-  set.seed(seed)
+```{r, eval=FALSE}
+# Define paths to the example data files included with the package
+# When running from the package source directory:
+example_dir <- file.path("examples", "input_data")
 
-  # Ensure the directory exists
-  if (!dir.exists(file_dir)) {
-    dir.create(file_dir, recursive = TRUE)
-  }
+# Define file paths
+example_files <- list(
+  usgs = file.path(example_dir, "USGS_dom.csv"),
+  epa = file.path(example_dir, "EPA_dom.csv"),
+  health = file.path(example_dir, "Demographics_dom.txt")
+)
 
-  # --- Generate Common Geographic Identifiers ---
-  # Simulate 100 counties
-  county_ids <- sprintf("%05d", 1:100)
-  geoid10 <- sample(county_ids, num_rows, replace = TRUE)
-  birth_fips <- sample(county_ids, num_births, replace = TRUE)
+# Verify files exist
+cat("Example data files:\n")
+cat("  USGS data:", example_files$usgs, "\n")
+cat("  EPA data:", example_files$epa, "\n")
+cat("  Health data:", example_files$health, "\n")
+```
 
-  # --- 1. USGS Arsenic Probability Data (Private Wells) ---
-  usgs_prob_values <- t(apply(
-    matrix(stats::runif(num_rows * 3), ncol = 3),
-    1,
-    function(x) x / sum(x)
-  ))
-  wells_2010 <- sample(50:500, num_rows, replace = TRUE)
-  dummy_usgs_df <- data.frame(
-    RFC3_C1v2 = usgs_prob_values[, 1],
-    RFC3_C2v2 = usgs_prob_values[, 2],
-    RFC3_C3v2 = usgs_prob_values[, 3],
-    Wells_2010 = wells_2010,
-    GEOID10 = geoid10
-  )
-  dummy_usgs_csv <- file.path(file_dir, "dummy_usgs_arsenic.csv")
-  data.table::fwrite(dummy_usgs_df, dummy_usgs_csv)
+The example data files have the following structure:
 
-  # --- 2. EPA Arsenic Data (Public Wells) ---
-  epa_lognormal_meanlog <- stats::runif(num_rows, 0.5, 1.5)
-  epa_lognormal_sdlog <- stats::runif(num_rows, 0.5, 1.5)
-  # You can use a constant value for epa_lognormal_sdlog if desired
-  # For example, epa_lognormal_sdlog <- 1.2
-  private_well_percent <- stats::runif(num_rows, min = 1, max = 99)
-  dummy_epa_df <- data.frame(
-    EPA_AS_meanlog = epa_lognormal_meanlog,
-    EPA_AS_sdlog = epa_lognormal_sdlog,
-    PWELL_private_pct = private_well_percent,
-    GEOID10 = geoid10
-  )
-  dummy_epa_csv <- file.path(file_dir, "dummy_epa_arsenic.csv")
-  data.table::fwrite(dummy_epa_df, dummy_epa_csv)
+```{r, eval=FALSE}
+# Preview USGS data (arsenic probability columns)
+usgs_preview <- data.table::fread(example_files$usgs, nrows = 5)
+cat("\nUSGS data columns:", paste(names(usgs_preview), collapse = ", "), "\n")
+# Columns: id, pub_water_pop, RFCprobC1, RFCprobC2, RFCprobC3, RFC_maxprob, RFC_maxprob_num, Dom_Pop_Percent
 
-  # --- 3. Birth Data ---
-  births_df <- data.frame(
-    MAGE_R = sample(18:45, num_births, replace = TRUE),
-    MRACEHISP_F = factor(
-      sample(
-        c("White", "Black", "Hispanic", "Other"),
-        num_births,
-        replace = TRUE
-      )
-    ),
-    MEDUC_2 = sample(0:1, num_births, replace = TRUE),
-    MEDUC_3 = sample(0:1, num_births, replace = TRUE),
-    MEDUC_4 = sample(0:1, num_births, replace = TRUE),
-    smoke = sample(0:1, num_births, replace = TRUE),
-    RUCC = sample(1:9, num_births, replace = TRUE),
-    RUCC_F = factor(sample(1:9, num_births, replace = TRUE)),
-    pm = stats::rnorm(num_births, mean = 8, sd = 2),
-    DMAR_1 = sample(0:1, num_births, replace = TRUE),
-    FIPS = birth_fips,
-    MRSTATE = factor(sample(state.abb, num_births, replace = TRUE)),
-    BWT = round(stats::rnorm(num_births, mean = 3400, sd = 450)),
-    OEGEST = round(stats::rnorm(num_births, mean = 40, sd = 2))
-  )
-  if (introduce_nas) {
-    # Introduce ~10% NAs into MAGE_R and smoke columns
-    n_na <- floor(0.1 * num_births)
-    births_df$MAGE_R[sample.int(num_births, n_na)] <- NA
-    births_df$smoke[sample.int(num_births, n_na)] <- NA
-  }
-  dummy_births_txt <- file.path(file_dir, "dummy_births.txt")
-  data.table::fwrite(births_df, dummy_births_txt, sep = "\t")
-  return(list(
-    usgs = dummy_usgs_csv,
-    epa = dummy_epa_csv,
-    births = dummy_births_txt
-  ))
-}
-# Create dummy data files for the vignette
-dummy_files <- create_dummy_data()
+# Preview EPA data
+epa_preview <- data.table::fread(example_files$epa, nrows = 5)
+cat("EPA data columns:", paste(names(epa_preview), collapse = ", "), "\n")
+# Columns: id, weighted_as20062008, county_pop_served20062008, well, Dom_Pop_Percent
+
+# Preview health/demographics data
+health_preview <- data.table::fread(example_files$health, nrows = 5)
+cat("Health data columns:", paste(names(health_preview), collapse = ", "), "\n")
+# Columns: id, SBP, age_decade
 ```
 
 ### Step 3: Define Analysis Parameters
 
-Next, define all the parameters for the analysis, including the regression formula.
+Next, define all the parameters for the analysis, including the regression formula. Note that we use column names matching the example data files.
 
-```{r}
+```{r, eval=FALSE}
 # Use a small number for the vignette; recommend >= 20 for real analysis
 ndraws <- 5
-targets <- c("BWT", "OEGEST") # Birth Weight and Gestational Age
-vars_to_impute <- c("MAGE_R", "smoke")
+targets <- c("SBP") # Systolic Blood Pressure (from Demographics_dom.txt)
 output_dir <- "analysis_results"
 as_level_col <- "AsLevel"
 
+# Arsenic category labels (matching USGS 3-category model)
+as_cat_labels <- c("As<5", "As5-10", "As10+")
+
+# Reference category for regression (lowest exposure)
+drop_as_cat_label_reg <- c("As<5")
+
 # Define the regression formula
-# This is a complex formula provided as an example. It models the outcome as a
-# function of the imputed Arsenic Level, with adjustments for various
-# covariates. It includes a random effect for county (FIPS) nested within state
-# (MRSTATE) to account for spatial clustering.
+# This models SBP as a function of arsenic level with age_decade as a random effect
 regression_formula <- paste0(
   "~ as.factor(", as_level_col, ") + ",
-  "rms::rcs(MAGE_R, parms = 3) + ",
-  "as.factor(MRACEHISP_F) + ",
-  "MEDUC_2 + MEDUC_3 + MEDUC_4 + ",
-  "DMAR_1 + smoke + pm + ",
-  "(1 | MRSTATE / FIPS)"
+  "(1 | age_decade)"
 )
 ```
 
 ### Step 4: Run the Analysis
 
-With all parameters defined, call the main function `perform_sensitivity_analysis()`.
+With all parameters defined, call the main function `perform_sensitivity_analysis()`. Note that we specify custom column names to match the example data file structure.
 
-```{r, message=TRUE, warning=TRUE}
+```{r, eval=FALSE}
 # This chunk may take a moment to run
 results <- perform_sensitivity_analysis(
-  birth_data = dummy_files$births,
-  as_usgs_prob_csv = dummy_files$usgs,
-  as_epa_prob_csv = dummy_files$epa,
+  birth_data = example_files$health,
+  as_usgs_prob_csv = example_files$usgs,
+  as_epa_prob_csv = example_files$epa,
   ndraws = ndraws,
   regression_formula = regression_formula,
-  impute_vars = vars_to_impute,
   output_dir = output_dir,
   targets = targets,
+  as_cat_label = as_cat_labels,
+  drop_as_cat_label_reg = drop_as_cat_label_reg,
+  # Custom column names matching the example data files
+  id_col = "id",                                           # ID column in USGS/EPA data
+  as_conc_cols = c("RFCprobC1", "RFCprobC2", "RFCprobC3"), # USGS probability columns
+  pop_well_col = "pub_water_pop",                          # Population column in USGS
+  record_id_col = "id",                                    # ID column in health data
+  as_level_col = as_level_col,
+  # Use raw concentration column for automatic lognormal conversion
+  epa_as_conc_col = "weighted_as20062008",                 # Raw arsenic concentration
+  epa_default_sdlog = 1.0,                                 # Default sdlog value
+  epa_pwell_col = "Dom_Pop_Percent",                       # Private well percentage
+  epa_cutoffs = c(5, 10),
+  # Imputation settings
+  seed = 12345,
+  mice_m = 1,
+  mice_maxit = 5,
+  mice_method = "pmm",
+  mice_covs = NULL,
+  impute_vars = NULL,
+  apply_imputation_fallback = TRUE,
   rucc_col = NULL
 )
 ```
@@ -452,19 +414,19 @@ results <- perform_sensitivity_analysis(
 
 The `results` object is a list where each element is a `mipo` object from the `mice` package. To view a publication-ready table of the pooled results, use `summary()`.
 
-Let's examine the results for Birth Weight (`BWT`).
+Let's examine the results for Systolic Blood Pressure (`SBP`).
 
-```{r}
-bwt_summary <- results$BWT
+```{r, eval=FALSE}
+sbp_summary <- results$SBP
 knitr::kable(
-  bwt_summary,
-  caption = "Pooled Regression Results for Birth Weight (BWT)"
+  sbp_summary,
+  caption = "Pooled Regression Results for Systolic Blood Pressure (SBP)"
 )
 ```
 
 The summary table includes:
 * **term**: The regression model term.
-* **estimate**: The pooled point estimate (e.g., the mean difference in birth weight).
+* **estimate**: The pooled point estimate (e.g., the mean difference in SBP).
 * **std.error**: The pooled standard error.
 * **statistic**: The t-statistic.
 * **df**: The degrees of freedom.
@@ -472,12 +434,12 @@ The summary table includes:
 
 From this table, you can assess the magnitude, direction, and statistical significance of the association between different levels of arsenic exposure and the health outcome, while accounting for uncertainty from both exposure and covariate imputation.
 
-### Step 6: Cleanup
+### Step 6: Cleanup (Optional)
 
-Finally, remove the dummy data directory created for this example.
+Remove the output directory created during the analysis if desired.
 
-```{r}
-unlink("example_data", recursive = TRUE)
+```{r, eval=FALSE}
+unlink(output_dir, recursive = TRUE)
 ```
 
 ## Additional Examples
