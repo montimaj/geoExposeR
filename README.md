@@ -30,7 +30,7 @@ An R package for modeling health effects of environmental exposures, with a prim
 <!-- [![JOSS](https://joss.theoj.org/papers/10.21105/joss.XXXXX/status.svg)](https://joss.theoj.org/papers/10.21105/joss.XXXXX) -->
 
 <!-- USGS Software Release -->
-**USGS IPDS Record Number:** IP-XXXXXX *(To be updated after USGS software release approval)*
+**USGS IPDS Record Number:** IP-180903
 
 **Principal Investigator**: [Dr. Matthew O. Gribble](https://profiles.ucsf.edu/matthew.gribble) [matt.gribble@ucsf.edu]
 

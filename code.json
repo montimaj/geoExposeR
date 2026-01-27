@@ -5,6 +5,7 @@
     "description": "geoExposeR is a package for analyzing groundwater arsenic data in the United States. It provides tools for data cleaning, analysis, and visualization, specifically tailored for arsenic concentration data in groundwater samples.",
     "version": "1.0.0",
     "status": "production",
+    "ipdsNumber": "IP-180903",
     "permissions": {
       "usageType": "openSource",
       "licenses": [
