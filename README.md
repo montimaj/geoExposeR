@@ -444,9 +444,9 @@ geoExposeR/
 │   ├── run_geoExposeR_nitrate.R        # Nitrate exposure example
 │   ├── run_geoExposeR_uranium.R        # Uranium exposure example
 │   ├── run_geoExposeR_pm25.R           # PM2.5 air quality example
-│   ├── input_data/                     # Example input data files
-│   │   ├── USGS_dom.csv                # Sample USGS arsenic probability data
-│   │   ├── EPA_dom.csv                 # Sample EPA arsenic concentration data
+│   ├── input_data/                     # Example input data files (all dummy data*)
+│   │   ├── USGS_dom.csv                # Sample USGS arsenic probability data (dummy*)
+│   │   ├── EPA_dom.csv                 # Sample EPA arsenic concentration data (dummy*)
 │   │   ├── Demographics_dom.txt        # Sample demographics/health data (dummy*)
 │   │   ├── USGS_nitrate.csv            # Sample nitrate probability data (dummy*)
 │   │   ├── EPA_nitrate.csv             # Sample nitrate concentration data (dummy*)
