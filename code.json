@@ -24,9 +24,14 @@
     "tags": [
         "groundwater",
         "arsenic",
-        "data analysis",
-        "R package",
-        "environmental health"
+        "nitrate",
+        "uranium",
+        "air quality",
+        "exposure assessment",
+        "sensitivity analysis",
+        "multiple imputation",
+        "environmental health",
+        "R package"
     ],
     "languages": [
       "R"
@@ -36,7 +41,7 @@
       "email": "mlombard@usgs.gov"
     },
     "date": {
-      "metadataLastUpdated": "2025-07-15"
+      "metadataLastUpdated": "2026-01-27"
     }
   }
 ]
