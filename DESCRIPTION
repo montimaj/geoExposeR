@@ -2,32 +2,32 @@ Package: geoExposeR
 Title: An R Package for Modeling Health Effects of Environmental Exposures
 Version: 1.0.0
 Authors@R: c(
-       person(given = "Sayantan",
-              family = "Majumdar",
-              role = c("aut", "cre"),
-              email = "sayantan.majumdar@dri.edu",
-              comment = c(ORCID = "0000-0002-3539-0147")),
-       person(given = "Scott M.",
-              family = "Bartell",
-              role = "aut",
-              email = "sbartell@uci.edu",
-              comment = c(ORCID = "0000-0001-7797-2906")),
-       person(given = "Melissa A.",
-              family = "Lombard",
-              role = "aut",
-              email = "mlombard@usgs.gov",
-              comment = c(ORCID = "0000-0001-5924-6556")),
-       person(given = "Ryan G.",
-              family = "Smith",
-              role = "aut",
-              email = "ryan.g.smith@colostate.edu",
-              comment = c(ORCID = "0000-0002-3747-6868")),
-       person(given = "Matthew O.",
-              family = "Gribble",
-              role = "aut",
-              email = "matt.gribble@ucsf.edu",
-              comment = c(ORCID = "0000-0002-1614-2981"))
-       )    
+    person(given = "Sayantan",
+           family = "Majumdar",
+           role = c("aut", "cre"),
+           email = "sayantan.majumdar@dri.edu",
+           comment = c(ORCID = "0000-0002-3539-0147")),
+    person(given = "Scott M.",
+           family = "Bartell",
+           role = "aut",
+           email = "sbartell@uci.edu",
+           comment = c(ORCID = "0000-0001-7797-2906")),
+    person(given = "Melissa A.",
+           family = "Lombard",
+           role = "aut",
+           email = "mlombard@usgs.gov",
+           comment = c(ORCID = "0000-0001-5924-6556")),
+    person(given = "Ryan G.",
+           family = "Smith",
+           role = "aut",
+           email = "ryan.g.smith@colostate.edu",
+           comment = c(ORCID = "0000-0002-3747-6868")),
+    person(given = "Matthew O.",
+           family = "Gribble",
+           role = "aut",
+           email = "matt.gribble@ucsf.edu",
+           comment = c(ORCID = "0000-0002-1614-2981"))
+    )    
 Description: The exposure of fetuses to arsenic concentrations greater than 50 ug/L in drinking water during pregnancy is linked to unfavorable birth outcomes, while the evidence for concentrations below 50 ug/L is not conclusive. To investigate this issue, Lombard et al. (2021) utilized machine learning model estimates to determine the arsenic concentrations in private wells, which are not regulated by the federal government for drinking water contaminants. The study then assessed the relationship between these arsenic concentrations and birth outcomes across the contiguous United States.
 License: CC0
 Encoding: UTF-8
