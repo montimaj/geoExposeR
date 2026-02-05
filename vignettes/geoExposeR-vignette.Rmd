@@ -62,7 +62,7 @@ The primary challenge in studying the health effects of arsenic in private wells
 
 1.  **Probabilistic Exposure Modeling**: The package combines two sources of arsenic prediction data:
     * **USGS Models**: Machine learning models (Lombard and others, 2021) that provide a multinomial probability for arsenic concentration falling into one of three categories (`<5`, `5-10`, `>10` µg/L) for grid cells across the U.S.
-    * **EPA Data**: County-level estimates of arsenic concentrations from public supply wells aggregated by [Ravalli and others 2022]https://doi.org/10.1016/S2542-5196(22)00043-2.
+    * **EPA Data**: County-level estimates of arsenic concentrations from public supply wells aggregated by [Ravalli and others 2022](https://doi.org/10.1016/S2542-5196(22)00043-2).
     These are combined, weighted by the proportion of the population using private vs. public wells, to create a county-specific probability distribution of arsenic exposure.
 
 2.  **Multiple Imputation**: Because we don't know the true arsenic exposure for each individual, we treat it as missing data. The package uses a multiple imputation framework to create `n` complete datasets (`ndraws`). In each dataset, a plausible arsenic exposure category is assigned to each county based on the probability distribution derived in the previous step. The framework also imputes missing values in any user-specified covariates.
