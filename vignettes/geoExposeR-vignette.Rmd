@@ -4,7 +4,7 @@ author: "Sayantan Majumdar, Scott M. Bartell, Melissa A. Lombard, Ryan G. Smith,
 date: "`r Sys.Date()`"
 output: rmarkdown::html_vignette
 vignette: >
-  %\VignetteIndexEntry{Using geoExposeR to Model Health Effects of Environmental Exposures}
+  %\VignetteIndexEntry{geoExposeR}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
 ---
@@ -97,7 +97,7 @@ The probabilities must sum to 1.0 for each row.
 
 ### 2. EPA Arsenic Data (`as_epa_prob_csv`)
 
-A CSV file containing the EPA data .
+A CSV file containing the EPA data compiled by Ravalli and others, 2022.
 
 * **Default Column Names** (can be customized via function parameters):
     * `EPA_AS_meanlog`: Numeric mean (on a log scale) of the arsenic concentration
@@ -429,10 +429,11 @@ knitr::kable(
 
 The summary table includes:
 * **term**: The regression model term.
-* **estimate**: The pooled point estimate (e.g., the mean difference in SBP).
-* **std.error**: The pooled standard error.
+* **q.mi**: The pooled point estimate (e.g., the mean difference in SBP).
+* **se.mi**: The pooled standard error.
 * **statistic**: The t-statistic.
-* **df**: The degrees of freedom.
+* **conf.low**: The lower bound of the 95% confidence interval.
+* **conf.high**: The upper bound of the 95% confidence interval.
 * **p.value**: The p-value for the term.
 
 From this table, you can assess the magnitude, direction, and statistical significance of the association between different levels of arsenic exposure and the health outcome, while accounting for uncertainty from both exposure and covariate imputation.
@@ -536,6 +537,9 @@ as_cat_labels <- c("NO3<5", "NO3_5-10", "NO3_10+")
 targets <- c("methemoglobin_pct")
 
 results <- perform_sensitivity_analysis(
+  birth_data_txt = "path/to/Health_nitrate.txt",
+  as_usgs_prob_csv = "path/to/USGS_nitrate.csv",
+  as_epa_prob_csv = "path/to/EPA_nitrate.csv",
   epa_cutoffs = nitrate_cutoffs,
   as_cat_label = as_cat_labels,
   targets = targets,
@@ -567,6 +571,9 @@ as_cat_labels <- c("U<15", "U_15-30", "U_30+")
 targets <- c("eGFR")
 
 results <- perform_sensitivity_analysis(
+  birth_data_txt = "path/to/Health_uranium.txt",
+  as_usgs_prob_csv = "path/to/USGS_uranium.csv",
+  as_epa_prob_csv = "path/to/EPA_uranium.csv",
   epa_cutoffs = uranium_cutoffs,
   as_cat_label = as_cat_labels,
   targets = targets,
@@ -600,6 +607,9 @@ as_cat_labels <- c("PM25<9", "PM25_9-35", "PM25_35+")
 targets <- c("FEV1_pct_predicted")
 
 results <- perform_sensitivity_analysis(
+  birth_data_txt = "path/to/Health_pm25.txt",
+  as_usgs_prob_csv = "path/to/Model_pm25.csv",
+  as_epa_prob_csv = "path/to/EPA_pm25.csv",
   epa_cutoffs = pm25_cutoffs,
   as_cat_label = as_cat_labels,
   targets = targets,

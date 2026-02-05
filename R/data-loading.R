@@ -70,17 +70,17 @@ load_and_process_arsenic_data <- function(
     # Process cutoffs
     cutoff_config <- validate_epa_cutoffs(epa_cutoffs)
 
-    message("Detected ", n_usgs_categories, " USGS arsenic categories\n")
-    message("Using auto-generated EPA cutoffs:",
-            paste(cutoff_config$cutoffs, "ug/L"), "\n")
+    message("Detected ", n_usgs_categories, " exposure categories\n")
+    message("Using auto-generated cutoffs:",
+            paste(cutoff_config$cutoffs), "\n")
   } else {
     # User provided cutoffs are already validated and aligned with USGS
     cutoff_config <- validate_epa_cutoffs(
       epa_cutoffs, validate_cutoffs = FALSE
     )
-    message("Detected ", n_usgs_categories, " USGS arsenic categories\n")
-    message("Using user-provided EPA cutoffs:",
-            paste(cutoff_config$cutoffs, "ug/L"), "\n")
+    message("Detected ", n_usgs_categories, " exposure categories\n")
+    message("Using user-provided cutoffs:",
+            paste(cutoff_config$cutoffs), "\n")
   }
 
   # Convert EPA lognormal to multinomial
