@@ -2969,7 +2969,7 @@ test_that("load_and_process_arsenic_data uses auto-generated cutoffs", {
       id_col = "GEOID10",
       epa_cutoffs = NULL
     ),
-    "auto-generated EPA cutoffs"
+    "auto-generated cutoffs"
   )
 
   unlink(temp_dir, recursive = TRUE)
