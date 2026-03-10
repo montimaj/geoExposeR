@@ -6,7 +6,7 @@
 \alias{geoExposeR-package}
 \title{geoExposeR: An R Package for Modeling Health Effects of Environmental Exposures}
 \description{
-The exposure of fetuses to arsenic concentrations greater than 50 ug/L in drinking water during pregnancy is linked to unfavorable birth outcomes, while the evidence for concentrations below 50 ug/L is not conclusive. To investigate this issue, Lombard et al. (2021) utilized machine learning model estimates to determine the arsenic concentrations in private wells, which are not regulated by the federal government for drinking water contaminants. The study then assessed the relationship between these arsenic concentrations and birth outcomes across the contiguous United States.
+An analytical workflow that automates integration of probabilistic exposure estimates from multiple data sources, population-weighted combination of exposure probabilities, multiple imputation to propagate exposure uncertainty, mixed-effects regression modeling with proper clustering adjustment, and result pooling via Rubin's Rules with appropriate variance estimation. Originally designed for drinking water arsenic exposure estimates but broadly applicable to other environmental contaminants.
 }
 \seealso{
 Useful links:

@@ -112,7 +112,7 @@ For a detailed description of the methodology, see Majumdar and others (2026).
 The figure below illustrates the complete analytical workflow implemented in geoExposeR. The pipeline integrates four input data sources through data ingestion, probability integration, multiple imputation, and statistical modeling stages to produce pooled estimates with proper uncertainty quantification.
 
 <p align="center">
-  <img src="paper/workflow.png" alt="geoExposeR Workflow" width="400">
+  <img src="man/figures/workflow.png" alt="geoExposeR Workflow" width="400">
 </p>
 
 <p align="center"><em>geoExposeR analytical workflow showing the data processing pipeline from input sources through statistical modeling to pooled estimates. Packages used at each stage are indicated in brackets. Pooled estimates include regression coefficients (β), standard errors (SE), 95% confidence intervals (CI), and p-values, all computed using Rubin's Rules. Adapted from Majumdar and others (2026).</em></p>

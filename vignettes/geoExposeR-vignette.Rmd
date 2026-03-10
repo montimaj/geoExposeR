@@ -4,7 +4,7 @@ author: "Sayantan Majumdar, Scott M. Bartell, Melissa A. Lombard, Ryan G. Smith,
 date: "`r Sys.Date()`"
 output: rmarkdown::html_vignette
 vignette: >
-  %\VignetteIndexEntry{geoExposeR}
+  %\VignetteIndexEntry{Using geoExposeR to Model Health Effects of Environmental Exposures}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
 ---
