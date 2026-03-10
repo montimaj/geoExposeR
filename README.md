@@ -78,7 +78,7 @@ If you use geoExposeR in your research, please cite:
 
 ## Statement of Need
 
-Environmental epidemiologists face a fundamental challenge: exposure to environmental contaminants is rarely measured directly for study participants. Instead, researchers must estimate exposures using predictive models, monitoring data, or biomarkers—each with inherent uncertainty. Failing to account for this uncertainty can lead to biased effect estimates and misleading conclusions about health risks.
+Environmental epidemiologists face a fundamental challenge: exposure to environmental contaminants is rarely measured directly for study participants. Instead, researchers must estimate exposures using predictive models, monitoring data, or biomarkers—each with inherent uncertainty. Failing to account for this uncertainty can lead to biased effect estimates and misleading conclusions about health risks (Majumdar and others, 2026).
 
 This challenge is particularly acute for drinking water contaminants like arsenic, where an estimated 40 million Americans rely on unregulated private wells. Foundational studies developed sophisticated methods to address exposure uncertainty by combining U.S. Geological Survey (USGS) machine learning predictions with U.S. Environmental Protection Agency (EPA) monitoring data through population-weighted integration and multiple imputation. However, implementing these methods requires specialized expertise in geospatial analysis, statistical modeling, and R programming—presenting a significant barrier for many researchers.
 
@@ -94,6 +94,19 @@ geoExposeR directly addresses this need by packaging the complete analytical pip
 
 By lowering technical barriers to rigorous uncertainty quantification, geoExposeR promotes reproducibility and enables wider application of state-of-the-art methods in environmental epidemiology.
 
+For a detailed description of the methodology, see Majumdar and others (2026).
+
+### Terminology: "USGS" vs "EPA" Data Types
+
+> **Important:** Throughout the package, the terms "USGS" and "EPA" refer to two distinct **types of input data**, not exclusively to data from those specific agencies:
+>
+> | Package Term | Data Type | Description | Examples |
+> |---|---|---|---|
+> | **"USGS" data** | **Modeled probabilistic estimates** | Multinomial probability distributions across concentration categories, typically derived from predictive models | USGS machine learning predictions, satellite-derived estimates, hybrid spatial models |
+> | **"EPA" data** | **Measured concentrations** | Point measurements or summary statistics of contaminant concentrations from monitoring stations or laboratory analyses | EPA public water system monitoring, ground-based air quality monitors, field sampling data |
+>
+> The package combines these two data types using population-based weights (e.g., private well vs. public water usage) to create integrated exposure probability distributions. Any dataset that provides **modeled probabilities** can serve as the "USGS" input, and any dataset that provides **measured concentrations** can serve as the "EPA" input, regardless of the originating agency.
+
 ## Workflow
 
 The figure below illustrates the complete analytical workflow implemented in geoExposeR. The pipeline integrates four input data sources through data ingestion, probability integration, multiple imputation, and statistical modeling stages to produce pooled estimates with proper uncertainty quantification.
@@ -102,7 +115,7 @@ The figure below illustrates the complete analytical workflow implemented in geo
   <img src="paper/workflow.png" alt="geoExposeR Workflow" width="400">
 </p>
 
-<p align="center"><em>geoExposeR analytical workflow showing the data processing pipeline from input sources through statistical modeling to pooled estimates. Packages used at each stage are indicated in brackets. Pooled estimates include regression coefficients (β), standard errors (SE), 95% confidence intervals (CI), and p-values, all computed using Rubin's Rules.</em></p>
+<p align="center"><em>geoExposeR analytical workflow showing the data processing pipeline from input sources through statistical modeling to pooled estimates. Packages used at each stage are indicated in brackets. Pooled estimates include regression coefficients (β), standard errors (SE), 95% confidence intervals (CI), and p-values, all computed using Rubin's Rules. Adapted from Majumdar and others (2026).</em></p>
 
 ### Key Capabilities
 
@@ -873,157 +886,112 @@ This section describes how to prepare input files for geoExposeR from raw data s
 | Health Outcomes | CDC, State Health Departments, Research Data | CSV/TXT | Health outcomes linked to any matching identifier |
 | Population Data | [U.S. Census Bureau](https://www.census.gov/) | Various | County-level population and water source statistics |
 
-### Step 1: Preparing USGS Probability Data
+### Step 1: Preparing Modeled Probability Data (\"USGS\" Data)
 
-The USGS provides arsenic probability models as GeoTIFF rasters. To convert these to the CSV format required by geoExposeR:
+This step converts modeled probability rasters (e.g., USGS GeoTIFF predictions) into the CSV format required by geoExposeR. The `prepare_usgs_data()` function automates this process.
 
-#### 1.1 Obtain USGS GeoTIFF Data
+#### 1.1 Obtain Modeled Probability Data
 
-Download arsenic probability GeoTIFFs from USGS ScienceBase:
+For arsenic, download probability GeoTIFFs from USGS ScienceBase:
 
 > Lombard, M.A., 2021, Data used to model and map arsenic concentration exceedances in private wells throughout the conterminous United States for human health studies: U.S. Geological Survey data release, https://doi.org/10.5066/P90RBJXS.
 
-Key datasets include regional and national-scale predictions at various concentration thresholds.
+For other contaminants, any model-predicted probability rasters can be used (see [Terminology](#terminology-usgs-vs-epa-data-types)).
 
-#### 1.2 Extract Values by Geographic Unit
+#### 1.2 Extract and Convert Using `prepare_usgs_data()`
 
-Use R with the `terra` and `sf` packages to extract county-level statistics:
+The `prepare_usgs_data()` function handles raster extraction, conversion from exceedance probabilities to multinomial probabilities, and output formatting:
 
 ```r
 library(terra)
 library(sf)
-library(dplyr)
 
-# Load USGS probability GeoTIFFs for each concentration threshold
-# Example: probabilities of As > 1, > 5, > 10 µg/L
-prob_c1 <- rast("path/to/usgs_prob_gt1.tif")   # P(As > 1)
-prob_c2 <- rast("path/to/usgs_prob_gt5.tif")   # P(As > 5)
-prob_c3 <- rast("path/to/usgs_prob_gt10.tif")  # P(As > 10)
-
-# Load county boundaries (e.g., from Census TIGER/Line)
+# Load probability rasters and geographic boundaries
+prob_rasters <- list(
+  gt5 = rast("path/to/prob_gt5.tif"),    # P(concentration > 5)
+  gt10 = rast("path/to/prob_gt10.tif")   # P(concentration > 10)
+)
 counties <- st_read("path/to/county_boundaries.shp")
 
-# Extract mean probabilities for each county
-# Option A: Using county centroids (faster)
-centroids <- st_centroid(counties)
-counties$prob_gt1 <- extract(prob_c1, vect(centroids))[, 2]
-counties$prob_gt5 <- extract(prob_c2, vect(centroids))[, 2]
-counties$prob_gt10 <- extract(prob_c3, vect(centroids))[, 2]
-
-# Option B: Using county polygon means (more accurate, slower)
-counties$prob_gt1 <- exact_extract(prob_c1, counties, fun = "mean")
-counties$prob_gt5 <- exact_extract(prob_c2, counties, fun = "mean")
-counties$prob_gt10 <- exact_extract(prob_c3, counties, fun = "mean")
-
-# Convert to multinomial probabilities (must sum to 1)
-# Category 1: As < 5, Category 2: 5 ≤ As < 10, Category 3: As ≥ 10
-usgs_data <- counties %>%
-  st_drop_geometry() %>%
-  mutate(
-    RFC3_C3v2 = prob_gt10,                           # P(As ≥ 10)
-    RFC3_C2v2 = pmax(0, prob_gt5 - prob_gt10),       # P(5 ≤ As < 10)
-    RFC3_C1v2 = pmax(0, 1 - prob_gt5),               # P(As < 5)
-    # Normalize to ensure sum = 1
-    total = RFC3_C1v2 + RFC3_C2v2 + RFC3_C3v2,
-    RFC3_C1v2 = RFC3_C1v2 / total,
-    RFC3_C2v2 = RFC3_C2v2 / total,
-    RFC3_C3v2 = RFC3_C3v2 / total
-  ) %>%
-  select(GEOID10 = GEOID, RFC3_C1v2, RFC3_C2v2, RFC3_C3v2)
-
-# Add private well population estimates (from Census or ACS)
-# Wells_2010 = estimated population using private wells
-usgs_data$Wells_2010 <- well_population_data$private_well_pop
-
-write.csv(usgs_data, "usgs_arsenic_probabilities.csv", row.names = FALSE)
+# Use prepare_usgs_data() to extract and convert probabilities
+usgs_data <- prepare_usgs_data(
+  prob_rasters = prob_rasters,
+  boundaries = counties,
+  id_col = "GEOID",
+  extraction_method = "mean",   # "mean" for polygon averages, "centroid" for point extraction
+  cutoffs = c(5, 10),
+  output_file = "usgs_probabilities.csv"
+)
 ```
+
+The function automatically:
+- Extracts raster values for each geographic unit
+- Converts exceedance probabilities to multinomial categories (e.g., P(As<5), P(5≤As<10), P(As≥10))
+- Normalizes probabilities to sum to 1.0
+- Saves the formatted output CSV
+
+See `run_geoExposeR_from_geotiff.R` in the `examples/` folder for a complete working example.
 
 #### 1.3 Custom Geographic Subsets
 
-For state, aquifer, or bounding box analyses:
+Use `subset_by_geography()` to filter data to specific states, regions, or custom areas:
 
 ```r
 # Filter to specific state (e.g., California)
-ca_counties <- counties %>% filter(STATEFP == "06")
+ca_data <- subset_by_geography(data = usgs_data, state_fips = "06")
 
-# Filter to bounding box
-bbox <- st_bbox(c(xmin = -120, ymin = 35, xmax = -115, ymax = 40), crs = 4326)
-subset_counties <- counties %>% st_crop(bbox)
-
-# Filter to specific aquifer extent
-aquifer <- st_read("path/to/aquifer_boundary.shp")
-aquifer_counties <- counties %>% st_filter(aquifer)
+# Filter to specific counties
+selected <- subset_by_geography(
+  data = usgs_data,
+  geoid_list = c("06001", "06003", "06005")
+)
 ```
 
-### Step 2: Preparing EPA Public Water System Data
+### Step 2: Preparing Measured Concentration Data (\"EPA\" Data)
 
-EPA data provides arsenic concentrations in public water systems, which serves populations not using private wells.
+This step processes measured concentration data (e.g., EPA monitoring data) into the format required by geoExposeR. The `prepare_epa_data()` function automates this process.
 
-#### 2.1 Obtain EPA Data
+#### 2.1 Obtain Measured Concentration Data
 
-Download arsenic monitoring data from:
+For arsenic, download monitoring data from:
 - [Columbia University Drinking Water Dashboard](https://msph.shinyapps.io/drinking-water-dashboard/) ([Ravalli and others, 2022](https://doi.org/10.1016/S2542-5196(22)00043-2))
 - [EPA SDWIS Federal Reports](https://www.epa.gov/ground-water-and-drinking-water/safe-drinking-water-information-system-sdwis-federal-reporting)
 - [EPA Envirofacts](https://enviro.epa.gov/)
 - State environmental agency databases
 
-#### 2.2 Process EPA Data to Lognormal Parameters
+For other contaminants, any measured concentration dataset can be used (see [Terminology](#terminology-usgs-vs-epa-data-types)).
+
+#### 2.2 Process Using `prepare_epa_data()`
+
+The `prepare_epa_data()` function handles aggregation, lognormal parameter estimation, and output formatting:
 
 ```r
-library(dplyr)
+# Option A: From raw individual measurements
+epa_data <- prepare_epa_data(
+  epa_data = raw_epa_measurements,
+  id_col = "county_fips",
+  concentration_col = "arsenic_ug_L",
+  population_col = "pop_served",
+  input_type = "raw",                   # Calculates population-weighted lognormal params
+  output_file = "epa_lognormal.csv"
+)
 
-# Load raw EPA arsenic measurements
-epa_raw <- read.csv("path/to/epa_arsenic_data.csv")
-
-# Aggregate by county and calculate lognormal parameters
-epa_processed <- epa_raw %>%
-  filter(arsenic_concentration > 0) %>%  # Remove zeros for log transform
-  group_by(county_fips) %>%
-  summarize(
-    # Calculate population-weighted mean if population data available
-    mean_as = weighted.mean(arsenic_concentration, population_served, na.rm = TRUE),
-    sd_as = sd(arsenic_concentration, na.rm = TRUE),
-    n_systems = n()
-  ) %>%
-  mutate(
-    # Convert to lognormal parameters
-    # If you have the mean and SD of concentrations:
-    EPA_AS_meanlog = log(mean_as^2 / sqrt(sd_as^2 + mean_as^2)),
-    EPA_AS_sdlog = sqrt(log(1 + (sd_as^2 / mean_as^2))),
-    # Handle cases where SD is unavailable
-    EPA_AS_sdlog = ifelse(is.na(EPA_AS_sdlog) | EPA_AS_sdlog == 0, 1.0, EPA_AS_sdlog)
-  )
-
-# Add private well percentage (1 - public water percentage)
-# From Census or American Community Survey
-epa_processed$PWELL_private_pct <- census_data$private_well_pct
-
-write.csv(epa_processed, "epa_arsenic_lognormal.csv", row.names = FALSE)
+# Option B: From pre-computed summary statistics
+epa_data <- prepare_epa_data(
+  epa_data = epa_summary_stats,
+  id_col = "county_fips",
+  mean_col = "mean_concentration",
+  sd_col = "sd_concentration",
+  input_type = "summary",
+  output_file = "epa_lognormal.csv"
+)
 ```
 
-#### 2.3 Alternative: Direct Concentration to Lognormal
+See `run_geoExposeR_data_pipeline.R` in the `examples/` folder for a complete working example.
 
-If you have summary statistics rather than raw measurements:
+#### 2.3 Automatic Lognormal Conversion
 
-```r
-# If you only have geometric mean and geometric SD
-epa_data <- epa_data %>%
-  mutate(
-    EPA_AS_meanlog = log(geometric_mean),
-    EPA_AS_sdlog = log(geometric_sd)
-  )
-
-# If you only have arithmetic mean (assume typical environmental SD)
-epa_data <- epa_data %>%
-  mutate(
-    EPA_AS_meanlog = log(arithmetic_mean + 0.1),  # Small offset to avoid log(0)
-    EPA_AS_sdlog = 1.0  # Typical value for environmental arsenic
-  )
-```
-
-#### 2.4 Automatic Lognormal Conversion
-
-Alternatively, you can skip manual preprocessing entirely. If your EPA data contains raw arsenic concentrations, geoExposeR can automatically convert them to lognormal parameters:
+Alternatively, you can skip manual preprocessing entirely. If your measured concentration data contains raw values, geoExposeR can automatically convert them to lognormal parameters at analysis time:
 
 ```r
 # Specify the concentration column - no preprocessing needed

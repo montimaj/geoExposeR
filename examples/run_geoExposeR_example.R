@@ -8,8 +8,17 @@
 #' 
 #' The data files include:
 #'   - USGS_dom.csv: USGS model-based multinomial probabilities of arsenic levels
-#'   - EPA_dom.csv: EPA arsenic data with lognormal parameters
+#'       Columns: id (FIPS code), pub_water_pop (public water population),
+#'       RFCprobC1/C2/C3 (P(As<5), P(5<=As<10), P(As>=10) in µg/L),
+#'       RFC_maxprob, RFC_maxprob_num, Dom_Pop_Percent (% on private wells)
+#'   - EPA_dom.csv: EPA arsenic concentration data from public water systems
+#'       Columns: id (FIPS code), weighted_as20062008 (pop-weighted mean As in µg/L),
+#'       county_pop_served20062008, well, Dom_Pop_Percent (% on private wells)
 #'   - Demographics_dom.txt: Demographics data with health outcomes
+#'       Columns: id (FIPS code), SBP (systolic blood pressure in mmHg),
+#'       age_decade (age group: 30-39, 40-49, etc.)
+#'
+#' See examples/input_data/README.md for full column documentation.
 #' 
 #' Author: Dr. Sayantan Majumdar (sayantan.majumdar@dri.edu)
 #' =============================================================================
@@ -167,6 +176,15 @@ results <- tryCatch({
 # ==============================================================================
 # Step 6: Examine and Interpret Results
 # ==============================================================================
+# The results table contains the following columns (pooled via Rubin's Rules):
+#   term      - Regression term (e.g., "As5-10", "As10+")
+#   q.mi      - Pooled effect estimate (mean across imputations)
+#   se.mi     - Pooled standard error (accounts for within- and between-imputation variance)
+#   statistic - Test statistic (q.mi / se.mi)
+#   conf.low  - Lower bound of 95% confidence interval
+#   conf.high - Upper bound of 95% confidence interval
+#   p.value   - Two-sided p-value for the test statistic
+# ==============================================================================
 
 if (!is.null(results)) {
   cat("\n========================================\n")
@@ -185,10 +203,10 @@ if (!is.null(results)) {
       print(result_df)
       
       cat("\nInterpretation:\n")
-      cat("- The 'estimate' column shows the pooled effect size\n")
-      cat("- The 'std.error' shows the pooled standard error\n")
+      cat("- The 'q.mi' column shows the pooled effect estimate (Rubin's Rules)\n")
+      cat("- The 'se.mi' shows the pooled standard error\n")
       cat("- The 'p.value' indicates statistical significance\n")
-      cat("- Positive estimates for As5-10 or As10+ indicate higher SBP\n")
+      cat("- Positive q.mi values for As5-10 or As10+ indicate higher SBP\n")
       cat("  compared to the reference category (As<5)\n\n")
     } else {
       cat("No results found for this target.\n\n")
