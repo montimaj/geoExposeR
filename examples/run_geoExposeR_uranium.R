@@ -12,15 +12,11 @@
 #' decreased eGFR (estimated Glomerular Filtration Rate).
 #' 
 #' ADAPTATION NOTES:
-#' - The geoExposeR framework uses "EPA" and "USGS" terminology internally,
-#'   but these can represent ANY two probability data sources
-#' - "EPA" data = concentration measurements from monitored water systems
-#' - "USGS" data = model-predicted probability distributions (any source)
 #' - Cutoffs are customized for uranium: <15, 15-30, >=30 µg/L
-#' 
+#'
 #' DATA FILES:
-#'   - USGS_uranium.csv: Multinomial probabilities of uranium concentration categories
-#'   - EPA_uranium.csv: Uranium concentration data with lognormal parameters
+#'   - prob_uranium.csv: Multinomial probabilities of uranium concentration categories
+#'   - conc_uranium.csv: Uranium concentration data with lognormal parameters
 #'   - Health_uranium.txt: Kidney function data (eGFR measurements)
 #' 
 #' Author: Dr. Sayantan Majumdar (sayantan.majumdar@dri.edu)
@@ -41,8 +37,8 @@ if (file.exists("DESCRIPTION")) {
 pkg_dir <- getwd()
 
 # Data files for uranium analysis
-usgs_data_path <- file.path(pkg_dir, "examples", "input_data", "USGS_uranium.csv")
-epa_data_path <- file.path(pkg_dir, "examples", "input_data", "EPA_uranium.csv")
+prob_data_path <- file.path(pkg_dir, "examples", "input_data", "prob_uranium.csv")
+conc_data_path <- file.path(pkg_dir, "examples", "input_data", "conc_uranium.csv")
 health_data_path <- file.path(pkg_dir, "examples", "input_data", "Health_uranium.txt")
 
 # Output directory
@@ -53,15 +49,15 @@ if (!dir.exists(output_dir)) {
 
 # Verify files exist
 stopifnot(
-  "USGS data file not found" = file.exists(usgs_data_path),
-  "EPA data file not found" = file.exists(epa_data_path),
+  "Probability data file not found" = file.exists(prob_data_path),
+  "Concentration data file not found" = file.exists(conc_data_path),
   "Health data file not found" = file.exists(health_data_path)
 )
 
 cat("=== Uranium Exposure Analysis ===\n\n")
 cat("Data files:\n")
-cat("  Probability data (USGS):", usgs_data_path, "\n")
-cat("  Concentration data (EPA):", epa_data_path, "\n")
+cat("  Probability data:", prob_data_path, "\n")
+cat("  Concentration data:", conc_data_path, "\n")
 cat("  Health outcomes:", health_data_path, "\n\n")
 
 # ==============================================================================
@@ -82,7 +78,7 @@ ndraws <- 5
 # Lower eGFR indicates worse kidney function
 targets <- c("eGFR")
 
-# Column containing uranium concentration in EPA data
+# Column containing uranium concentration in concentration data
 conc_col <- "weighted_uranium"
 
 # Regression formula
@@ -116,28 +112,28 @@ results <- perform_sensitivity_analysis(
   # Number of imputed datasets
   ndraws = ndraws,
   
-  # Data file paths (using EPA/USGS terminology for any data sources)
-  as_usgs_prob_csv = usgs_data_path,
-  as_epa_prob_csv = epa_data_path,
+  # Data file paths
+  model_prob_csv = prob_data_path,
+  conc_data_csv = conc_data_path,
   birth_data_txt = health_data_path,
   
-  # EPA data configuration - auto-convert concentration to lognormal
-  epa_as_conc_col = conc_col,
-  epa_default_sdlog = 0.9,  # Uranium typically shows moderate variance
+  # Concentration data configuration - auto-convert concentration to lognormal
+  conc_raw_col = conc_col,
+  default_sdlog = 0.9,  # Uranium typically shows moderate variance
   
   # Custom cutoffs for uranium
-  epa_cutoffs = uranium_cutoffs,
+  conc_cutoffs = uranium_cutoffs,
   
   # Category labels for results display
   as_cat_label = as_cat_labels,
   drop_as_cat_label_reg = drop_as_cat_label_reg,
   
-  # Column name mappings (adapting package parameters for uranium data)
-  id_col = "id",                                    # ID column in USGS/EPA data
-  as_conc_cols = c("RFCprobC1", "RFCprobC2", "RFCprobC3"),  # Probability columns
+  # Column name mappings for uranium data
+  id_col = "id",                                    # ID column in prob/conc data
+  prob_cols = c("RFCprobC1", "RFCprobC2", "RFCprobC3"),  # Probability columns
   pop_well_col = "pub_water_pop",                   # Population column
   record_id_col = "id",                             # ID column in health data
-  epa_pwell_col = "Dom_Pop_Percent",                # Private well percentage
+  pwell_col = "Dom_Pop_Percent",                # Private well percentage
   
   # Regression configuration
   regression_formula = regression_formula,

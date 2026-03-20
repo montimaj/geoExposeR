@@ -10,9 +10,9 @@ validate_column_names(
   id_col,
   pop_well_col,
   record_id_col,
-  epa_as_mean_col,
-  epa_as_sd_col,
-  epa_pwell_col
+  conc_mean_col,
+  conc_sd_col,
+  pwell_col
 )
 }
 \description{

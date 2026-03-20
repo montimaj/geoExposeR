@@ -35,18 +35,18 @@ Default is "private_well_pct".}
 The target_data with an added column for private well percentage.
 }
 \description{
-Merges private well percentage data into EPA or USGS datasets.
+Merges private well percentage data into probability or concentration datasets.
 }
 \examples{
 \dontrun{
-# Add well percentages to EPA data
+# Add well percentages to concentration data
 census_wells <- data.frame(
   GEOID = c("06001", "06003"),
   private_well_pct = c(15.2, 28.7)
 )
 
-epa_with_wells <- add_well_percentages(
-  target_data = epa_data,
+conc_with_wells <- add_well_percentages(
+  target_data = conc_data,
   well_data = census_wells,
   well_pct_col = "private_well_pct"
 )

@@ -3,14 +3,14 @@
 #' Internal function to create multiple imputed datasets with arsenic
 #' exposure levels based on county-level probability distributions.
 #'
-#' @param datmatx_usgs Data frame containing USGS data with geographic
+#' @param datmatx_prob Data frame containing probability data with geographic
 #'   identifiers
 #' @param rasterprob_combined Matrix of combined probability distributions
 #' @param cellpop Vector of cell population weights
 #' @param births Data frame containing birth records
 #' @param ndraws Number of imputed datasets to create
 #' @param as_cat_label Character vector of arsenic category labels
-#' @param id_col Column name for geographic/participant identifier in USGS data
+#' @param id_col Column name for geographic/participant identifier in probability data
 #' @param record_id_col Column name for matching identifier in health data
 #' @param as_level_col Column name for arsenic level variable
 #' @param apply_imputation_fallback Logical indicating whether to apply fallback
@@ -23,7 +23,7 @@
 #'
 #' @keywords internal
 impute_arsenic_exposure <- function(
-  datmatx_usgs,
+  datmatx_prob,
   rasterprob_combined,
   cellpop,
   births,
@@ -35,15 +35,15 @@ impute_arsenic_exposure <- function(
   apply_imputation_fallback
 ) {
   # Get unique counties and setup
-  county_id_list <- na.omit(unique(datmatx_usgs[[id_col]]))
+  county_id_list <- na.omit(unique(datmatx_prob[[id_col]]))
   n_counties <- length(county_id_list)
   ncats <- length(as_cat_label)
   # Pre-allocate matrix with appropriate type
   as_temp <- matrix(NA_integer_, nrow = n_counties, ncol = ndraws)
   # Create efficient county lookup using split()
   county_lookup <- split(
-    seq_len(nrow(datmatx_usgs)),
-    datmatx_usgs[[id_col]]
+    seq_len(nrow(datmatx_prob)),
+    datmatx_prob[[id_col]]
   )
   # Vectorized probability calculation and sampling
   for (i in seq_len(n_counties)) {

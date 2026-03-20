@@ -5,7 +5,7 @@
 \title{Data Ingestion Functions for geoExposeR}
 \description{
 Functions for preparing input data from raw sources including:
-USGS GeoTIFF probability rasters, EPA public water system data,
+GeoTIFF probability rasters, measured concentration data,
 health outcome data formatting, and Census/population data integration.
 }
 \keyword{internal}

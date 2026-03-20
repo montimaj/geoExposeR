@@ -1,20 +1,19 @@
-#' Perform Sensitivity Analysis for Arsenic Exposure
+#' Perform Sensitivity Analysis for Environmental Exposure
 #'
 #' @description
-#' This function performs a sensitivity analysis to assess the impact of arsenic
-#' exposure from private wells on specified health outcomes. It integrates data
-#' from USGS (private wells) and EPA (public wells) models to create a
-#' probabilistic model of arsenic exposure, weighted by the proportion of the
-#' population using each water source. It then uses multiple imputation to
-#' generate a series of datasets with imputed arsenic levels.
+#' This function performs a sensitivity analysis to assess the impact of
+#' environmental exposure on specified health outcomes. It integrates modeled
+#' probability data and measured concentration data to create a probabilistic
+#' exposure model, weighted by the proportion of the population using each
+#' source. It then uses multiple imputation to generate a series of datasets
+#' with imputed exposure levels.
 #'
 #' @param ndraws An integer specifying the number of imputed datasets to
 #'   generate.
-#' @param as_usgs_prob_csv A file path to the CSV containing USGS model-based
-#'   multinomial probabilities of arsenic levels for private wells.
-#' @param as_epa_prob_csv A file path to the CSV containing EPA model-based
-#'   lognormal parameters for public wells and the percentage of private well
-#'   users.
+#' @param model_prob_csv A file path to the CSV containing modeled multinomial
+#'   probabilities of exposure levels (e.g., from predictive models).
+#' @param conc_data_csv A file path to the CSV containing measured concentration
+#'   lognormal parameters and the percentage of private well users.
 #' @param birth_data_txt A file path to the text file containing the birth data.
 #' @param regression_formula A string or formula object for the regression
 #'   model.
@@ -37,14 +36,14 @@
 #'   including county FIPS codes, census tract IDs, ZIP codes, or participant-
 #'   specific IDs. The only requirement is that identifiers match between
 #'   datasets. Defaults to "GEOID10".
-#' @param as_conc_cols A character vector of column names from the USGS data
-#'   for the arsenic concentration probabilities. Defaults to
-#'   c("RFC3_C1v2", "RFC3_C2v2", "RFC3_C3v2").
-#' @param epa_cutoffs A numeric vector of cutoffs for categorizing arsenic
-#' levels based on EPA data. If NULL, will be automatically determined based
-#' on number of USGS columns. Defaults to c(5, 10)
+#' @param prob_cols A character vector of column names from the probability data
+#'   for the exposure probability categories. Defaults to
+#'   c("prob_C1", "prob_C2", "prob_C3").
+#' @param conc_cutoffs A numeric vector of cutoffs for categorizing exposure
+#' levels based on concentration data. If NULL, will be automatically determined
+#' based on number of probability columns. Defaults to c(5, 10)
 #' @param pop_well_col A character string specifying the column name from the
-#'   USGS data for the population of well users. Defaults to "Wells_2010".
+#'   probability data for the population of well users. Defaults to "Wells_2010".
 #'   This has to be at the same scale as the `id_col` and `record_id_col`.
 #' @param record_id_col A character string specifying the column name for
 #'   the geographic/participant identifier in the health data. Supports any
@@ -53,22 +52,22 @@
 #'   Defaults to "FIPS".
 #' @param as_level_col A character string for the name of the imputed arsenic
 #'   level column. Defaults to "AsLevel".
-#' @param epa_as_mean_col A character string for the column name of the EPA
-#'   arsenic lognormal meanlog parameter. Defaults to "EPA_AS_meanlog".
-#'   If this column doesn't exist and `epa_as_conc_col` is provided, it will
+#' @param conc_mean_col A character string for the column name of the
+#'   concentration lognormal meanlog parameter. Defaults to "conc_meanlog".
+#'   If this column doesn't exist and `conc_raw_col` is provided, it will
 #'   be calculated automatically.
-#' @param epa_as_sd_col A character string for the column name of the EPA
-#'   arsenic lognormal sdlog parameter. Defaults to "EPA_AS_sdlog".
-#'   If this column doesn't exist, `epa_default_sdlog` will be used.
-#' @param epa_as_conc_col A character string for the column name of raw EPA
-#'   arsenic concentration values (in µg/L). If provided and the meanlog/sdlog
-#'   columns don't exist, lognormal parameters will be calculated automatically
-#'   as: meanlog = log(concentration + 0.1), sdlog = epa_default_sdlog.
+#' @param conc_sd_col A character string for the column name of the
+#'   concentration lognormal sdlog parameter. Defaults to "conc_sdlog".
+#'   If this column doesn't exist, `default_sdlog` will be used.
+#' @param conc_raw_col A character string for the column name of raw
+#'   concentration values (in measurement units). If provided and the
+#'   meanlog/sdlog columns don't exist, lognormal parameters will be calculated
+#'   automatically as: meanlog = log(concentration + 0.1), sdlog = default_sdlog.
 #'   Defaults to NULL.
-#' @param epa_default_sdlog A numeric value for the default lognormal sdlog
-#'   when EPA sdlog column is not provided. Defaults to 1.0, which is typical
-#'   for environmental arsenic data.
-#' @param epa_pwell_col A character string for the column name of the
+#' @param default_sdlog A numeric value for the default lognormal sdlog
+#'   when the sdlog column is not provided. Defaults to 1.0, which is typical
+#'   for environmental concentration data.
+#' @param pwell_col A character string for the column name of the
 #'   percentage of private well users. Defaults to "PWELL_private_pct".
 #' @param seed An integer for setting the random number generator seed for
 #'   reproducibility. Defaults to 12345.
@@ -101,8 +100,8 @@
 #' # Basic usage with minimal parameters
 #' results <- perform_sensitivity_analysis(
 #'   ndraws = 10,
-#'   as_usgs_prob_csv = "usgs_arsenic_probs.csv",
-#'   as_epa_prob_csv = "epa_arsenic_params.csv",
+#'   model_prob_csv = "prob_model_data.csv",
+#'   conc_data_csv = "conc_measured_data.csv",
 #'   birth_data_txt = "birth_outcomes.txt",
 #'   regression_formula = "~ as.factor(AsLevel) + maternal_age + (1|county)",
 #'   output_dir = "results/",
@@ -112,8 +111,8 @@
 #' # Advanced usage with custom parameters and MICE imputation
 #' results <- perform_sensitivity_analysis(
 #'   ndraws = 100,
-#'   as_usgs_prob_csv = "data/usgs_probs.csv",
-#'   as_epa_prob_csv = "data/epa_params.csv",
+#'   model_prob_csv = "data/prob_data.csv",
+#'   conc_data_csv = "data/conc_data.csv",
 #'   birth_data_txt = "data/births.txt",
 #'   regression_formula = "~ as.factor(AsLevel) + MAGE_R + rural + (1|FIPS)",
 #'   output_dir = "sensitivity_results/",
@@ -128,8 +127,8 @@
 #' @export
 perform_sensitivity_analysis <- function(
   ndraws = 10,
-  as_usgs_prob_csv = NULL,
-  as_epa_prob_csv = NULL,
+  model_prob_csv = NULL,
+  conc_data_csv = NULL,
   birth_data_txt = NULL,
   regression_formula = NULL,
   output_dir = "sensitivity_results/",
@@ -140,16 +139,16 @@ perform_sensitivity_analysis <- function(
   columns_to_select = NULL,
   rucc_col = NULL,
   id_col = "GEOID10",
-  as_conc_cols = c("RFC3_C1v2", "RFC3_C2v2", "RFC3_C3v2"),
-  epa_cutoffs = c(5, 10),
+  prob_cols = c("prob_C1", "prob_C2", "prob_C3"),
+  conc_cutoffs = c(5, 10),
   pop_well_col = "Wells_2010",
   record_id_col = "FIPS",
   as_level_col = "AsLevel",
-  epa_as_mean_col = "EPA_AS_meanlog",
-  epa_as_sd_col = "EPA_AS_sdlog",
-  epa_as_conc_col = NULL,
-  epa_default_sdlog = 1.0,
-  epa_pwell_col = "PWELL_private_pct",
+  conc_mean_col = "conc_meanlog",
+  conc_sd_col = "conc_sdlog",
+  conc_raw_col = NULL,
+  default_sdlog = 1.0,
+  pwell_col = "PWELL_private_pct",
   seed = 12345,
   mice_m = 1,
   mice_maxit = 5,
@@ -162,8 +161,8 @@ perform_sensitivity_analysis <- function(
   # --- 0. Validate all input parameters ---
   validate_all_inputs(
     birth_data_txt = birth_data_txt,
-    as_usgs_prob_csv = as_usgs_prob_csv,
-    as_epa_prob_csv = as_epa_prob_csv,
+    model_prob_csv = model_prob_csv,
+    conc_data_csv = conc_data_csv,
     ndraws = ndraws,
     regression_formula = regression_formula,
     targets = targets,
@@ -172,22 +171,22 @@ perform_sensitivity_analysis <- function(
     mice_m = mice_m,
     mice_maxit = mice_maxit,
     mice_method = mice_method,
-    epa_as_mean_col = epa_as_mean_col,
-    epa_as_sd_col = epa_as_sd_col,
-    epa_as_conc_col = epa_as_conc_col,
-    epa_default_sdlog = epa_default_sdlog,
+    conc_mean_col = conc_mean_col,
+    conc_sd_col = conc_sd_col,
+    conc_raw_col = conc_raw_col,
+    default_sdlog = default_sdlog,
     seed = seed,
     as_cat_label = as_cat_label,
     as_level_col = as_level_col,
     drop_as_cat_label_reg = drop_as_cat_label_reg,
-    epa_cutoffs = epa_cutoffs,
+    conc_cutoffs = conc_cutoffs,
     columns_to_select = columns_to_select,
     rucc_col = rucc_col,
     id_col = id_col,
-    as_conc_cols = as_conc_cols,
+    prob_cols = prob_cols,
     pop_well_col = pop_well_col,
     record_id_col = record_id_col,
-    epa_pwell_col = epa_pwell_col,
+    pwell_col = pwell_col,
     mice_covs = mice_covs,
     apply_imputation_fallback = apply_imputation_fallback
   )
@@ -199,17 +198,17 @@ perform_sensitivity_analysis <- function(
 
   # --- 1. Load and Process Arsenic Data ---
   arsenic_data <- load_and_process_arsenic_data(
-    as_usgs_prob_csv = as_usgs_prob_csv,
-    as_epa_prob_csv = as_epa_prob_csv,
-    as_conc_cols = as_conc_cols,
+    model_prob_csv = model_prob_csv,
+    conc_data_csv = conc_data_csv,
+    prob_cols = prob_cols,
     pop_well_col = pop_well_col,
-    epa_as_mean_col = epa_as_mean_col,
-    epa_as_sd_col = epa_as_sd_col,
-    epa_as_conc_col = epa_as_conc_col,
-    epa_default_sdlog = epa_default_sdlog,
-    epa_pwell_col = epa_pwell_col,
+    conc_mean_col = conc_mean_col,
+    conc_sd_col = conc_sd_col,
+    conc_raw_col = conc_raw_col,
+    default_sdlog = default_sdlog,
+    pwell_col = pwell_col,
     id_col = id_col,
-    epa_cutoffs = epa_cutoffs,
+    conc_cutoffs = conc_cutoffs,
     format_ids = format_ids
   )
 
@@ -224,7 +223,7 @@ perform_sensitivity_analysis <- function(
 
   # --- 3. Multiple Imputation ---
   imputed_datasets <- impute_arsenic_exposure(
-    datmatx_usgs = arsenic_data$datmatx_usgs,
+    datmatx_prob = arsenic_data$datmatx_prob,
     rasterprob_combined = arsenic_data$rasterprob_combined,
     cellpop = arsenic_data$cellpop,
     births = births,

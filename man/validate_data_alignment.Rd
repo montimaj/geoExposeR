@@ -4,12 +4,12 @@
 \alias{validate_data_alignment}
 \title{Validate Data Alignment}
 \usage{
-validate_data_alignment(datmatx_usgs, datmatx_epa)
+validate_data_alignment(datmatx_prob, datmatx_conc)
 }
 \arguments{
-\item{datmatx_usgs}{USGS data frame}
+\item{datmatx_prob}{Probability data frame}
 
-\item{datmatx_epa}{EPA data frame}
+\item{datmatx_conc}{Concentration data frame}
 }
 \description{
 Validate Data Alignment

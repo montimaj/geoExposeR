@@ -5,7 +5,7 @@
 \title{Impute Arsenic Exposure Levels}
 \usage{
 impute_arsenic_exposure(
-  datmatx_usgs,
+  datmatx_prob,
   rasterprob_combined,
   cellpop,
   births,
@@ -18,7 +18,7 @@ impute_arsenic_exposure(
 )
 }
 \arguments{
-\item{datmatx_usgs}{Data frame containing USGS data with geographic
+\item{datmatx_prob}{Data frame containing probability data with geographic
 identifiers}
 
 \item{rasterprob_combined}{Matrix of combined probability distributions}
@@ -31,7 +31,7 @@ identifiers}
 
 \item{as_cat_label}{Character vector of arsenic category labels}
 
-\item{id_col}{Column name for geographic/participant identifier in USGS data}
+\item{id_col}{Column name for geographic/participant identifier in probability data}
 
 \item{record_id_col}{Column name for matching identifier in health data}
 

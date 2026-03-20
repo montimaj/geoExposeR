@@ -6,17 +6,17 @@
 \usage{
 validate_file_contents(
   birth_data_txt,
-  as_usgs_prob_csv,
-  as_epa_prob_csv,
+  model_prob_csv,
+  conc_data_csv,
   rucc_col,
   record_id_col,
   id_col,
-  as_conc_cols,
+  prob_cols,
   pop_well_col,
-  epa_as_mean_col,
-  epa_as_sd_col,
-  epa_as_conc_col,
-  epa_pwell_col
+  conc_mean_col,
+  conc_sd_col,
+  conc_raw_col,
+  pwell_col
 )
 }
 \description{

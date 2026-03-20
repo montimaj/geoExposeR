@@ -2,7 +2,7 @@
 % Please edit documentation in R/data-loading.R
 \name{generate_logarithmic_cutoffs}
 \alias{generate_logarithmic_cutoffs}
-\title{Generate Logarithmic EPA Cutoffs for Unusual Category Counts}
+\title{Generate Logarithmic Cutoffs for Unusual Category Counts}
 \usage{
 generate_logarithmic_cutoffs(n_categories)
 }
@@ -13,6 +13,6 @@ generate_logarithmic_cutoffs(n_categories)
 Numeric vector of logarithmically spaced cutoffs
 }
 \description{
-Generate Logarithmic EPA Cutoffs for Unusual Category Counts
+Generate Logarithmic Cutoffs for Unusual Category Counts
 }
 \keyword{internal}

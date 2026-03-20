@@ -21,35 +21,35 @@ create_dummy_data <- function(
   geoid10 <- sample(county_ids, num_rows, replace = TRUE)
   birth_fips <- sample(county_ids, num_births, replace = TRUE)
 
-  # USGS Arsenic Probability Data
-  usgs_prob_values <- t(apply(
+  # Modeled Probability Data
+  prob_values <- t(apply(
     matrix(stats::runif(num_rows * 3), ncol = 3),
     1,
     function(x) x / sum(x)
   ))
   wells_2010 <- sample(50:500, num_rows, replace = TRUE)
-  dummy_usgs_df <- data.frame(
-    RFC3_C1v2 = usgs_prob_values[, 1],
-    RFC3_C2v2 = usgs_prob_values[, 2],
-    RFC3_C3v2 = usgs_prob_values[, 3],
+  dummy_prob_df <- data.frame(
+    prob_C1 = prob_values[, 1],
+    prob_C2 = prob_values[, 2],
+    prob_C3 = prob_values[, 3],
     Wells_2010 = wells_2010,
     GEOID10 = geoid10
   )
-  dummy_usgs_csv <- file.path(file_dir, "dummy_usgs_arsenic.csv")
-  data.table::fwrite(dummy_usgs_df, dummy_usgs_csv)
+  dummy_prob_csv <- file.path(file_dir, "dummy_prob_data.csv")
+  data.table::fwrite(dummy_prob_df, dummy_prob_csv)
 
-  # EPA Arsenic Data
-  epa_lognormal_meanlog <- stats::runif(num_rows, 0.5, 1.5)
-  epa_lognormal_sdlog <- stats::runif(num_rows, 0.1, 0.5)
+  # Measured Concentration Data
+  conc_lognormal_meanlog <- stats::runif(num_rows, 0.5, 1.5)
+  conc_lognormal_sdlog <- stats::runif(num_rows, 0.1, 0.5)
   private_well_percent <- stats::runif(num_rows, min = 1, max = 99)
-  dummy_epa_df <- data.frame(
-    EPA_AS_meanlog = epa_lognormal_meanlog,
-    EPA_AS_sdlog = epa_lognormal_sdlog,
+  dummy_conc_df <- data.frame(
+    conc_meanlog = conc_lognormal_meanlog,
+    conc_sdlog = conc_lognormal_sdlog,
     PWELL_private_pct = private_well_percent,
     GEOID10 = geoid10
   )
-  dummy_epa_csv <- file.path(file_dir, "dummy_epa_arsenic.csv")
-  data.table::fwrite(dummy_epa_df, dummy_epa_csv)
+  dummy_conc_csv <- file.path(file_dir, "dummy_conc_data.csv")
+  data.table::fwrite(dummy_conc_df, dummy_conc_csv)
 
   # Birth Data
   births_df <- data.frame(
@@ -77,8 +77,8 @@ create_dummy_data <- function(
   data.table::fwrite(births_df, dummy_births_txt, sep = "\t")
 
   return(list(
-    usgs = dummy_usgs_csv,
-    epa = dummy_epa_csv,
+    prob = dummy_prob_csv,
+    conc = dummy_conc_csv,
     births = dummy_births_txt
   ))
 }
@@ -132,8 +132,8 @@ test_that("Function handles missing covariates and produces valid output", {
   results <- expect_no_error(
     perform_sensitivity_analysis(
       birth_data_txt = dummy_files$births,
-      as_usgs_prob_csv = dummy_files$usgs,
-      as_epa_prob_csv = dummy_files$epa,
+      model_prob_csv = dummy_files$prob,
+      conc_data_csv = dummy_files$conc,
       ndraws = ndraws,
       regression_formula = regression_formula,
       impute_vars = impute_vars,
@@ -217,8 +217,8 @@ test_that("Function handles basic analysis without missing data", {
   results <- expect_no_error(
     perform_sensitivity_analysis(
       birth_data_txt = dummy_files$births,
-      as_usgs_prob_csv = dummy_files$usgs,
-      as_epa_prob_csv = dummy_files$epa,
+      model_prob_csv = dummy_files$prob,
+      conc_data_csv = dummy_files$conc,
       ndraws = 3,
       regression_formula = "~ as.factor(AsLevel) + MAGE_R + (1 | MRSTATE)",
       targets = c("BWT"),
@@ -242,8 +242,8 @@ test_that("Function handles single target variable", {
   results <- expect_no_error(
     perform_sensitivity_analysis(
       birth_data_txt = dummy_files$births,
-      as_usgs_prob_csv = dummy_files$usgs,
-      as_epa_prob_csv = dummy_files$epa,
+      model_prob_csv = dummy_files$prob,
+      conc_data_csv = dummy_files$conc,
       ndraws = 2,
       regression_formula = "~ as.factor(AsLevel) + (1 | MRSTATE)",
       targets = "OEGEST",
@@ -265,30 +265,30 @@ test_that("validate_inputs validates required parameters correctly", {
   expect_error(
     geoExposeR:::validate_all_inputs(
       birth_data_txt = NULL,
-      as_usgs_prob_csv = "usgs.csv",
-      as_epa_prob_csv = "epa.csv"
+      model_prob_csv = "prob_data.csv",
+      conc_data_csv = "conc_data.csv"
     ),
     "birth_data_txt is required and cannot be NULL"
   )
 
-  # Test missing as_usgs_prob_csv
+  # Test missing model_prob_csv
   expect_error(
     geoExposeR:::validate_all_inputs(
       birth_data_txt = "birth.txt",
-      as_usgs_prob_csv = NULL,
-      as_epa_prob_csv = "epa.csv"
+      model_prob_csv = NULL,
+      conc_data_csv = "conc_data.csv"
     ),
-    "as_usgs_prob_csv is required and cannot be NULL"
+    "model_prob_csv is required and cannot be NULL"
   )
 
-  # Test missing as_epa_prob_csv
+  # Test missing conc_data_csv
   expect_error(
     geoExposeR:::validate_all_inputs(
       birth_data_txt = "birth.txt",
-      as_usgs_prob_csv = "usgs.csv",
-      as_epa_prob_csv = NULL
+      model_prob_csv = "prob_data.csv",
+      conc_data_csv = NULL
     ),
-    "as_epa_prob_csv is required and cannot be NULL"
+    "conc_data_csv is required and cannot be NULL"
   )
 })
 
@@ -297,8 +297,8 @@ test_that("validate_inputs validates file path formats", {
   expect_error(
     geoExposeR:::validate_all_inputs(
       birth_data_txt = 123,
-      as_usgs_prob_csv = "usgs.csv",
-      as_epa_prob_csv = "epa.csv"
+      model_prob_csv = "prob_data.csv",
+      conc_data_csv = "conc_data.csv"
     ),
     "birth_data_txt must be a single character string"
   )
@@ -307,30 +307,30 @@ test_that("validate_inputs validates file path formats", {
   expect_error(
     geoExposeR:::validate_all_inputs(
       birth_data_txt = c("file1.txt", "file2.txt"),
-      as_usgs_prob_csv = "usgs.csv",
-      as_epa_prob_csv = "epa.csv"
+      model_prob_csv = "prob_data.csv",
+      conc_data_csv = "conc_data.csv"
     ),
     "birth_data_txt must be a single character string"
   )
 
-  # Test non-character as_usgs_prob_csv
+  # Test non-character model_prob_csv
   expect_error(
     geoExposeR:::validate_all_inputs(
       birth_data_txt = "birth.txt",
-      as_usgs_prob_csv = 123,
-      as_epa_prob_csv = "epa.csv"
+      model_prob_csv = 123,
+      conc_data_csv = "conc_data.csv"
     ),
-    "as_usgs_prob_csv must be a single character string"
+    "model_prob_csv must be a single character string"
   )
 
-  # Test non-character as_epa_prob_csv
+  # Test non-character conc_data_csv
   expect_error(
     geoExposeR:::validate_all_inputs(
       birth_data_txt = "birth.txt",
-      as_usgs_prob_csv = "usgs.csv",
-      as_epa_prob_csv = 123
+      model_prob_csv = "prob_data.csv",
+      conc_data_csv = 123
     ),
-    "as_epa_prob_csv must be a single character string"
+    "conc_data_csv must be a single character string"
   )
 })
 
@@ -339,8 +339,8 @@ test_that("validate_inputs validates file existence", {
   expect_error(
     geoExposeR:::validate_all_inputs(
       birth_data_txt = "nonexistent_birth.txt",
-      as_usgs_prob_csv = "usgs.csv",
-      as_epa_prob_csv = "epa.csv"
+      model_prob_csv = "prob_data.csv",
+      conc_data_csv = "conc_data.csv"
     ),
     "File does not exist: nonexistent_birth.txt"
   )
@@ -350,44 +350,44 @@ test_that("validate_inputs validates file existence", {
   dir.create(temp_dir)
 
   birth_file <- file.path(temp_dir, "birth.txt")
-  usgs_file <- file.path(temp_dir, "usgs.csv")
-  epa_file <- file.path(temp_dir, "epa.csv")
+  prob_file <- file.path(temp_dir, "prob_data.csv")
+  conc_file <- file.path(temp_dir, "conc_data.csv")
 
   # Create the files
   writeLines("test", birth_file)
-  writeLines("test", usgs_file)
-  writeLines("test", epa_file)
+  writeLines("test", prob_file)
+  writeLines("test", conc_file)
 
   # Test with existing files (should not error)
   expect_no_error(
     geoExposeR:::validate_all_inputs(
       birth_data_txt = birth_file,
-      as_usgs_prob_csv = usgs_file,
-      as_epa_prob_csv = epa_file
+      model_prob_csv = prob_file,
+      conc_data_csv = conc_file
     )
   )
 
-  # Test when the EPA file does not exist
-  unlink(epa_file)  # Remove EPA file
+  # Test when the concentration file does not exist
+  unlink(conc_file)  # Remove concentration file
   expect_error(
     geoExposeR:::validate_all_inputs(
       birth_data_txt = birth_file,
-      as_usgs_prob_csv = usgs_file,
-      as_epa_prob_csv = epa_file
+      model_prob_csv = prob_file,
+      conc_data_csv = conc_file
     ),
-    "File does not exist.*epa\\.csv"
+    "File does not exist.*conc_data\\.csv"
   )
 
-  # Test when the USGS file does not exist
-  writeLines("test", epa_file)  # Restore EPA file
-  unlink(usgs_file)  # Remove USGS file
+  # Test when the probability file does not exist
+  writeLines("test", conc_file)  # Restore concentration file
+  unlink(prob_file)  # Remove probability file
   expect_error(
     geoExposeR:::validate_all_inputs(
       birth_data_txt = birth_file,
-      as_usgs_prob_csv = usgs_file,
-      as_epa_prob_csv = epa_file
+      model_prob_csv = prob_file,
+      conc_data_csv = conc_file
     ),
-    "File does not exist.*usgs\\.csv"
+    "File does not exist.*prob_data\\.csv"
   )
 
   unlink(temp_dir, recursive = TRUE)
@@ -399,18 +399,18 @@ test_that("validate_inputs validates ndraws parameter", {
 
   # Create temporary files
   birth_file <- file.path(temp_dir, "birth.txt")
-  usgs_file <- file.path(temp_dir, "usgs.csv")
-  epa_file <- file.path(temp_dir, "epa.csv")
+  prob_file <- file.path(temp_dir, "prob_data.csv")
+  conc_file <- file.path(temp_dir, "conc_data.csv")
   writeLines("test", birth_file)
-  writeLines("test", usgs_file)
-  writeLines("test", epa_file)
+  writeLines("test", prob_file)
+  writeLines("test", conc_file)
 
   # Test non-numeric ndraws
   expect_error(
     geoExposeR:::validate_all_inputs(
       birth_data_txt = birth_file,
-      as_usgs_prob_csv = usgs_file,
-      as_epa_prob_csv = epa_file,
+      model_prob_csv = prob_file,
+      conc_data_csv = conc_file,
       ndraws = "five"
     ),
     "ndraws must be a single numeric value"
@@ -420,8 +420,8 @@ test_that("validate_inputs validates ndraws parameter", {
   expect_error(
     geoExposeR:::validate_all_inputs(
       birth_data_txt = birth_file,
-      as_usgs_prob_csv = usgs_file,
-      as_epa_prob_csv = epa_file,
+      model_prob_csv = prob_file,
+      conc_data_csv = conc_file,
       ndraws = c(1, 2, 3)
     ),
     "ndraws must be a single numeric value"
@@ -431,8 +431,8 @@ test_that("validate_inputs validates ndraws parameter", {
   expect_error(
     geoExposeR:::validate_all_inputs(
       birth_data_txt = birth_file,
-      as_usgs_prob_csv = usgs_file,
-      as_epa_prob_csv = epa_file,
+      model_prob_csv = prob_file,
+      conc_data_csv = conc_file,
       ndraws = 0
     ),
     "ndraws must be a positive integer"
@@ -442,8 +442,8 @@ test_that("validate_inputs validates ndraws parameter", {
   expect_error(
     geoExposeR:::validate_all_inputs(
       birth_data_txt = birth_file,
-      as_usgs_prob_csv = usgs_file,
-      as_epa_prob_csv = epa_file,
+      model_prob_csv = prob_file,
+      conc_data_csv = conc_file,
       ndraws = -5
     ),
     "ndraws must be a positive integer"
@@ -453,8 +453,8 @@ test_that("validate_inputs validates ndraws parameter", {
   expect_error(
     geoExposeR:::validate_all_inputs(
       birth_data_txt = birth_file,
-      as_usgs_prob_csv = usgs_file,
-      as_epa_prob_csv = epa_file,
+      model_prob_csv = prob_file,
+      conc_data_csv = conc_file,
       ndraws = 5.5
     ),
     "ndraws must be a positive integer"
@@ -464,8 +464,8 @@ test_that("validate_inputs validates ndraws parameter", {
   expect_warning(
     geoExposeR:::validate_all_inputs(
       birth_data_txt = birth_file,
-      as_usgs_prob_csv = usgs_file,
-      as_epa_prob_csv = epa_file,
+      model_prob_csv = prob_file,
+      conc_data_csv = conc_file,
       ndraws = 15000
     ),
     "ndraws is very large.*This may take a long time"
@@ -480,18 +480,18 @@ test_that("validate_inputs validates regression_formula parameter", {
 
   # Create temporary files
   birth_file <- file.path(temp_dir, "birth.txt")
-  usgs_file <- file.path(temp_dir, "usgs.csv")
-  epa_file <- file.path(temp_dir, "epa.csv")
+  prob_file <- file.path(temp_dir, "prob_data.csv")
+  conc_file <- file.path(temp_dir, "conc_data.csv")
   writeLines("test", birth_file)
-  writeLines("test", usgs_file)
-  writeLines("test", epa_file)
+  writeLines("test", prob_file)
+  writeLines("test", conc_file)
 
   # Test non-character, non-formula regression_formula
   expect_error(
     geoExposeR:::validate_all_inputs(
       birth_data_txt = birth_file,
-      as_usgs_prob_csv = usgs_file,
-      as_epa_prob_csv = epa_file,
+      model_prob_csv = prob_file,
+      conc_data_csv = conc_file,
       regression_formula = 123
     ),
     "regression_formula must be a character string or formula object"
@@ -501,8 +501,8 @@ test_that("validate_inputs validates regression_formula parameter", {
   expect_error(
     geoExposeR:::validate_all_inputs(
       birth_data_txt = birth_file,
-      as_usgs_prob_csv = usgs_file,
-      as_epa_prob_csv = epa_file,
+      model_prob_csv = prob_file,
+      conc_data_csv = conc_file,
       regression_formula = c("~ x", "~ y")
     ),
     "regression_formula must be a single character string"
@@ -512,8 +512,8 @@ test_that("validate_inputs validates regression_formula parameter", {
   expect_error(
     geoExposeR:::validate_all_inputs(
       birth_data_txt = birth_file,
-      as_usgs_prob_csv = usgs_file,
-      as_epa_prob_csv = epa_file,
+      model_prob_csv = prob_file,
+      conc_data_csv = conc_file,
       regression_formula = ""
     ),
     "regression_formula cannot be empty"
@@ -523,8 +523,8 @@ test_that("validate_inputs validates regression_formula parameter", {
   expect_error(
     geoExposeR:::validate_all_inputs(
       birth_data_txt = birth_file,
-      as_usgs_prob_csv = usgs_file,
-      as_epa_prob_csv = epa_file,
+      model_prob_csv = prob_file,
+      conc_data_csv = conc_file,
       regression_formula = "   "
     ),
     "regression_formula cannot be empty"
@@ -534,8 +534,8 @@ test_that("validate_inputs validates regression_formula parameter", {
   expect_error(
     geoExposeR:::validate_all_inputs(
       birth_data_txt = birth_file,
-      as_usgs_prob_csv = usgs_file,
-      as_epa_prob_csv = epa_file,
+      model_prob_csv = prob_file,
+      conc_data_csv = conc_file,
       regression_formula = "invalid formula syntax $$"
     ),
     "Invalid regression_formula"
@@ -545,8 +545,8 @@ test_that("validate_inputs validates regression_formula parameter", {
   expect_no_error(
     geoExposeR:::validate_all_inputs(
       birth_data_txt = birth_file,
-      as_usgs_prob_csv = usgs_file,
-      as_epa_prob_csv = epa_file,
+      model_prob_csv = prob_file,
+      conc_data_csv = conc_file,
       regression_formula = "~ as.factor(AsLevel) + y"
     )
   )
@@ -555,8 +555,8 @@ test_that("validate_inputs validates regression_formula parameter", {
   expect_no_error(
     geoExposeR:::validate_all_inputs(
       birth_data_txt = birth_file,
-      as_usgs_prob_csv = usgs_file,
-      as_epa_prob_csv = epa_file,
+      model_prob_csv = prob_file,
+      conc_data_csv = conc_file,
       regression_formula = as.formula("~ x + y")
     )
   )
@@ -570,18 +570,18 @@ test_that("validate_inputs validates targets parameter", {
 
   # Create temporary files
   birth_file <- file.path(temp_dir, "birth.txt")
-  usgs_file <- file.path(temp_dir, "usgs.csv")
-  epa_file <- file.path(temp_dir, "epa.csv")
+  prob_file <- file.path(temp_dir, "prob_data.csv")
+  conc_file <- file.path(temp_dir, "conc_data.csv")
   writeLines("test", birth_file)
-  writeLines("test", usgs_file)
-  writeLines("test", epa_file)
+  writeLines("test", prob_file)
+  writeLines("test", conc_file)
 
   # Test non-character targets
   expect_error(
     geoExposeR:::validate_all_inputs(
       birth_data_txt = birth_file,
-      as_usgs_prob_csv = usgs_file,
-      as_epa_prob_csv = epa_file,
+      model_prob_csv = prob_file,
+      conc_data_csv = conc_file,
       targets = 123
     ),
     "targets must be a character vector"
@@ -591,8 +591,8 @@ test_that("validate_inputs validates targets parameter", {
   expect_error(
     geoExposeR:::validate_all_inputs(
       birth_data_txt = birth_file,
-      as_usgs_prob_csv = usgs_file,
-      as_epa_prob_csv = epa_file,
+      model_prob_csv = prob_file,
+      conc_data_csv = conc_file,
       targets = character(0)
     ),
     "targets cannot be empty"
@@ -602,8 +602,8 @@ test_that("validate_inputs validates targets parameter", {
   expect_error(
     geoExposeR:::validate_all_inputs(
       birth_data_txt = birth_file,
-      as_usgs_prob_csv = usgs_file,
-      as_epa_prob_csv = epa_file,
+      model_prob_csv = prob_file,
+      conc_data_csv = conc_file,
       targets = c("BWT", NA, "OEGEST")
     ),
     "targets cannot contain NA or empty values"
@@ -613,8 +613,8 @@ test_that("validate_inputs validates targets parameter", {
   expect_error(
     geoExposeR:::validate_all_inputs(
       birth_data_txt = birth_file,
-      as_usgs_prob_csv = usgs_file,
-      as_epa_prob_csv = epa_file,
+      model_prob_csv = prob_file,
+      conc_data_csv = conc_file,
       targets = c("BWT", "", "OEGEST")
     ),
     "targets cannot contain NA or empty values"
@@ -624,8 +624,8 @@ test_that("validate_inputs validates targets parameter", {
   expect_error(
     geoExposeR:::validate_all_inputs(
       birth_data_txt = birth_file,
-      as_usgs_prob_csv = usgs_file,
-      as_epa_prob_csv = epa_file,
+      model_prob_csv = prob_file,
+      conc_data_csv = conc_file,
       targets = c("BWT", "BWT", "OEGEST")
     ),
     "targets cannot contain duplicate values"
@@ -635,8 +635,8 @@ test_that("validate_inputs validates targets parameter", {
   expect_no_error(
     geoExposeR:::validate_all_inputs(
       birth_data_txt = birth_file,
-      as_usgs_prob_csv = usgs_file,
-      as_epa_prob_csv = epa_file,
+      model_prob_csv = prob_file,
+      conc_data_csv = conc_file,
       targets = c("BWT", "OEGEST")
     )
   )
@@ -650,18 +650,18 @@ test_that("validate_inputs validates impute_vars parameter", {
 
   # Create temporary files
   birth_file <- file.path(temp_dir, "birth.txt")
-  usgs_file <- file.path(temp_dir, "usgs.csv")
-  epa_file <- file.path(temp_dir, "epa.csv")
+  prob_file <- file.path(temp_dir, "prob_data.csv")
+  conc_file <- file.path(temp_dir, "conc_data.csv")
   writeLines("test", birth_file)
-  writeLines("test", usgs_file)
-  writeLines("test", epa_file)
+  writeLines("test", prob_file)
+  writeLines("test", conc_file)
 
   # Test non-character impute_vars
   expect_error(
     geoExposeR:::validate_all_inputs(
       birth_data_txt = birth_file,
-      as_usgs_prob_csv = usgs_file,
-      as_epa_prob_csv = epa_file,
+      model_prob_csv = prob_file,
+      conc_data_csv = conc_file,
       impute_vars = 123
     ),
     "impute_vars must be a character vector or NULL"
@@ -671,8 +671,8 @@ test_that("validate_inputs validates impute_vars parameter", {
   expect_error(
     geoExposeR:::validate_all_inputs(
       birth_data_txt = birth_file,
-      as_usgs_prob_csv = usgs_file,
-      as_epa_prob_csv = epa_file,
+      model_prob_csv = prob_file,
+      conc_data_csv = conc_file,
       impute_vars = character(0)
     ),
     "impute_vars cannot be empty \\(use NULL instead\\)"
@@ -682,8 +682,8 @@ test_that("validate_inputs validates impute_vars parameter", {
   expect_error(
     geoExposeR:::validate_all_inputs(
       birth_data_txt = birth_file,
-      as_usgs_prob_csv = usgs_file,
-      as_epa_prob_csv = epa_file,
+      model_prob_csv = prob_file,
+      conc_data_csv = conc_file,
       impute_vars = c("var1", NA, "var2")
     ),
     "impute_vars cannot contain NA or empty values"
@@ -693,8 +693,8 @@ test_that("validate_inputs validates impute_vars parameter", {
   expect_no_error(
     geoExposeR:::validate_all_inputs(
       birth_data_txt = birth_file,
-      as_usgs_prob_csv = usgs_file,
-      as_epa_prob_csv = epa_file,
+      model_prob_csv = prob_file,
+      conc_data_csv = conc_file,
       impute_vars = c("var1", "var2")
     )
   )
@@ -703,8 +703,8 @@ test_that("validate_inputs validates impute_vars parameter", {
   expect_no_error(
     geoExposeR:::validate_all_inputs(
       birth_data_txt = birth_file,
-      as_usgs_prob_csv = usgs_file,
-      as_epa_prob_csv = epa_file,
+      model_prob_csv = prob_file,
+      conc_data_csv = conc_file,
       impute_vars = NULL
     )
   )
@@ -718,18 +718,18 @@ test_that("validate_inputs validates output_dir parameter", {
 
   # Create temporary files
   birth_file <- file.path(temp_dir, "birth.txt")
-  usgs_file <- file.path(temp_dir, "usgs.csv")
-  epa_file <- file.path(temp_dir, "epa.csv")
+  prob_file <- file.path(temp_dir, "prob_data.csv")
+  conc_file <- file.path(temp_dir, "conc_data.csv")
   writeLines("test", birth_file)
-  writeLines("test", usgs_file)
-  writeLines("test", epa_file)
+  writeLines("test", prob_file)
+  writeLines("test", conc_file)
 
   # Test non-character output_dir
   expect_error(
     geoExposeR:::validate_all_inputs(
       birth_data_txt = birth_file,
-      as_usgs_prob_csv = usgs_file,
-      as_epa_prob_csv = epa_file,
+      model_prob_csv = prob_file,
+      conc_data_csv = conc_file,
       output_dir = 123
     ),
     "output_dir must be a single character string"
@@ -739,8 +739,8 @@ test_that("validate_inputs validates output_dir parameter", {
   expect_error(
     geoExposeR:::validate_all_inputs(
       birth_data_txt = birth_file,
-      as_usgs_prob_csv = usgs_file,
-      as_epa_prob_csv = epa_file,
+      model_prob_csv = prob_file,
+      conc_data_csv = conc_file,
       output_dir = ""
     ),
     "output_dir cannot be empty"
@@ -750,8 +750,8 @@ test_that("validate_inputs validates output_dir parameter", {
   expect_error(
     geoExposeR:::validate_all_inputs(
       birth_data_txt = birth_file,
-      as_usgs_prob_csv = usgs_file,
-      as_epa_prob_csv = epa_file,
+      model_prob_csv = prob_file,
+      conc_data_csv = conc_file,
       output_dir = "/nonexistent/parent/directory"
     ),
     "Parent directory does not exist"
@@ -762,8 +762,8 @@ test_that("validate_inputs validates output_dir parameter", {
   expect_no_error(
     geoExposeR:::validate_all_inputs(
       birth_data_txt = birth_file,
-      as_usgs_prob_csv = usgs_file,
-      as_epa_prob_csv = epa_file,
+      model_prob_csv = prob_file,
+      conc_data_csv = conc_file,
       output_dir = valid_output_dir
     )
   )
@@ -777,18 +777,18 @@ test_that("validate_inputs validates MICE parameters", {
 
   # Create temporary files
   birth_file <- file.path(temp_dir, "birth.txt")
-  usgs_file <- file.path(temp_dir, "usgs.csv")
-  epa_file <- file.path(temp_dir, "epa.csv")
+  prob_file <- file.path(temp_dir, "prob_data.csv")
+  conc_file <- file.path(temp_dir, "conc_data.csv")
   writeLines("test", birth_file)
-  writeLines("test", usgs_file)
-  writeLines("test", epa_file)
+  writeLines("test", prob_file)
+  writeLines("test", conc_file)
 
   # Test invalid mice_m
   expect_error(
     geoExposeR:::validate_all_inputs(
       birth_data_txt = birth_file,
-      as_usgs_prob_csv = usgs_file,
-      as_epa_prob_csv = epa_file,
+      model_prob_csv = prob_file,
+      conc_data_csv = conc_file,
       mice_m = -1
     ),
     "mice_m must be a positive integer"
@@ -797,8 +797,8 @@ test_that("validate_inputs validates MICE parameters", {
   expect_error(
     geoExposeR:::validate_all_inputs(
       birth_data_txt = birth_file,
-      as_usgs_prob_csv = usgs_file,
-      as_epa_prob_csv = epa_file,
+      model_prob_csv = prob_file,
+      conc_data_csv = conc_file,
       mice_m = 2.5
     ),
     "mice_m must be a positive integer"
@@ -808,8 +808,8 @@ test_that("validate_inputs validates MICE parameters", {
   expect_error(
     geoExposeR:::validate_all_inputs(
       birth_data_txt = birth_file,
-      as_usgs_prob_csv = usgs_file,
-      as_epa_prob_csv = epa_file,
+      model_prob_csv = prob_file,
+      conc_data_csv = conc_file,
       mice_m = "ten"
     ),
     "mice_m must be a single numeric value"
@@ -819,8 +819,8 @@ test_that("validate_inputs validates MICE parameters", {
   expect_warning(
     geoExposeR:::validate_all_inputs(
       birth_data_txt = birth_file,
-      as_usgs_prob_csv = usgs_file,
-      as_epa_prob_csv = epa_file,
+      model_prob_csv = prob_file,
+      conc_data_csv = conc_file,
       mice_m = 150
     ),
     "mice_m is very large.*This may take a long time"
@@ -830,8 +830,8 @@ test_that("validate_inputs validates MICE parameters", {
   expect_error(
     geoExposeR:::validate_all_inputs(
       birth_data_txt = birth_file,
-      as_usgs_prob_csv = usgs_file,
-      as_epa_prob_csv = epa_file,
+      model_prob_csv = prob_file,
+      conc_data_csv = conc_file,
       mice_maxit = 0
     ),
     "mice_maxit must be a positive integer"
@@ -840,8 +840,8 @@ test_that("validate_inputs validates MICE parameters", {
   expect_error(
     geoExposeR:::validate_all_inputs(
       birth_data_txt = birth_file,
-      as_usgs_prob_csv = usgs_file,
-      as_epa_prob_csv = epa_file,
+      model_prob_csv = prob_file,
+      conc_data_csv = conc_file,
       mice_maxit = "three"
     ),
     "mice_maxit must be a single numeric value"
@@ -851,8 +851,8 @@ test_that("validate_inputs validates MICE parameters", {
   expect_error(
     geoExposeR:::validate_all_inputs(
       birth_data_txt = birth_file,
-      as_usgs_prob_csv = usgs_file,
-      as_epa_prob_csv = epa_file,
+      model_prob_csv = prob_file,
+      conc_data_csv = conc_file,
       mice_method = "invalid_method"
     ),
     "mice_method must be one of"
@@ -862,8 +862,8 @@ test_that("validate_inputs validates MICE parameters", {
   expect_error(
     geoExposeR:::validate_all_inputs(
       birth_data_txt = birth_file,
-      as_usgs_prob_csv = usgs_file,
-      as_epa_prob_csv = epa_file,
+      model_prob_csv = prob_file,
+      conc_data_csv = conc_file,
       mice_method = 123
     ),
     "mice_method must be a single character string"
@@ -873,8 +873,8 @@ test_that("validate_inputs validates MICE parameters", {
   expect_no_error(
     geoExposeR:::validate_all_inputs(
       birth_data_txt = birth_file,
-      as_usgs_prob_csv = usgs_file,
-      as_epa_prob_csv = epa_file,
+      model_prob_csv = prob_file,
+      conc_data_csv = conc_file,
       mice_method = "pmm"
     )
   )
@@ -889,53 +889,53 @@ test_that("validate_inputs validates numeric parameters", {
   # Create temporary files
   dummy_files <- create_dummy_data(file_dir = temp_dir)
 
-  # Test invalid epa_lognormal_sdlog
-  # create a dummy epa_lognormal_sdlog
-  dummy_epa_df <- data.table::fread(dummy_files$epa, header = TRUE)
-  dummy_epa_df$EPA_AS_sdlog <- -1.0
-  dummy_epa_csv <- file.path(temp_dir, "invalid_epa_arsenic.csv")
-  data.table::fwrite(dummy_epa_df, dummy_epa_csv)
+  # Test invalid conc_lognormal_sdlog
+  # create a dummy conc_lognormal_sdlog
+  dummy_conc_df <- data.table::fread(dummy_files$conc, header = TRUE)
+  dummy_conc_df$conc_sdlog <- -1.0
+  dummy_conc_csv <- file.path(temp_dir, "invalid_conc_data.csv")
+  data.table::fwrite(dummy_conc_df, dummy_conc_csv)
 
   expect_error(
     geoExposeR:::perform_sensitivity_analysis(
       birth_data_txt = dummy_files$births,
-      as_usgs_prob_csv = dummy_files$usgs,
-      as_epa_prob_csv = dummy_epa_csv
+      model_prob_csv = dummy_files$prob,
+      conc_data_csv = dummy_conc_csv
     ),
-    "epa_as_sd_col must contain only positive values.*"
+    "conc_sd_col must contain only positive values.*"
   )
 
-  dummy_epa_df$EPA_AS_sdlog1 <- "one"
-  data.table::fwrite(dummy_epa_df, dummy_epa_csv)
+  dummy_conc_df$conc_sdlog1 <- "one"
+  data.table::fwrite(dummy_conc_df, dummy_conc_csv)
   expect_error(
     geoExposeR:::perform_sensitivity_analysis(
       birth_data_txt = dummy_files$births,
-      as_usgs_prob_csv = dummy_files$usgs,
-      as_epa_prob_csv = dummy_epa_csv,
-      epa_as_sd_col = "EPA_AS_sdlog1"
+      model_prob_csv = dummy_files$prob,
+      conc_data_csv = dummy_conc_csv,
+      conc_sd_col = "conc_sdlog1"
     ),
-    "epa_as_sd_col must contain only finite numeric values.*"
+    "conc_sd_col must contain only finite numeric values.*"
   )
 
-  # Test large epa_lognormal_sdlog (should warn)
-  dummy_epa_df$EPA_AS_sdlog <- 15.0
-  data.table::fwrite(dummy_epa_df, dummy_epa_csv)
+  # Test large conc_lognormal_sdlog (should warn)
+  dummy_conc_df$conc_sdlog <- 15.0
+  data.table::fwrite(dummy_conc_df, dummy_conc_csv)
   expect_warning(
     geoExposeR:::perform_sensitivity_analysis(
       birth_data_txt = dummy_files$births,
-      as_usgs_prob_csv = dummy_files$usgs,
-      as_epa_prob_csv = dummy_epa_csv,
+      model_prob_csv = dummy_files$prob,
+      conc_data_csv = dummy_conc_csv,
       regression_formula = "~ as.factor(AsLevel) + (1 | MRSTATE)"
     ),
-    "epa_as_sd_col contains very large values.*"
+    "conc_sd_col contains very large values.*"
   )
 
   # Test invalid seed
   expect_error(
     geoExposeR:::perform_sensitivity_analysis(
       birth_data_txt = dummy_files$births,
-      as_usgs_prob_csv = dummy_files$usgs,
-      as_epa_prob_csv = dummy_epa_csv,
+      model_prob_csv = dummy_files$prob,
+      conc_data_csv = dummy_conc_csv,
       seed = 123.45
     ),
     "seed must be an integer"
@@ -944,8 +944,8 @@ test_that("validate_inputs validates numeric parameters", {
   expect_error(
     geoExposeR:::perform_sensitivity_analysis(
       birth_data_txt = dummy_files$births,
-      as_usgs_prob_csv = dummy_files$usgs,
-      as_epa_prob_csv = dummy_epa_csv,
+      model_prob_csv = dummy_files$prob,
+      conc_data_csv = dummy_conc_csv,
       seed = c(1, 2, 3)
     ),
     "seed must be a single numeric value"
@@ -965,8 +965,8 @@ test_that("validate_inputs validates arsenic category labels", {
   expect_error(
     geoExposeR:::perform_sensitivity_analysis(
       birth_data_txt = dummy_files$births,
-      as_usgs_prob_csv = dummy_files$usgs,
-      as_epa_prob_csv = dummy_files$epa,
+      model_prob_csv = dummy_files$prob,
+      conc_data_csv = dummy_files$conc,
       as_cat_label = 123,
       drop_as_cat_label_reg = c("Low"),
       regression_formula = "~ as.factor(AsLevel) + (1 | MRSTATE)"
@@ -978,8 +978,8 @@ test_that("validate_inputs validates arsenic category labels", {
   expect_error(
     geoExposeR:::perform_sensitivity_analysis(
       birth_data_txt = dummy_files$births,
-      as_usgs_prob_csv = dummy_files$usgs,
-      as_epa_prob_csv = dummy_files$epa,
+      model_prob_csv = dummy_files$prob,
+      conc_data_csv = dummy_files$conc,
       as_cat_label = character(0),
       drop_as_cat_label_reg = c("Low")
     ),
@@ -990,8 +990,8 @@ test_that("validate_inputs validates arsenic category labels", {
   expect_error(
     geoExposeR:::perform_sensitivity_analysis(
       birth_data_txt = dummy_files$births,
-      as_usgs_prob_csv = dummy_files$usgs,
-      as_epa_prob_csv = dummy_files$epa,
+      model_prob_csv = dummy_files$prob,
+      conc_data_csv = dummy_files$conc,
       as_cat_label = c("Low", "Medium", "Low"),
       drop_as_cat_label_reg = c("Low")
     ),
@@ -1002,8 +1002,8 @@ test_that("validate_inputs validates arsenic category labels", {
   expect_error(
     geoExposeR:::perform_sensitivity_analysis(
       birth_data_txt = dummy_files$births,
-      as_usgs_prob_csv = dummy_files$usgs,
-      as_epa_prob_csv = dummy_files$epa,
+      model_prob_csv = dummy_files$prob,
+      conc_data_csv = dummy_files$conc,
       as_cat_label = c("Low", "Medium", "High"),
       drop_as_cat_label_reg = c("VeryLow")
     ),
@@ -1014,8 +1014,8 @@ test_that("validate_inputs validates arsenic category labels", {
   expect_error(
     geoExposeR:::perform_sensitivity_analysis(
       birth_data_txt = dummy_files$births,
-      as_usgs_prob_csv = dummy_files$usgs,
-      as_epa_prob_csv = dummy_files$epa,
+      model_prob_csv = dummy_files$prob,
+      conc_data_csv = dummy_files$conc,
       as_cat_label = c("Low", "Medium"),
       drop_as_cat_label_reg = c("Low", "Medium")
     ),
@@ -1026,8 +1026,8 @@ test_that("validate_inputs validates arsenic category labels", {
   expect_no_error(
     geoExposeR:::perform_sensitivity_analysis(
       birth_data_txt = dummy_files$births,
-      as_usgs_prob_csv = dummy_files$usgs,
-      as_epa_prob_csv = dummy_files$epa,
+      model_prob_csv = dummy_files$prob,
+      conc_data_csv = dummy_files$conc,
       as_cat_label = c("Low", "Medium", "High"),
       drop_as_cat_label_reg = c("Low"),
       regression_formula = "~ as.factor(AsLevel) + (1 | MRSTATE)"
@@ -1048,15 +1048,15 @@ test_that("Function validates required parameters through main interface", {
 
   expect_error(
     perform_sensitivity_analysis(birth_data_txt = "test.txt"),
-    "as_usgs_prob_csv is required and cannot be NULL"
+    "model_prob_csv is required and cannot be NULL"
   )
 
   expect_error(
     perform_sensitivity_analysis(
       birth_data_txt = "test.txt",
-      as_usgs_prob_csv = "usgs.csv"
+      model_prob_csv = "prob_data.csv"
     ),
-    "as_epa_prob_csv is required and cannot be NULL"
+    "conc_data_csv is required and cannot be NULL"
   )
 })
 
@@ -1070,8 +1070,8 @@ test_that("Function validates parameter values through main interface", {
   expect_error(
     geoExposeR::perform_sensitivity_analysis(
       birth_data_txt = dummy_files$births,
-      as_usgs_prob_csv = dummy_files$usgs,
-      as_epa_prob_csv = dummy_files$epa,
+      model_prob_csv = dummy_files$prob,
+      conc_data_csv = dummy_files$conc,
       ndraws = 0,
       regression_formula = "~ as.factor(AsLevel) + (1 | MRSTATE)"
     ),
@@ -1081,8 +1081,8 @@ test_that("Function validates parameter values through main interface", {
   expect_error(
     perform_sensitivity_analysis(
       birth_data_txt = dummy_files$births,
-      as_usgs_prob_csv = dummy_files$usgs,
-      as_epa_prob_csv = dummy_files$epa,
+      model_prob_csv = dummy_files$prob,
+      conc_data_csv = dummy_files$conc,
       ndraws = -5,
       regression_formula = "~ as.factor(AsLevel) + (1 | MRSTATE)"
     ),
@@ -1093,8 +1093,8 @@ test_that("Function validates parameter values through main interface", {
   expect_error(
     perform_sensitivity_analysis(
       birth_data_txt = dummy_files$births,
-      as_usgs_prob_csv = dummy_files$usgs,
-      as_epa_prob_csv = dummy_files$epa,
+      model_prob_csv = dummy_files$prob,
+      conc_data_csv = dummy_files$conc,
       ndraws = 2,
       regression_formula = ""
     ),
@@ -1109,8 +1109,8 @@ test_that("Function handles file validation errors through main interface", {
   expect_error(
     perform_sensitivity_analysis(
       birth_data_txt = "nonexistent.txt",
-      as_usgs_prob_csv = "nonexistent.csv",
-      as_epa_prob_csv = "nonexistent.csv",
+      model_prob_csv = "nonexistent.csv",
+      conc_data_csv = "nonexistent.csv",
       ndraws = 2
     ),
     "File does not exist: nonexistent.txt"
@@ -1130,8 +1130,8 @@ test_that("Function handles different MICE parameters", {
   results <- expect_no_error(
     perform_sensitivity_analysis(
       birth_data_txt = dummy_files$births,
-      as_usgs_prob_csv = dummy_files$usgs,
-      as_epa_prob_csv = dummy_files$epa,
+      model_prob_csv = dummy_files$prob,
+      conc_data_csv = dummy_files$conc,
       ndraws = 2,
       regression_formula = "~ as.factor(AsLevel) + MAGE_R + (1 | MRSTATE)",
       targets = "BWT",
@@ -1160,8 +1160,8 @@ test_that("Function handles different arsenic level column names", {
   results <- expect_no_error(
     geoExposeR::perform_sensitivity_analysis(
       birth_data_txt = dummy_files$births,
-      as_usgs_prob_csv = dummy_files$usgs,
-      as_epa_prob_csv = dummy_files$epa,
+      model_prob_csv = dummy_files$prob,
+      conc_data_csv = dummy_files$conc,
       ndraws = 2,
       regression_formula = paste0(
         "~ as.factor(", as_level_col, ") + (1 | MRSTATE)"
@@ -1188,8 +1188,8 @@ test_that("Function handles custom output directory", {
   results <- expect_no_error(
     perform_sensitivity_analysis(
       birth_data_txt = dummy_files$births,
-      as_usgs_prob_csv = dummy_files$usgs,
-      as_epa_prob_csv = dummy_files$epa,
+      model_prob_csv = dummy_files$prob,
+      conc_data_csv = dummy_files$conc,
       ndraws = 2,
       regression_formula = "~ as.factor(AsLevel) + (1 | MRSTATE)",
       targets = "BWT",
@@ -1216,8 +1216,8 @@ test_that("Function handles boundary conditions appropriately", {
   results <- expect_no_error(
     perform_sensitivity_analysis(
       birth_data_txt = dummy_files$births,
-      as_usgs_prob_csv = dummy_files$usgs,
-      as_epa_prob_csv = dummy_files$epa,
+      model_prob_csv = dummy_files$prob,
+      conc_data_csv = dummy_files$conc,
       ndraws = 1,  # Absolute minimum
       regression_formula = "~ as.factor(AsLevel) + (1 | MRSTATE)",
       targets = "BWT",
@@ -1240,8 +1240,8 @@ test_that("Function handles multiple targets with imputation", {
   results <- expect_no_error(
     perform_sensitivity_analysis(
       birth_data_txt = dummy_files$births,
-      as_usgs_prob_csv = dummy_files$usgs,
-      as_epa_prob_csv = dummy_files$epa,
+      model_prob_csv = dummy_files$prob,
+      conc_data_csv = dummy_files$conc,
       ndraws = 2,
       regression_formula = "~ as.factor(AsLevel) + MAGE_R + (1 | MRSTATE)",
       targets = c("BWT", "OEGEST"),
@@ -1275,8 +1275,8 @@ test_that("Function handles formula validation", {
   results1 <- expect_no_error(
     perform_sensitivity_analysis(
       birth_data_txt = dummy_files$births,
-      as_usgs_prob_csv = dummy_files$usgs,
-      as_epa_prob_csv = dummy_files$epa,
+      model_prob_csv = dummy_files$prob,
+      conc_data_csv = dummy_files$conc,
       ndraws = 2,
       regression_formula = "~ as.factor(AsLevel) + (1 | MRSTATE)",
       targets = "BWT",
@@ -1289,8 +1289,8 @@ test_that("Function handles formula validation", {
   results2 <- expect_no_error(
     perform_sensitivity_analysis(
       birth_data_txt = dummy_files$births,
-      as_usgs_prob_csv = dummy_files$usgs,
-      as_epa_prob_csv = dummy_files$epa,
+      model_prob_csv = dummy_files$prob,
+      conc_data_csv = dummy_files$conc,
       ndraws = 2,
       regression_formula = formula_obj,
       targets = "BWT",
@@ -1314,8 +1314,8 @@ test_that("Function handles seed setting for reproducibility", {
   set.seed(12345)
   results1 <- perform_sensitivity_analysis(
     birth_data_txt = dummy_files$births,
-    as_usgs_prob_csv = dummy_files$usgs,
-    as_epa_prob_csv = dummy_files$epa,
+    model_prob_csv = dummy_files$prob,
+    conc_data_csv = dummy_files$conc,
     ndraws = 2,
     regression_formula = "~ as.factor(AsLevel) + (1 | MRSTATE)",
     targets = "BWT",
@@ -1325,8 +1325,8 @@ test_that("Function handles seed setting for reproducibility", {
   set.seed(12345)
   results2 <- perform_sensitivity_analysis(
     birth_data_txt = dummy_files$births,
-    as_usgs_prob_csv = dummy_files$usgs,
-    as_epa_prob_csv = dummy_files$epa,
+    model_prob_csv = dummy_files$prob,
+    conc_data_csv = dummy_files$conc,
     ndraws = 2,
     regression_formula = "~ as.factor(AsLevel) + (1 | MRSTATE)",
     targets = "BWT",
@@ -1358,8 +1358,8 @@ test_that("Function handles all error conditions comprehensively", {
   expect_error(
     perform_sensitivity_analysis(
       birth_data_txt = invalid_birth_file,
-      as_usgs_prob_csv = dummy_files$usgs,
-      as_epa_prob_csv = dummy_files$epa,
+      model_prob_csv = dummy_files$prob,
+      conc_data_csv = dummy_files$conc,
       ndraws = 2
     )
   )
@@ -1375,7 +1375,7 @@ test_that("Function handles memory and performance edge cases", {
   dummy_files <- create_dummy_data(
     file_dir = temp_dir,
     num_births = 10000,  # Large number of births
-    num_rows = 1000,     # Large number of rows in USGS and EPA
+    num_rows = 1000,     # Large number of rows in prob and conc
     introduce_nas = TRUE  # Introduce some NAs to test imputation
   )
 
@@ -1383,8 +1383,8 @@ test_that("Function handles memory and performance edge cases", {
   results <- expect_no_error(
     perform_sensitivity_analysis(
       birth_data_txt = dummy_files$births,
-      as_usgs_prob_csv = dummy_files$usgs,
-      as_epa_prob_csv = dummy_files$epa,
+      model_prob_csv = dummy_files$prob,
+      conc_data_csv = dummy_files$conc,
       ndraws = 2,
       regression_formula = "~ as.factor(AsLevel) + (1 | MRSTATE)",
       targets = "BWT",
@@ -1408,8 +1408,8 @@ test_that("Function validates AsLevel requirement through main interface", {
   expect_error(
     perform_sensitivity_analysis(
       birth_data_txt = dummy_files$births,
-      as_usgs_prob_csv = dummy_files$usgs,
-      as_epa_prob_csv = dummy_files$epa,
+      model_prob_csv = dummy_files$prob,
+      conc_data_csv = dummy_files$conc,
       ndraws = 2,
       regression_formula = "~ MAGE_R + (1 | MRSTATE)",
       targets = "BWT",
@@ -1422,8 +1422,8 @@ test_that("Function validates AsLevel requirement through main interface", {
   expect_error(
     perform_sensitivity_analysis(
       birth_data_txt = dummy_files$births,
-      as_usgs_prob_csv = dummy_files$usgs,
-      as_epa_prob_csv = dummy_files$epa,
+      model_prob_csv = dummy_files$prob,
+      conc_data_csv = dummy_files$conc,
       ndraws = 2,
       regression_formula = "~ AsLevel + MAGE_R + (1 | MRSTATE)",
       targets = "BWT",
@@ -1449,8 +1449,8 @@ test_that("Function handles arsenic category reference dropping edge cases", {
   expect_error(
     perform_sensitivity_analysis(
       birth_data_txt = dummy_files$births,
-      as_usgs_prob_csv = dummy_files$usgs,
-      as_epa_prob_csv = dummy_files$epa,
+      model_prob_csv = dummy_files$prob,
+      conc_data_csv = dummy_files$conc,
       ndraws = 2,
       regression_formula = "~ as.factor(AsLevel) + (1 | MRSTATE)",
       targets = "BWT",
@@ -1474,8 +1474,8 @@ test_that("Function handles arsenic category reference dropping edge cases", {
   expect_error(
     perform_sensitivity_analysis(
       birth_data_txt = single_category_file,
-      as_usgs_prob_csv = dummy_files$usgs,
-      as_epa_prob_csv = dummy_files$epa,
+      model_prob_csv = dummy_files$prob,
+      conc_data_csv = dummy_files$conc,
       ndraws = 2,
       regression_formula = "~ as.factor(AsLevel) + (1 | MRSTATE)",
       targets = "BWT",
@@ -1502,8 +1502,8 @@ test_that("Function handles arsenic category reference dropping edge cases", {
   expect_error(
     perform_sensitivity_analysis(
       birth_data_txt = two_category_file,
-      as_usgs_prob_csv = dummy_files$usgs,
-      as_epa_prob_csv = dummy_files$epa,
+      model_prob_csv = dummy_files$prob,
+      conc_data_csv = dummy_files$conc,
       ndraws = 2,
       regression_formula = "~ as.factor(AsLevel) + (1 | MRSTATE)",
       targets = "BWT",
@@ -1518,8 +1518,8 @@ test_that("Function handles arsenic category reference dropping edge cases", {
   expect_error(
     perform_sensitivity_analysis(
       birth_data_txt = two_category_file,
-      as_usgs_prob_csv = dummy_files$usgs,
-      as_epa_prob_csv = dummy_files$epa,
+      model_prob_csv = dummy_files$prob,
+      conc_data_csv = dummy_files$conc,
       ndraws = 2,
       regression_formula = "~ as.factor(AsLevel) + (1 | MRSTATE)",
       targets = "BWT",
@@ -1548,8 +1548,8 @@ test_that("Function validates arsenic category data consistency", {
   expect_error(
     perform_sensitivity_analysis(
       birth_data_txt = dummy_files$births,
-      as_usgs_prob_csv = dummy_files$usgs,
-      as_epa_prob_csv = dummy_files$epa,
+      model_prob_csv = dummy_files$prob,
+      conc_data_csv = dummy_files$conc,
       ndraws = 2,
       regression_formula = "~ as.factor(AsLevel) + (1 | MRSTATE)",
       targets = "BWT",
@@ -1566,8 +1566,8 @@ test_that("Function validates arsenic category data consistency", {
   expect_error(
     perform_sensitivity_analysis(
       birth_data_txt = dummy_files$births,
-      as_usgs_prob_csv = dummy_files$usgs,
-      as_epa_prob_csv = dummy_files$epa,
+      model_prob_csv = dummy_files$prob,
+      conc_data_csv = dummy_files$conc,
       ndraws = 2,
       regression_formula = "~ as.factor(AsLevel) + (1 | MRSTATE)",
       targets = "BWT",
@@ -1582,8 +1582,8 @@ test_that("Function validates arsenic category data consistency", {
   expect_error(
     perform_sensitivity_analysis(
       birth_data_txt = dummy_files$births,
-      as_usgs_prob_csv = dummy_files$usgs,
-      as_epa_prob_csv = dummy_files$epa,
+      model_prob_csv = dummy_files$prob,
+      conc_data_csv = dummy_files$conc,
       ndraws = 2,
       regression_formula = "~ as.factor(AsLevel) + (1 | MRSTATE)",
       targets = "BWT",
@@ -1597,8 +1597,8 @@ test_that("Function validates arsenic category data consistency", {
   expect_error(
     perform_sensitivity_analysis(
       birth_data_txt = dummy_files$births,
-      as_usgs_prob_csv = dummy_files$usgs,
-      as_epa_prob_csv = dummy_files$epa,
+      model_prob_csv = dummy_files$prob,
+      conc_data_csv = dummy_files$conc,
       ndraws = 2,
       regression_formula = "~ as.factor(AsLevel) + (1 | MRSTATE)",
       targets = "BWT",
@@ -1616,17 +1616,17 @@ test_that("Function validates column names in input files", {
   dir.create(temp_dir)
   dummy_files <- create_dummy_data(file_dir = temp_dir)
 
-  # Test missing columns in USGS data
+  # Test missing columns in probability data
   expect_error(
     perform_sensitivity_analysis(
       birth_data_txt = dummy_files$births,
-      as_usgs_prob_csv = dummy_files$usgs,
-      as_epa_prob_csv = dummy_files$epa,
+      model_prob_csv = dummy_files$prob,
+      conc_data_csv = dummy_files$conc,
       ndraws = 2,
       regression_formula = "~ as.factor(AsLevel) + (1 | MRSTATE)",
       targets = "BWT",
       output_dir = tempdir(),
-      as_conc_cols = c(
+      prob_cols = c(
         "NonExistentColumn1", "NonExistentColumn2",
         "NonExistentColumn3"
       )
@@ -1634,20 +1634,20 @@ test_that("Function validates column names in input files", {
     "The following columns are missing in.*"
   )
 
-  # Test incorrect file format (e.g., non-CSV for EPA)
+  # Test incorrect file format (e.g., non-CSV for conc)
   dummy_files <- create_dummy_data(file_dir = temp_dir)
-  dummy_epa_df <- data.table::fread(dummy_files$epa, header = TRUE)
-  invalid_epa_file <- file.path(temp_dir, "invalid_epa.bin")
+  dummy_conc_df <- data.table::fread(dummy_files$conc, header = TRUE)
+  invalid_conc_file <- file.path(temp_dir, "invalid_epa.bin")
   data.table::fwrite(
-    dummy_epa_df,
-    file = invalid_epa_file,
+    dummy_conc_df,
+    file = invalid_conc_file,
     sep = "\t"
   )
   expect_error(
     perform_sensitivity_analysis(
       birth_data_txt = dummy_files$births,
-      as_usgs_prob_csv = dummy_files$usgs,
-      as_epa_prob_csv = invalid_epa_file,
+      model_prob_csv = dummy_files$prob,
+      conc_data_csv = invalid_conc_file,
       ndraws = 2,
       regression_formula = "~ as.factor(AsLevel) + (1 | MRSTATE)",
       targets = "BWT",
@@ -1660,8 +1660,8 @@ test_that("Function validates column names in input files", {
   expect_error(
     perform_sensitivity_analysis(
       birth_data_txt = dummy_files$births,
-      as_usgs_prob_csv = dummy_files$usgs,
-      as_epa_prob_csv = dummy_files$epa,
+      model_prob_csv = dummy_files$prob,
+      conc_data_csv = dummy_files$conc,
       ndraws = 2,
       regression_formula = "~ as.factor(AsLevel) + (1 | MRSTATE)",
       targets = "BWT",
@@ -1675,8 +1675,8 @@ test_that("Function validates column names in input files", {
   expect_error(
     perform_sensitivity_analysis(
       birth_data_txt = dummy_files$births,
-      as_usgs_prob_csv = dummy_files$usgs,
-      as_epa_prob_csv = dummy_files$epa,
+      model_prob_csv = dummy_files$prob,
+      conc_data_csv = dummy_files$conc,
       ndraws = 2,
       regression_formula = "~ as.factor(AsLevel) + (1 | MRSTATE)",
       targets = "BWT",
@@ -1690,216 +1690,216 @@ test_that("Function validates column names in input files", {
   expect_error(
     perform_sensitivity_analysis(
       birth_data_txt = dummy_files$births,
-      as_usgs_prob_csv = dummy_files$usgs,
-      as_epa_prob_csv = dummy_files$epa,
+      model_prob_csv = dummy_files$prob,
+      conc_data_csv = dummy_files$conc,
       ndraws = 2,
       regression_formula = "~ as.factor(AsLevel) + (1 | MRSTATE)",
       targets = "BWT",
       output_dir = tempdir(),
-      as_conc_cols = c(1, 2, 3)  # Mixed types
+      prob_cols = c(1, 2, 3)  # Mixed types
     ),
-    "as_conc_cols must be a character vector.*"
+    "prob_cols must be a character vector.*"
   )
 
   # Test NA values in other column names
   expect_error(
     perform_sensitivity_analysis(
       birth_data_txt = dummy_files$births,
-      as_usgs_prob_csv = dummy_files$usgs,
-      as_epa_prob_csv = dummy_files$epa,
+      model_prob_csv = dummy_files$prob,
+      conc_data_csv = dummy_files$conc,
       ndraws = 2,
       regression_formula = "~ as.factor(AsLevel) + (1 | MRSTATE)",
       targets = "BWT",
       output_dir = tempdir(),
-      as_conc_cols = c("Col1", NA)  # NA value
+      prob_cols = c("Col1", NA)  # NA value
     ),
-    "as_conc_cols cannot contain NA or empty values"
+    "prob_cols cannot contain NA or empty values"
   )
 
   # Test duplicate values in other column names
   expect_error(
     perform_sensitivity_analysis(
       birth_data_txt = dummy_files$births,
-      as_usgs_prob_csv = dummy_files$usgs,
-      as_epa_prob_csv = dummy_files$epa,
+      model_prob_csv = dummy_files$prob,
+      conc_data_csv = dummy_files$conc,
       ndraws = 2,
       regression_formula = "~ as.factor(AsLevel) + (1 | MRSTATE)",
       targets = "BWT",
       output_dir = tempdir(),
-      as_conc_cols = c("Col1", "Col1")  # Duplicate values
+      prob_cols = c("Col1", "Col1")  # Duplicate values
     ),
-    "as_conc_cols cannot contain duplicate values"
+    "prob_cols cannot contain duplicate values"
   )
 
   unlink(temp_dir, recursive = TRUE)
 })
 
 
-test_that("Function validates epa_cutoff parameter", {
-  temp_dir <- tempfile(pattern = "test_epa_cutoff_")
+test_that("Function validates conc_cutoff parameter", {
+  temp_dir <- tempfile(pattern = "test_conc_cutoff_")
   dir.create(temp_dir)
   dummy_files <- create_dummy_data(file_dir = temp_dir)
 
-  # Test negative epa_cutoffs
+  # Test negative conc_cutoffs
   expect_error(
     perform_sensitivity_analysis(
       birth_data_txt = dummy_files$births,
-      as_usgs_prob_csv = dummy_files$usgs,
-      as_epa_prob_csv = dummy_files$epa,
+      model_prob_csv = dummy_files$prob,
+      conc_data_csv = dummy_files$conc,
       ndraws = 2,
       regression_formula = "~ as.factor(AsLevel) + (1 | MRSTATE)",
       targets = "BWT",
       output_dir = tempdir(),
-      epa_cutoffs = -1  # Invalid negative value
+      conc_cutoffs = -1  # Invalid negative value
     ),
-    "epa_cutoffs must contain only positive values"
+    "conc_cutoffs must contain only positive values"
   )
 
-  # Test non-numeric epa_cutoffs
+  # Test non-numeric conc_cutoffs
   expect_error(
     perform_sensitivity_analysis(
       birth_data_txt = dummy_files$births,
-      as_usgs_prob_csv = dummy_files$usgs,
-      as_epa_prob_csv = dummy_files$epa,
+      model_prob_csv = dummy_files$prob,
+      conc_data_csv = dummy_files$conc,
       ndraws = 2,
       regression_formula = "~ as.factor(AsLevel) + (1 | MRSTATE)",
       targets = "BWT",
       output_dir = tempdir(),
-      epa_cutoffs = "high"  # Invalid non-numeric value
+      conc_cutoffs = "high"  # Invalid non-numeric value
     ),
-    "epa_cutoffs must be a numeric vector"
+    "conc_cutoffs must be a numeric vector"
   )
 
-  # Test NA in epa_cutoffs
+  # Test NA in conc_cutoffs
   expect_error(
     perform_sensitivity_analysis(
       birth_data_txt = dummy_files$births,
-      as_usgs_prob_csv = dummy_files$usgs,
-      as_epa_prob_csv = dummy_files$epa,
+      model_prob_csv = dummy_files$prob,
+      conc_data_csv = dummy_files$conc,
       ndraws = 2,
       regression_formula = "~ as.factor(AsLevel) + (1 | MRSTATE)",
       targets = "BWT",
       output_dir = tempdir(),
-      epa_cutoffs = c(5, NA)  # Contains NA
+      conc_cutoffs = c(5, NA)  # Contains NA
     ),
-    "epa_cutoffs cannot contain NA values"
+    "conc_cutoffs cannot contain NA values"
   )
 
-  # Test duplicate values in epa_cutoffs
+  # Test duplicate values in conc_cutoffs
   expect_error(
     perform_sensitivity_analysis(
       birth_data_txt = dummy_files$births,
-      as_usgs_prob_csv = dummy_files$usgs,
-      as_epa_prob_csv = dummy_files$epa,
+      model_prob_csv = dummy_files$prob,
+      conc_data_csv = dummy_files$conc,
       ndraws = 2,
       regression_formula = "~ as.factor(AsLevel) + (1 | MRSTATE)",
       targets = "BWT",
       output_dir = tempdir(),
-      epa_cutoffs = c(5, 5)  # Duplicate values
+      conc_cutoffs = c(5, 5)  # Duplicate values
     ),
-    "epa_cutoffs cannot contain duplicate values"
+    "conc_cutoffs cannot contain duplicate values"
   )
 
-  # Test valid epa_cutoffs with 4 categories
-  # Create a dummy USGS file with 4 arsenic categories
-  # Ensure the dummy USGS data has appropriate columns
+  # Test valid conc_cutoffs with 4 categories
+  # Create a dummy probability file with 4 arsenic categories
+  # Ensure the dummy probability data has appropriate columns
   # and realistic probability distributions
 
   num_rows <- 500
   county_ids <- sprintf("%05d", 1:100)
   geoid10 <- sample(county_ids, num_rows, replace = TRUE)
   # Generate random probabilities for 4 categories that sum to 1
-  usgs_prob_values <- t(apply(
+  prob_values <- t(apply(
     matrix(stats::runif(num_rows * 4), ncol = 4),
     1,
     function(x) x / sum(x)
   ))
   wells_2010 <- sample(50:500, num_rows, replace = TRUE)
-  dummy_usgs_df <- data.frame(
-    AS_C1 = usgs_prob_values[, 1],
-    AS_C2 = usgs_prob_values[, 2],
-    AS_C3 = usgs_prob_values[, 3],
-    AS_C4 = usgs_prob_values[, 4],
+  dummy_prob_df <- data.frame(
+    AS_C1 = prob_values[, 1],
+    AS_C2 = prob_values[, 2],
+    AS_C3 = prob_values[, 3],
+    AS_C4 = prob_values[, 4],
     Wells_2010 = wells_2010,
     GEOID10 = geoid10
   )
-  # Write the dummy USGS data to a CSV fil
-  dummy_usgs_csv <- file.path(temp_dir, "dummy_usgs_4cats_arsenic.csv")
-  data.table::fwrite(dummy_usgs_df, dummy_usgs_csv)
+  # Write the dummy probability data to a CSV fil
+  dummy_prob_csv <- file.path(temp_dir, "dummy_prob_4cats.csv")
+  data.table::fwrite(dummy_prob_df, dummy_prob_csv)
 
-  # Create a dummy EPA file with 4 categories
-  dummy_epa_df <- data.frame(
-    EPA_AS_meanlog = runif(num_rows, 0.5, 1.5),  # Log-normal mean
-    EPA_AS_sdlog = runif(num_rows, 0.1, 0.5),  # Log-normal sd
+  # Create a dummy concentration file with 4 categories
+  dummy_conc_df <- data.frame(
+    conc_meanlog = runif(num_rows, 0.5, 1.5),  # Log-normal mean
+    conc_sdlog = runif(num_rows, 0.1, 0.5),  # Log-normal sd
     PWELL_private_pct = runif(num_rows, 1, 99),  # Private well percentage
     GEOID10 = geoid10
   )
-  dummy_epa_csv <- file.path(temp_dir, "dummy_epa_4cats.csv")
-  data.table::fwrite(dummy_epa_df, dummy_epa_csv)
+  dummy_conc_csv <- file.path(temp_dir, "dummy_conc_4cats.csv")
+  data.table::fwrite(dummy_conc_df, dummy_conc_csv)
   dummy_files <- create_dummy_data(file_dir = temp_dir)
 
   # this tests the default fallback imputation as well
   expect_no_error({
     perform_sensitivity_analysis(
       birth_data_txt = dummy_files$births,
-      as_usgs_prob_csv = dummy_usgs_csv,
-      as_epa_prob_csv = dummy_epa_csv,
+      model_prob_csv = dummy_prob_csv,
+      conc_data_csv = dummy_conc_csv,
       ndraws = 2,
       regression_formula = "~ as.factor(AsLevel) + (1 | MRSTATE)",
       targets = "BWT",
       output_dir = tempdir(),
-      as_conc_cols = c("AS_C1", "AS_C2", "AS_C3", "AS_C4"),
+      prob_cols = c("AS_C1", "AS_C2", "AS_C3", "AS_C4"),
       drop_as_cat_label_reg = "AS<5",  # Drop one category
       as_cat_label = c("AS<5", "AS5-10", "AS10-15", "AS>15"),
-      epa_cutoffs = c(5, 10, 15)  # Valid ascending cutoffs
+      conc_cutoffs = c(5, 10, 15)  # Valid ascending cutoffs
     )
   })
 
   expect_no_error({
     perform_sensitivity_analysis(
       birth_data_txt = dummy_files$births,
-      as_usgs_prob_csv = dummy_usgs_csv,
-      as_epa_prob_csv = dummy_epa_csv,
+      model_prob_csv = dummy_prob_csv,
+      conc_data_csv = dummy_conc_csv,
       ndraws = 2,
       regression_formula = "~ as.factor(AsLevel) + (1 | MRSTATE)",
       targets = "BWT",
       output_dir = tempdir(),
-      as_conc_cols = c("AS_C1", "AS_C2", "AS_C3", "AS_C4"),
+      prob_cols = c("AS_C1", "AS_C2", "AS_C3", "AS_C4"),
       drop_as_cat_label_reg = "AS<5",  # Drop one category
       as_cat_label = c("AS<5", "AS5-10", "AS10-15", "AS>15"),
-      epa_cutoffs = c(5, 10, 15),  # Valid ascending cutoffs
+      conc_cutoffs = c(5, 10, 15),  # Valid ascending cutoffs
       apply_imputation_fallback = FALSE # removes NA values
     )
   })
 
-  # Test descending order epa_cutoffs
+  # Test descending order conc_cutoffs
   expect_error(
     perform_sensitivity_analysis(
       birth_data_txt = dummy_files$births,
-      as_usgs_prob_csv = dummy_files$usgs,
-      as_epa_prob_csv = dummy_files$epa,
+      model_prob_csv = dummy_files$prob,
+      conc_data_csv = dummy_files$conc,
       ndraws = 2,
       regression_formula = "~ as.factor(AsLevel) + (1 | MRSTATE)",
       targets = "BWT",
       output_dir = tempdir(),
-      epa_cutoffs = c(15, 10, 5)  # Descending order
+      conc_cutoffs = c(15, 10, 5)  # Descending order
     ),
-    "epa_cutoffs must be in ascending order"
+    "conc_cutoffs must be in ascending order"
   )
 
-  # Test if epa_cutoffs have categories not matching USGS data
+  # Test if conc_cutoffs have categories not matching probability data
   expect_error(
     perform_sensitivity_analysis(
       birth_data_txt = dummy_files$births,
-      as_usgs_prob_csv = dummy_files$usgs,
-      as_epa_prob_csv = dummy_files$epa,
+      model_prob_csv = dummy_files$prob,
+      conc_data_csv = dummy_files$conc,
       ndraws = 2,
       regression_formula = "~ as.factor(AsLevel) + (1 | MRSTATE)",
       targets = "BWT",
       output_dir = tempdir(),
-      epa_cutoffs = c(5, 10, 20)  # Assuming USGS has only 3 categories
+      conc_cutoffs = c(5, 10, 20)  # Assuming probability data has only 3 categories
     ),
-    "as_conc_cols must have length equal to.*"
+    "prob_cols must have length equal to.*"
   )
 
   unlink(temp_dir, recursive = TRUE)
@@ -1907,60 +1907,60 @@ test_that("Function validates epa_cutoff parameter", {
 
 
 # ===================================================================
-# Tests for Dynamic EPA Cutoffs Functionality
+# Tests for Dynamic Concentration Cutoffs Functionality
 # ===================================================================
 
-test_that("validate_epa_cutoffs works correctly", {
-  as_conc_cols <- c("AS_C1", "AS_C2", "AS_C3", "AS_C4")
+test_that("validate_conc_cutoffs works correctly", {
+  prob_cols <- c("AS_C1", "AS_C2", "AS_C3", "AS_C4")
   # Test valid cutoffs
   valid_cutoffs <- c(5, 10, 15)
   expect_no_error(
-    validate_epa_cutoff_params(valid_cutoffs, as_conc_cols)
+    validate_conc_cutoff_params(valid_cutoffs, prob_cols)
   )
 
   # Test empty cutoffs similar to no cutoffs provided
   expect_no_error(
-    validate_epa_cutoff_params(c(), as_conc_cols)
+    validate_conc_cutoff_params(c(), prob_cols)
   )
 
   # Test non-numeric cutoffs
   expect_error(
-    validate_epa_cutoff_params(c("5", "10"), as_conc_cols),
-    "epa_cutoffs must be a numeric vector"
+    validate_conc_cutoff_params(c("5", "10"), prob_cols),
+    "conc_cutoffs must be a numeric vector"
   )
 
   # Test unsorted cutoffs
   expect_error(
-    validate_epa_cutoff_params(c(10, 5, 2.5), as_conc_cols),
-    "epa_cutoffs must be in ascending order"
+    validate_conc_cutoff_params(c(10, 5, 2.5), prob_cols),
+    "conc_cutoffs must be in ascending order"
   )
 
   # Test negative cutoffs
   expect_error(
-    validate_epa_cutoff_params(c(-1, 5, 10), as_conc_cols),
-    "epa_cutoffs must contain.*"
+    validate_conc_cutoff_params(c(-1, 5, 10), prob_cols),
+    "conc_cutoffs must contain.*"
   )
 })
 
-test_that("convert_epa_to_multinomial creates correct probabilities", {
-  # Create test EPA data
-  epa_data <- data.frame(
+test_that("convert_conc_to_multinomial creates correct probabilities", {
+  # Create test concentration data
+  conc_data <- data.frame(
     FIPS = c(1001, 1002, 1003),
-    EPA_AS_meanlog = c(log(1), log(5), log(15)),
-    EPA_AS_sdlog = c(0.5, 1.0, 1.5)
+    conc_meanlog = c(log(1), log(5), log(15)),
+    conc_sdlog = c(0.5, 1.0, 1.5)
   )
 
   # Test 3 categories (2 cutoffs)
   cutoff_config <- list(cutoffs = c(5, 10), n_categories = 3)
-  result <- convert_epa_to_multinomial(
-    epa_data, epa_as_mean_col = "EPA_AS_meanlog",
-    epa_as_sd_col = "EPA_AS_sdlog",
+  result <- convert_conc_to_multinomial(
+    conc_data, conc_mean_col = "conc_meanlog",
+    conc_sd_col = "conc_sdlog",
     cutoff_config = cutoff_config,
     return_prob_matrix = FALSE
   )
 
   # Check that correct columns were created
-  expected_cols <- c("EPA_C1v2", "EPA_C2v2", "EPA_C3v2")
+  expected_cols <- c("conc_C1v2", "conc_C2v2", "conc_C3v2")
   expect_true(all(expected_cols %in% names(result)))
 
   # Check that probabilities are between 0 and 1
@@ -1980,61 +1980,61 @@ test_that("convert_epa_to_multinomial creates correct probabilities", {
   expect_true(row2_probs[1] > 0.4 && row2_probs[1] < 0.6)  # Around 0.5
 })
 
-test_that("convert_epa_to_multinomial handles different categories", {
-  epa_data <- data.frame(
+test_that("convert_conc_to_multinomial handles different categories", {
+  conc_data <- data.frame(
     FIPS = 1001,
-    EPA_AS_meanlog = log(5),
-    EPA_AS_sdlog = 1.0
+    conc_meanlog = log(5),
+    conc_sdlog = 1.0
   )
 
   # Test 2 categories
   cutoff_config_2 <- list(cutoffs = c(5), n_categories = 2)
-  result_2 <- convert_epa_to_multinomial(
-    epa_data,
-    epa_as_mean_col = "EPA_AS_meanlog",
-    epa_as_sd_col = "EPA_AS_sdlog",
+  result_2 <- convert_conc_to_multinomial(
+    conc_data,
+    conc_mean_col = "conc_meanlog",
+    conc_sd_col = "conc_sdlog",
     cutoff_config = cutoff_config_2,
     return_prob_matrix = FALSE
   )
-  prob_cols_2 <- c("EPA_C1v2", "EPA_C2v2")
+  prob_cols_2 <- c("conc_C1v2", "conc_C2v2")
   expect_true(all(prob_cols_2 %in% names(result_2)))
   expect_true(abs(sum(result_2[, ..prob_cols_2]) - 1) < 1e-10)
 
   # Test 5 categories
   cutoff_config_5 <- list(cutoffs = c(1, 5, 10, 20), n_categories = 5)
-  result_5 <- convert_epa_to_multinomial(
-    epa_data,
-    epa_as_mean_col = "EPA_AS_meanlog",
-    epa_as_sd_col = "EPA_AS_sdlog",
+  result_5 <- convert_conc_to_multinomial(
+    conc_data,
+    conc_mean_col = "conc_meanlog",
+    conc_sd_col = "conc_sdlog",
     cutoff_config = cutoff_config_5,
     return_prob_matrix = FALSE
   )
-  expected_cols_5 <- paste0("EPA_C", 1:5, "v2")
+  expected_cols_5 <- paste0("conc_C", 1:5, "v2")
   expect_true(all(expected_cols_5 %in% names(result_5)))
   expect_true(abs(sum(result_5[, ..expected_cols_5]) - 1) < 1e-10)
 })
 
-test_that("generate_default_epa_cutoffs produces correct schemes", {
+test_that("generate_default_conc_cutoffs produces correct schemes", {
   # Test standard predefined schemes
-  expect_equal(generate_default_epa_cutoffs(2), c(5))
-  expect_equal(generate_default_epa_cutoffs(3), c(5, 10))
-  expect_equal(generate_default_epa_cutoffs(4), c(2.5, 5, 10))
-  expect_equal(generate_default_epa_cutoffs(5), c(1, 5, 10, 20))
-  expect_equal(generate_default_epa_cutoffs(6), c(1, 3, 5, 10, 20))
+  expect_equal(generate_default_conc_cutoffs(2), c(5))
+  expect_equal(generate_default_conc_cutoffs(3), c(5, 10))
+  expect_equal(generate_default_conc_cutoffs(4), c(2.5, 5, 10))
+  expect_equal(generate_default_conc_cutoffs(5), c(1, 5, 10, 20))
+  expect_equal(generate_default_conc_cutoffs(6), c(1, 3, 5, 10, 20))
 
   # Test logarithmic generation for unusual numbers
-  cutoffs_8 <- generate_default_epa_cutoffs(8)
+  cutoffs_8 <- generate_default_conc_cutoffs(8)
   expect_equal(length(cutoffs_8), 7)  # n-1 cutoffs for n categories
   expect_true(all(cutoffs_8 > 0))
   expect_true(all(diff(cutoffs_8) > 0))  # Should be increasing
 
   # Test error for invalid input
   expect_error(
-    generate_default_epa_cutoffs(1),
+    generate_default_conc_cutoffs(1),
     "Must have at least 2 categories"
   )
   expect_error(
-    generate_default_epa_cutoffs(0),
+    generate_default_conc_cutoffs(0),
     "Must have at least 2 categories"
   )
 })
@@ -2067,7 +2067,7 @@ test_that("validate_category_alignment catches mismatches", {
   expect_error(
     validate_category_alignment(3, c(5)),
     paste0(
-      "Category mismatch: USGS has 3 categories but EPA cutoffs define ",
+      "Category mismatch: probability data has 3 categories but concentration cutoffs define ",
       "2 categories"
     )
   )
@@ -2075,45 +2075,45 @@ test_that("validate_category_alignment catches mismatches", {
   expect_error(
     validate_category_alignment(2, c(5, 10)),
     paste0(
-      "Category mismatch: USGS has 2 categories but EPA cutoffs define ",
+      "Category mismatch: probability data has 2 categories but concentration cutoffs define ",
       "3 categories"
     )
   )
 })
 
-test_that("edge cases in EPA probability calculations", {
+test_that("edge cases in concentration probability calculations", {
   # Test extreme values
-  epa_extreme <- data.frame(
+  conc_extreme <- data.frame(
     FIPS = c(1001, 1002, 1003),
-    EPA_AS_meanlog_extreme = c(log(0.1), log(100), log(1000)),
-    EPA_AS_sdlog_extreme = c(0.1, 0.5, 1.0)
+    conc_meanlog_extreme = c(log(0.1), log(100), log(1000)),
+    conc_sdlog_extreme = c(0.1, 0.5, 1.0)
   )
 
   cutoff_config <- list(cutoffs = c(5, 10), n_categories = 3)
-  result <- convert_epa_to_multinomial(
-    datmatx_epa = epa_extreme,
-    epa_as_mean_col = "EPA_AS_meanlog_extreme",
-    epa_as_sd_col = "EPA_AS_sdlog_extreme",
+  result <- convert_conc_to_multinomial(
+    datmatx_conc = conc_extreme,
+    conc_mean_col = "conc_meanlog_extreme",
+    conc_sd_col = "conc_sdlog_extreme",
     return_prob_matrix = FALSE,
     cutoff_config = cutoff_config
   )
 
   # Check row sums still equal 1
-  prob_cols <- c("EPA_C1v2", "EPA_C2v2", "EPA_C3v2")
+  prob_cols <- c("conc_C1v2", "conc_C2v2", "conc_C3v2")
   # convert to matrix for row sums
   prob_matrix <- as.matrix(result[, prob_cols, with = FALSE])
   row_sums <- rowSums(prob_matrix)
   expect_true(all(abs(row_sums - 1) < 1e-10))
 
   # Very low mean should have most probability in first category
-  expect_true(prob_matrix[1, "EPA_C1v2"] > 0.5)
+  expect_true(prob_matrix[1, "conc_C1v2"] > 0.5)
 
   # Very high mean should have most probability in last category
-  expect_true(prob_matrix[3, "EPA_C3v2"] > 0.5)
+  expect_true(prob_matrix[3, "conc_C3v2"] > 0.5)
 })
 
 # test apply_fallback_imputation functionality
-test_that("Fallback imputation works when EPA data is missing", {
+test_that("Fallback imputation works when concentration data is missing", {
   temp_dir <- tempfile(pattern = "test_fallback_imputation_")
   dir.create(temp_dir)
 
@@ -2122,8 +2122,8 @@ test_that("Fallback imputation works when EPA data is missing", {
   expect_error(
     perform_sensitivity_analysis(
       birth_data_txt = dummy_files$births,
-      as_usgs_prob_csv = dummy_files$usgs,
-      as_epa_prob_csv = dummy_files$epa,
+      model_prob_csv = dummy_files$prob,
+      conc_data_csv = dummy_files$conc,
       ndraws = 2,
       regression_formula = "~ as.factor(AsLevel) + (1 | MRSTATE)",
       targets = "BWT",
@@ -2144,9 +2144,9 @@ test_that("impute_arsenic_exposure handles basic case correctly", {
   ndraws <- 3
   as_cat_label <- c("As<5", "As5-10", "As10+")
 
-  # Create USGS data with multiple cells per county
+  # Create probability data with multiple cells per county
   county_ids <- sprintf("%05d", rep(1:n_counties, each = 5))
-  datmatx_usgs <- data.frame(
+  datmatx_prob <- data.frame(
     GEOID10 = county_ids,
     stringsAsFactors = FALSE
   )
@@ -2171,7 +2171,7 @@ test_that("impute_arsenic_exposure handles basic case correctly", {
   )
 
   result <- geoExposeR:::impute_arsenic_exposure(
-    datmatx_usgs = datmatx_usgs,
+    datmatx_prob = datmatx_prob,
     rasterprob_combined = rasterprob_combined,
     cellpop = cellpop,
     births = births,
@@ -2203,7 +2203,7 @@ test_that("impute_arsenic_exposure handles NA weights correctly", {
   as_cat_label <- c("As<5", "As5-10", "As10+")
 
   county_ids <- sprintf("%05d", rep(1:n_counties, each = 5))
-  datmatx_usgs <- data.frame(
+  datmatx_prob <- data.frame(
     GEOID10 = county_ids,
     stringsAsFactors = FALSE
   )
@@ -2228,7 +2228,7 @@ test_that("impute_arsenic_exposure handles NA weights correctly", {
   # Should not error with NA weights
   result <- expect_no_error(
     geoExposeR:::impute_arsenic_exposure(
-      datmatx_usgs = datmatx_usgs,
+      datmatx_prob = datmatx_prob,
       rasterprob_combined = rasterprob_combined,
       cellpop = cellpop,
       births = births,
@@ -2255,7 +2255,7 @@ test_that("impute_arsenic_exposure handles all-zero weights gracefully", {
   as_cat_label <- c("As<5", "As5-10", "As10+")
 
   county_ids <- sprintf("%05d", rep(1:n_counties, each = 5))
-  datmatx_usgs <- data.frame(
+  datmatx_prob <- data.frame(
     GEOID10 = county_ids,
     stringsAsFactors = FALSE
   )
@@ -2279,7 +2279,7 @@ test_that("impute_arsenic_exposure handles all-zero weights gracefully", {
 
   result <- expect_no_error(
     geoExposeR:::impute_arsenic_exposure(
-      datmatx_usgs = datmatx_usgs,
+      datmatx_prob = datmatx_prob,
       rasterprob_combined = rasterprob_combined,
       cellpop = cellpop,
       births = births,
@@ -2303,7 +2303,7 @@ test_that("impute_arsenic_exposure handles single cell per county", {
 
   # Single cell per county
   county_ids <- sprintf("%05d", 1:n_counties)
-  datmatx_usgs <- data.frame(
+  datmatx_prob <- data.frame(
     GEOID10 = county_ids,
     stringsAsFactors = FALSE
   )
@@ -2324,7 +2324,7 @@ test_that("impute_arsenic_exposure handles single cell per county", {
   )
 
   result <- geoExposeR:::impute_arsenic_exposure(
-    datmatx_usgs = datmatx_usgs,
+    datmatx_prob = datmatx_prob,
     rasterprob_combined = rasterprob_combined,
     cellpop = cellpop,
     births = births,
@@ -2349,7 +2349,7 @@ test_that("impute_arsenic_exposure removes rows when fallback disabled", {
   as_cat_label <- c("As<5", "As5-10", "As10+")
 
   county_ids <- sprintf("%05d", 1:n_counties)
-  datmatx_usgs <- data.frame(
+  datmatx_prob <- data.frame(
     GEOID10 = county_ids,
     stringsAsFactors = FALSE
   )
@@ -2363,15 +2363,15 @@ test_that("impute_arsenic_exposure removes rows when fallback disabled", {
 
   cellpop <- sample(50:500, n_counties, replace = TRUE)
 
-  # Add some birth records with counties not in USGS data
+  # Add some birth records with counties not in probability data data
   births <- data.frame(
-    FIPS = c(county_ids, sprintf("%05d", 99:100)),  # 99, 100 not in USGS
+    FIPS = c(county_ids, sprintf("%05d", 99:100)),  # 99, 100 not in probability data
     BWT = rnorm(n_counties + 2, 3400, 450),
     stringsAsFactors = FALSE
   )
 
   result <- geoExposeR:::impute_arsenic_exposure(
-    datmatx_usgs = datmatx_usgs,
+    datmatx_prob = datmatx_prob,
     rasterprob_combined = rasterprob_combined,
     cellpop = cellpop,
     births = births,
@@ -2619,9 +2619,9 @@ test_that("impute_arsenic_exposure applies fallback with message for unmatched c
   ndraws <- 2
   as_cat_label <- c("As<5", "As5-10", "As10+")
 
-  # Create USGS data with only 3 counties
+  # Create probability data with only 3 counties
   county_ids <- sprintf("%05d", 1:3)
-  datmatx_usgs <- data.frame(
+  datmatx_prob <- data.frame(
     GEOID10 = county_ids,
     stringsAsFactors = FALSE
   )
@@ -2635,7 +2635,7 @@ test_that("impute_arsenic_exposure applies fallback with message for unmatched c
 
   cellpop <- sample(50:500, 3, replace = TRUE)
 
-  # Create birth data with counties 1-5 (counties 4,5 not in USGS)
+  # Create birth data with counties 1-5 (counties 4,5 not in probability data)
   births <- data.frame(
     FIPS = sprintf("%05d", 1:5),
     BWT = rnorm(5, 3400, 450),
@@ -2645,7 +2645,7 @@ test_that("impute_arsenic_exposure applies fallback with message for unmatched c
   # Should print message about filling NAs with most common category
   expect_message(
     geoExposeR:::impute_arsenic_exposure(
-      datmatx_usgs = datmatx_usgs,
+      datmatx_prob = datmatx_prob,
       rasterprob_combined = rasterprob_combined,
       cellpop = cellpop,
       births = births,
@@ -2775,38 +2775,38 @@ test_that("impute_additional_variables skips birth column check when disabled", 
 
 # ===== Tests for data-loading.R functions =====
 
-test_that("load_usgs_data errors on missing columns", {
-  temp_dir <- tempfile(pattern = "test_usgs_missing_")
+test_that("load_prob_data errors on missing columns", {
+  temp_dir <- tempfile(pattern = "test_prob_missing_")
   dir.create(temp_dir)
 
-  # Create USGS data with missing columns
-  usgs_df <- data.frame(
+  # Create probability data with missing columns
+  prob_df <- data.frame(
     GEOID10 = sprintf("%05d", 1:10),
-    RFC3_C1v2 = runif(10),
-    # Missing RFC3_C2v2 and RFC3_C3v2
+    prob_C1 = runif(10),
+    # Missing prob_C2 and prob_C3
     Wells_2010 = sample(50:500, 10)
   )
-  usgs_file <- file.path(temp_dir, "usgs_missing.csv")
-  data.table::fwrite(usgs_df, usgs_file)
+  prob_file <- file.path(temp_dir, "prob_missing.csv")
+  data.table::fwrite(prob_df, prob_file)
 
   expect_error(
-    geoExposeR:::load_usgs_data(
-      as_usgs_prob_csv = usgs_file,
-      as_conc_cols = c("RFC3_C1v2", "RFC3_C2v2", "RFC3_C3v2"),
+    geoExposeR:::load_prob_data(
+      model_prob_csv = prob_file,
+      prob_cols = c("prob_C1", "prob_C2", "prob_C3"),
       pop_well_col = "Wells_2010"
     ),
-    "columns are missing in USGS data"
+    "columns are missing in probability data"
   )
 
   unlink(temp_dir, recursive = TRUE)
 })
 
 test_that("validate_data_alignment errors on row count mismatch", {
-  usgs_df <- data.frame(GEOID10 = 1:10)
-  epa_df <- data.frame(GEOID10 = 1:5)  # Different row count
+  prob_df <- data.frame(GEOID10 = 1:10)
+  conc_df <- data.frame(GEOID10 = 1:5)  # Different row count
 
   expect_error(
-    geoExposeR:::validate_data_alignment(usgs_df, epa_df),
+    geoExposeR:::validate_data_alignment(prob_df, conc_df),
     "different numbers of rows"
   )
 })
@@ -2869,59 +2869,59 @@ test_that("load_and_process_birth_data creates rural indicator", {
   unlink(temp_dir, recursive = TRUE)
 })
 
-test_that("create_weighted_prob_matrix handles NA in EPA data", {
+test_that("create_weighted_prob_matrix handles NA in concentration data", {
   set.seed(12345)
 
-  # USGS probabilities (no NAs)
-  rasterprob_usgs <- matrix(
+  # Model probabilities (no NAs)
+  rasterprob_model <- matrix(
     c(0.7, 0.2, 0.1, 0.5, 0.3, 0.2, 0.6, 0.25, 0.15),
     nrow = 3, ncol = 3, byrow = TRUE
   )
 
-  # EPA probabilities with NA in row 2
-  rasterprob_epa <- matrix(
+  # Concentration probabilities with NA in row 2
+  rasterprob_conc <- matrix(
     c(0.8, 0.15, 0.05, NA, NA, NA, 0.4, 0.35, 0.25),
     nrow = 3, ncol = 3, byrow = TRUE
   )
 
-  datmatx_epa <- data.frame(
+  datmatx_conc <- data.frame(
     PWELL_private_pct = c(50, 50, 50)
   )
 
   result <- geoExposeR:::create_weighted_prob_matrix(
-    rasterprob_usgs = rasterprob_usgs,
-    rasterprob_epa = rasterprob_epa,
-    datmatx_epa = datmatx_epa,
-    epa_pwell_col = "PWELL_private_pct"
+    rasterprob_model = rasterprob_model,
+    rasterprob_conc = rasterprob_conc,
+    datmatx_conc = datmatx_conc,
+    pwell_col = "PWELL_private_pct"
   )
 
-  # Row 2 should use USGS probabilities (fallback)
-  expect_equal(result[2, ], rasterprob_usgs[2, ])
+  # Row 2 should use model probabilities (fallback)
+  expect_equal(result[2, ], rasterprob_model[2, ])
   # Row 1 and 3 should be weighted averages
   expect_false(any(is.na(result)))
 })
 
-test_that("validate_epa_cutoffs validates properly with validate_cutoffs=TRUE", {
+test_that("validate_conc_cutoffs validates properly with validate_cutoffs=TRUE", {
   # Non-numeric cutoffs
   expect_error(
-    geoExposeR:::validate_epa_cutoffs(c("5", "10"), validate_cutoffs = TRUE),
+    geoExposeR:::validate_conc_cutoffs(c("5", "10"), validate_cutoffs = TRUE),
     "must be numeric"
   )
 
   # Unsorted cutoffs
   expect_error(
-    geoExposeR:::validate_epa_cutoffs(c(10, 5), validate_cutoffs = TRUE),
+    geoExposeR:::validate_conc_cutoffs(c(10, 5), validate_cutoffs = TRUE),
     "must be in ascending order"
   )
 
   # Negative cutoffs
   expect_error(
-    geoExposeR:::validate_epa_cutoffs(c(-5, 10), validate_cutoffs = TRUE),
+    geoExposeR:::validate_conc_cutoffs(c(-5, 10), validate_cutoffs = TRUE),
     "cannot contain negative values"
   )
 
   # Valid cutoffs
-  result <- geoExposeR:::validate_epa_cutoffs(c(5, 10), validate_cutoffs = TRUE)
+  result <- geoExposeR:::validate_conc_cutoffs(c(5, 10), validate_cutoffs = TRUE)
   expect_equal(result$cutoffs, c(5, 10))
   expect_equal(result$n_categories, 3)
 })
@@ -2930,44 +2930,44 @@ test_that("load_and_process_arsenic_data uses auto-generated cutoffs", {
   temp_dir <- tempfile(pattern = "test_auto_cutoffs_")
   dir.create(temp_dir)
 
-  # Create USGS data with 3 categories
+  # Create probability data with 3 categories
   set.seed(12345)
   n_rows <- 20
-  usgs_probs <- matrix(runif(n_rows * 3), ncol = 3)
-  usgs_probs <- usgs_probs / rowSums(usgs_probs)
+  model_probs <- matrix(runif(n_rows * 3), ncol = 3)
+  model_probs <- model_probs / rowSums(model_probs)
 
-  usgs_df <- data.frame(
+  prob_df <- data.frame(
     GEOID10 = sprintf("%05d", 1:n_rows),
-    RFC3_C1v2 = usgs_probs[, 1],
-    RFC3_C2v2 = usgs_probs[, 2],
-    RFC3_C3v2 = usgs_probs[, 3],
+    prob_C1 = model_probs[, 1],
+    prob_C2 = model_probs[, 2],
+    prob_C3 = model_probs[, 3],
     Wells_2010 = sample(50:500, n_rows, replace = TRUE)
   )
-  usgs_file <- file.path(temp_dir, "usgs.csv")
-  data.table::fwrite(usgs_df, usgs_file)
+  prob_file <- file.path(temp_dir, "prob_data.csv")
+  data.table::fwrite(prob_df, prob_file)
 
-  # Create EPA data
-  epa_df <- data.frame(
+  # Create concentration data
+  conc_df <- data.frame(
     GEOID10 = sprintf("%05d", 1:n_rows),
-    EPA_AS_meanlog = runif(n_rows, 0.5, 1.5),
-    EPA_AS_sdlog = runif(n_rows, 0.1, 0.5),
+    conc_meanlog = runif(n_rows, 0.5, 1.5),
+    conc_sdlog = runif(n_rows, 0.1, 0.5),
     PWELL_private_pct = runif(n_rows, 10, 90)
   )
-  epa_file <- file.path(temp_dir, "epa.csv")
-  data.table::fwrite(epa_df, epa_file)
+  conc_file <- file.path(temp_dir, "conc_data.csv")
+  data.table::fwrite(conc_df, conc_file)
 
-  # Should auto-generate cutoffs when epa_cutoffs = NULL
+  # Should auto-generate cutoffs when conc_cutoffs = NULL
   expect_message(
     geoExposeR:::load_and_process_arsenic_data(
-      as_usgs_prob_csv = usgs_file,
-      as_epa_prob_csv = epa_file,
-      as_conc_cols = c("RFC3_C1v2", "RFC3_C2v2", "RFC3_C3v2"),
+      model_prob_csv = prob_file,
+      conc_data_csv = conc_file,
+      prob_cols = c("prob_C1", "prob_C2", "prob_C3"),
       pop_well_col = "Wells_2010",
-      epa_as_mean_col = "EPA_AS_meanlog",
-      epa_as_sd_col = "EPA_AS_sdlog",
-      epa_pwell_col = "PWELL_private_pct",
+      conc_mean_col = "conc_meanlog",
+      conc_sd_col = "conc_sdlog",
+      pwell_col = "PWELL_private_pct",
       id_col = "GEOID10",
-      epa_cutoffs = NULL
+      conc_cutoffs = NULL
     ),
     "auto-generated cutoffs"
   )
@@ -3116,19 +3116,19 @@ test_that("regression_analysis handles model fitting errors", {
 # ==============================================================================
 
 # ------------------------------------------------------------------------------
-# Tests for prepare_epa_data()
+# Tests for prepare_conc_data()
 # ------------------------------------------------------------------------------
 
-test_that("prepare_epa_data processes raw EPA measurements correctly", {
-  # Create sample raw EPA data
-  epa_raw <- data.frame(
+test_that("prepare_conc_data processes raw concentration measurements correctly", {
+  # Create sample raw concentration data
+  conc_raw_data <- data.frame(
     county_fips = c("06001", "06001", "06003", "06003", "06005"),
     arsenic_concentration = c(2.5, 3.1, 8.2, 7.5, 4.0),
     population_served = c(50000, 25000, 10000, 15000, 30000)
   )
 
-  result <- prepare_epa_data(
-    epa_data = epa_raw,
+  result <- prepare_conc_data(
+    conc_data = conc_raw_data,
     id_col = "county_fips",
     concentration_col = "arsenic_concentration",
     input_type = "raw"
@@ -3138,27 +3138,27 @@ test_that("prepare_epa_data processes raw EPA measurements correctly", {
 
   expect_true(data.table::is.data.table(result))
   expect_true("GEOID10" %in% names(result))
-  expect_true("EPA_AS_meanlog" %in% names(result))
-  expect_true("EPA_AS_sdlog" %in% names(result))
+  expect_true("conc_meanlog" %in% names(result))
+  expect_true("conc_sdlog" %in% names(result))
 
   # Check aggregation (should have 3 unique counties)
   expect_equal(nrow(result), 3)
 
   # Check that meanlog and sdlog are valid
-  expect_true(all(is.finite(result$EPA_AS_meanlog)))
-  expect_true(all(result$EPA_AS_sdlog > 0))
+  expect_true(all(is.finite(result$conc_meanlog)))
+  expect_true(all(result$conc_sdlog > 0))
 })
 
-test_that("prepare_epa_data handles summary input type", {
-  # Create summary EPA data
-  epa_summary <- data.frame(
+test_that("prepare_conc_data handles summary input type", {
+  # Create summary concentration data
+  conc_summary <- data.frame(
     county_fips = c("06001", "06003", "06005"),
     mean_concentration = c(3.0, 7.8, 4.0),
     sd_concentration = c(0.5, 1.2, 0.8)
   )
 
-  result <- prepare_epa_data(
-    epa_data = epa_summary,
+  result <- prepare_conc_data(
+    conc_data = conc_summary,
     id_col = "county_fips",
     input_type = "summary",
     mean_col = "mean_concentration",
@@ -3166,18 +3166,18 @@ test_that("prepare_epa_data handles summary input type", {
   )
 
   expect_equal(nrow(result), 3)
-  expect_true(all(is.finite(result$EPA_AS_meanlog)))
-  expect_true(all(result$EPA_AS_sdlog > 0))
+  expect_true(all(is.finite(result$conc_meanlog)))
+  expect_true(all(result$conc_sdlog > 0))
 })
 
-test_that("prepare_epa_data handles missing SD with default", {
-  epa_summary <- data.frame(
+test_that("prepare_conc_data handles missing SD with default", {
+  conc_summary <- data.frame(
     county_fips = c("06001", "06003"),
     mean_concentration = c(3.0, 7.8)
   )
 
-  result <- prepare_epa_data(
-    epa_data = epa_summary,
+  result <- prepare_conc_data(
+    conc_data = conc_summary,
     id_col = "county_fips",
     input_type = "summary",
     mean_col = "mean_concentration",
@@ -3185,41 +3185,41 @@ test_that("prepare_epa_data handles missing SD with default", {
   )
 
   # sdlog should be calculated based on derived sd_as
-  expect_true(all(result$EPA_AS_sdlog > 0))
+  expect_true(all(result$conc_sdlog > 0))
 })
 
-test_that("prepare_epa_data validates missing geoid column", {
-  epa_data <- data.frame(
+test_that("prepare_conc_data validates missing geoid column", {
+  conc_data <- data.frame(
     wrong_col = c("06001"),
     arsenic_concentration = c(3.0)
   )
 
   expect_error(
-    prepare_epa_data(epa_data, id_col = "county_fips"),
+    prepare_conc_data(conc_data, id_col = "county_fips"),
     "Geographic ID column 'county_fips' not found"
   )
 })
 
-test_that("prepare_epa_data validates missing concentration column", {
-  epa_data <- data.frame(
+test_that("prepare_conc_data validates missing concentration column", {
+  conc_data <- data.frame(
     county_fips = c("06001"),
     wrong_col = c(3.0)
   )
 
   expect_error(
-    prepare_epa_data(epa_data, id_col = "county_fips", input_type = "raw"),
+    prepare_conc_data(conc_data, id_col = "county_fips", input_type = "raw"),
     "Concentration column 'arsenic_concentration' not found"
   )
 })
 
-test_that("prepare_epa_data handles zero/negative concentrations", {
-  epa_data <- data.frame(
+test_that("prepare_conc_data handles zero/negative concentrations", {
+  conc_data <- data.frame(
     county_fips = c("06001", "06001", "06003"),
     arsenic_concentration = c(0, -1, 5.0)
   )
 
-  result <- prepare_epa_data(
-    epa_data = epa_data,
+  result <- prepare_conc_data(
+    conc_data = conc_data,
     id_col = "county_fips",
     input_type = "raw"
   )
@@ -3229,27 +3229,27 @@ test_that("prepare_epa_data handles zero/negative concentrations", {
   expect_equal(result$GEOID10, "06003")
 })
 
-test_that("prepare_epa_data errors when all concentrations are non-positive", {
-  epa_data <- data.frame(
+test_that("prepare_conc_data errors when all concentrations are non-positive", {
+  conc_data <- data.frame(
     county_fips = c("06001", "06003"),
     arsenic_concentration = c(0, -1)
   )
 
   expect_error(
-    prepare_epa_data(epa_data, id_col = "county_fips", input_type = "raw"),
+    prepare_conc_data(conc_data, id_col = "county_fips", input_type = "raw"),
     "No positive concentration values found"
   )
 })
 
-test_that("prepare_epa_data includes private well percentage when provided", {
-  epa_data <- data.frame(
+test_that("prepare_conc_data includes private well percentage when provided", {
+  conc_data <- data.frame(
     county_fips = c("06001", "06001", "06003"),
     arsenic_concentration = c(3.0, 4.0, 5.0),
     pwell_pct = c(15.0, 15.0, 25.0)
   )
 
-  result <- prepare_epa_data(
-    epa_data = epa_data,
+  result <- prepare_conc_data(
+    conc_data = conc_data,
     id_col = "county_fips",
     input_type = "raw",
     private_well_pct_col = "pwell_pct"
@@ -3259,16 +3259,16 @@ test_that("prepare_epa_data includes private well percentage when provided", {
   expect_equal(result$PWELL_private_pct[result$GEOID10 == "06001"], 15.0)
 })
 
-test_that("prepare_epa_data saves output file when requested", {
-  epa_data <- data.frame(
+test_that("prepare_conc_data saves output file when requested", {
+  conc_data <- data.frame(
     county_fips = c("06001", "06003"),
     arsenic_concentration = c(3.0, 5.0)
   )
 
   output_file <- tempfile(fileext = ".csv")
 
-  result <- prepare_epa_data(
-    epa_data = epa_data,
+  result <- prepare_conc_data(
+    conc_data = conc_data,
     id_col = "county_fips",
     input_type = "raw",
     output_file = output_file
@@ -3283,15 +3283,15 @@ test_that("prepare_epa_data saves output file when requested", {
   unlink(output_file)
 })
 
-test_that("prepare_epa_data validates summary input missing mean column", {
-  epa_data <- data.frame(
+test_that("prepare_conc_data validates summary input missing mean column", {
+  conc_data <- data.frame(
     county_fips = c("06001"),
     wrong_col = c(3.0)
   )
 
   expect_error(
-    prepare_epa_data(
-      epa_data,
+    prepare_conc_data(
+      conc_data,
       id_col = "county_fips",
       input_type = "summary",
       mean_col = "mean_concentration"
@@ -3470,7 +3470,7 @@ test_that("format_health_data saves to csv format", {
 test_that("add_well_percentages merges data correctly", {
   target <- data.frame(
     GEOID10 = c("06001", "06003", "06005"),
-    EPA_AS_meanlog = c(1.0, 1.5, 2.0)
+    conc_meanlog = c(1.0, 1.5, 2.0)
   )
 
   wells <- data.frame(
@@ -3618,8 +3618,8 @@ test_that("subset_by_geography uses custom geoid column", {
 
 test_that("validate_prepared_inputs detects missing files", {
   result <- validate_prepared_inputs(
-    usgs_file = "nonexistent_usgs.csv",
-    epa_file = "nonexistent_epa.csv",
+    prob_file = "nonexistent_prob.csv",
+    conc_file = "nonexistent_epa.csv",
     health_file = "nonexistent_health.txt"
   )
 
@@ -3632,27 +3632,27 @@ test_that("validate_prepared_inputs validates correct files", {
   # Create valid test files
   temp_dir <- tempdir()
 
-  usgs_file <- file.path(temp_dir, "test_usgs.csv")
-  epa_file <- file.path(temp_dir, "test_epa.csv")
+  prob_file <- file.path(temp_dir, "test_prob.csv")
+  conc_file <- file.path(temp_dir, "test_conc.csv")
   health_file <- file.path(temp_dir, "test_health.txt")
 
-  # Create USGS file
-  usgs_data <- data.frame(
+  # Create probability file
+  prob_data_local <- data.frame(
     GEOID10 = c("06001", "06003"),
-    RFC3_C1v2 = c(0.7, 0.6),
-    RFC3_C2v2 = c(0.2, 0.25),
-    RFC3_C3v2 = c(0.1, 0.15)
+    prob_C1 = c(0.7, 0.6),
+    prob_C2 = c(0.2, 0.25),
+    prob_C3 = c(0.1, 0.15)
   )
-  data.table::fwrite(usgs_data, usgs_file)
+  data.table::fwrite(prob_data_local, prob_file)
 
-  # Create EPA file
-  epa_data <- data.frame(
+  # Create concentration file
+  conc_data <- data.frame(
     GEOID10 = c("06001", "06003"),
-    EPA_AS_meanlog = c(1.0, 1.5),
-    EPA_AS_sdlog = c(0.8, 0.9),
+    conc_meanlog = c(1.0, 1.5),
+    conc_sdlog = c(0.8, 0.9),
     PWELL_private_pct = c(15, 25)
   )
-  data.table::fwrite(epa_data, epa_file)
+  data.table::fwrite(conc_data, conc_file)
 
   # Create health file
   health_data <- data.frame(
@@ -3662,8 +3662,8 @@ test_that("validate_prepared_inputs validates correct files", {
   data.table::fwrite(health_data, health_file, sep = "\t")
 
   result <- validate_prepared_inputs(
-    usgs_file = usgs_file,
-    epa_file = epa_file,
+    prob_file = prob_file,
+    conc_file = conc_file,
     health_file = health_file
   )
 
@@ -3671,28 +3671,28 @@ test_that("validate_prepared_inputs validates correct files", {
   expect_equal(length(result$issues), 0)
 
   # Cleanup
-  unlink(c(usgs_file, epa_file, health_file))
+  unlink(c(prob_file, conc_file, health_file))
 })
 
 test_that("validate_prepared_inputs detects missing columns", {
   temp_dir <- tempdir()
-  usgs_file <- file.path(temp_dir, "test_usgs_bad.csv")
-  epa_file <- file.path(temp_dir, "test_epa_bad.csv")
+  prob_file <- file.path(temp_dir, "test_prob_bad.csv")
+  conc_file <- file.path(temp_dir, "test_conc_bad.csv")
   health_file <- file.path(temp_dir, "test_health_bad.txt")
 
-  # Create USGS file missing probability columns
-  usgs_data <- data.frame(
+  # Create probability file missing probability columns
+  prob_data_local <- data.frame(
     GEOID10 = c("06001"),
     wrong_col = c(0.5)
   )
-  data.table::fwrite(usgs_data, usgs_file)
+  data.table::fwrite(prob_data_local, prob_file)
 
-  # Create EPA file missing meanlog
-  epa_data <- data.frame(
+  # Create concentration file missing meanlog
+  conc_data <- data.frame(
     GEOID10 = c("06001"),
     wrong_col = c(1.0)
   )
-  data.table::fwrite(epa_data, epa_file)
+  data.table::fwrite(conc_data, conc_file)
 
   # Create health file
   health_data <- data.frame(
@@ -3702,41 +3702,41 @@ test_that("validate_prepared_inputs detects missing columns", {
   data.table::fwrite(health_data, health_file, sep = "\t")
 
   result <- validate_prepared_inputs(
-    usgs_file = usgs_file,
-    epa_file = epa_file,
+    prob_file = prob_file,
+    conc_file = conc_file,
     health_file = health_file
   )
 
   expect_false(result$valid)
   expect_true(any(grepl("missing probability columns", result$issues)))
-  expect_true(any(grepl("EPA_AS_meanlog", result$issues)))
+  expect_true(any(grepl("conc_meanlog", result$issues)))
 
-  unlink(c(usgs_file, epa_file, health_file))
+  unlink(c(prob_file, conc_file, health_file))
 })
 
 test_that("validate_prepared_inputs detects invalid probability sums", {
   temp_dir <- tempdir()
-  usgs_file <- file.path(temp_dir, "test_usgs_prob.csv")
-  epa_file <- file.path(temp_dir, "test_epa_prob.csv")
+  prob_file <- file.path(temp_dir, "test_prob_prob.csv")
+  conc_file <- file.path(temp_dir, "test_conc_prob.csv")
   health_file <- file.path(temp_dir, "test_health_prob.txt")
 
-  # Create USGS file with probabilities that don't sum to 1
-  usgs_data <- data.frame(
+  # Create probability file with probabilities that don't sum to 1
+  prob_data_local <- data.frame(
     GEOID10 = c("06001", "06003"),
-    RFC3_C1v2 = c(0.5, 0.6),
-    RFC3_C2v2 = c(0.2, 0.25),
-    RFC3_C3v2 = c(0.1, 0.15)  # Sum = 0.8 and 1.0
+    prob_C1 = c(0.5, 0.6),
+    prob_C2 = c(0.2, 0.25),
+    prob_C3 = c(0.1, 0.15)  # Sum = 0.8 and 1.0
   )
-  data.table::fwrite(usgs_data, usgs_file)
+  data.table::fwrite(prob_data_local, prob_file)
 
-  # Create valid EPA file
-  epa_data <- data.frame(
+  # Create valid concentration file
+  conc_data <- data.frame(
     GEOID10 = c("06001", "06003"),
-    EPA_AS_meanlog = c(1.0, 1.5),
-    EPA_AS_sdlog = c(0.8, 0.9),
+    conc_meanlog = c(1.0, 1.5),
+    conc_sdlog = c(0.8, 0.9),
     PWELL_private_pct = c(15, 25)
   )
-  data.table::fwrite(epa_data, epa_file)
+  data.table::fwrite(conc_data, conc_file)
 
   # Create health file
   health_data <- data.frame(
@@ -3746,113 +3746,113 @@ test_that("validate_prepared_inputs detects invalid probability sums", {
   data.table::fwrite(health_data, health_file, sep = "\t")
 
   result <- validate_prepared_inputs(
-    usgs_file = usgs_file,
-    epa_file = epa_file,
+    prob_file = prob_file,
+    conc_file = conc_file,
     health_file = health_file
   )
 
   # Should have warnings about probability sums
   expect_true(any(grepl("probability sums", result$warnings)))
 
-  unlink(c(usgs_file, epa_file, health_file))
+  unlink(c(prob_file, conc_file, health_file))
 })
 
 test_that("validate_prepared_inputs detects negative probabilities", {
   temp_dir <- tempdir()
-  usgs_file <- file.path(temp_dir, "test_usgs_neg.csv")
-  epa_file <- file.path(temp_dir, "test_epa_neg.csv")
+  prob_file <- file.path(temp_dir, "test_prob_neg.csv")
+  conc_file <- file.path(temp_dir, "test_conc_neg.csv")
   health_file <- file.path(temp_dir, "test_health_neg.txt")
 
-  # Create USGS file with negative probability
-  usgs_data <- data.frame(
+  # Create probability file with negative probability
+  prob_data_local <- data.frame(
     GEOID10 = c("06001"),
-    RFC3_C1v2 = c(-0.1),
-    RFC3_C2v2 = c(0.6),
-    RFC3_C3v2 = c(0.5)
+    prob_C1 = c(-0.1),
+    prob_C2 = c(0.6),
+    prob_C3 = c(0.5)
   )
-  data.table::fwrite(usgs_data, usgs_file)
+  data.table::fwrite(prob_data_local, prob_file)
 
-  epa_data <- data.frame(
+  conc_data <- data.frame(
     GEOID10 = c("06001"),
-    EPA_AS_meanlog = c(1.0),
-    EPA_AS_sdlog = c(0.8)
+    conc_meanlog = c(1.0),
+    conc_sdlog = c(0.8)
   )
-  data.table::fwrite(epa_data, epa_file)
+  data.table::fwrite(conc_data, conc_file)
 
   health_data <- data.frame(FIPS = c("06001"), BWT = c(3200))
   data.table::fwrite(health_data, health_file, sep = "\t")
 
   result <- validate_prepared_inputs(
-    usgs_file = usgs_file,
-    epa_file = epa_file,
+    prob_file = prob_file,
+    conc_file = conc_file,
     health_file = health_file
   )
 
   expect_false(result$valid)
   expect_true(any(grepl("Negative probabilities", result$issues)))
 
-  unlink(c(usgs_file, epa_file, health_file))
+  unlink(c(prob_file, conc_file, health_file))
 })
 
 test_that("validate_prepared_inputs detects invalid PWELL range", {
   temp_dir <- tempdir()
-  usgs_file <- file.path(temp_dir, "test_usgs_pwell.csv")
-  epa_file <- file.path(temp_dir, "test_epa_pwell.csv")
+  prob_file <- file.path(temp_dir, "test_prob_pwell.csv")
+  conc_file <- file.path(temp_dir, "test_conc_pwell.csv")
   health_file <- file.path(temp_dir, "test_health_pwell.txt")
 
-  usgs_data <- data.frame(
+  prob_data_local <- data.frame(
     GEOID10 = c("06001"),
-    RFC3_C1v2 = c(0.7),
-    RFC3_C2v2 = c(0.2),
-    RFC3_C3v2 = c(0.1)
+    prob_C1 = c(0.7),
+    prob_C2 = c(0.2),
+    prob_C3 = c(0.1)
   )
-  data.table::fwrite(usgs_data, usgs_file)
+  data.table::fwrite(prob_data_local, prob_file)
 
-  # Create EPA file with invalid PWELL (> 100)
-  epa_data <- data.frame(
+  # Create concentration file with invalid PWELL (> 100)
+  conc_data <- data.frame(
     GEOID10 = c("06001"),
-    EPA_AS_meanlog = c(1.0),
-    EPA_AS_sdlog = c(0.8),
+    conc_meanlog = c(1.0),
+    conc_sdlog = c(0.8),
     PWELL_private_pct = c(150)  # Invalid
   )
-  data.table::fwrite(epa_data, epa_file)
+  data.table::fwrite(conc_data, conc_file)
 
   health_data <- data.frame(FIPS = c("06001"), BWT = c(3200))
   data.table::fwrite(health_data, health_file, sep = "\t")
 
   result <- validate_prepared_inputs(
-    usgs_file = usgs_file,
-    epa_file = epa_file,
+    prob_file = prob_file,
+    conc_file = conc_file,
     health_file = health_file
   )
 
   expect_false(result$valid)
   expect_true(any(grepl("PWELL_private_pct must be between", result$issues)))
 
-  unlink(c(usgs_file, epa_file, health_file))
+  unlink(c(prob_file, conc_file, health_file))
 })
 
 test_that("validate_prepared_inputs returns summary statistics", {
   temp_dir <- tempdir()
-  usgs_file <- file.path(temp_dir, "test_usgs_sum.csv")
-  epa_file <- file.path(temp_dir, "test_epa_sum.csv")
+  prob_file <- file.path(temp_dir, "test_prob_sum.csv")
+  conc_file <- file.path(temp_dir, "test_conc_sum.csv")
   health_file <- file.path(temp_dir, "test_health_sum.txt")
 
-  usgs_data <- data.frame(
+  prob_data_local <- data.frame(
     GEOID10 = c("06001", "06003", "06005"),
-    RFC3_C1v2 = c(0.7, 0.6, 0.5),
-    RFC3_C2v2 = c(0.2, 0.25, 0.3),
-    RFC3_C3v2 = c(0.1, 0.15, 0.2)
+    prob_C1 = c(0.7, 0.6, 0.5),
+    prob_C2 = c(0.2, 0.25, 0.3),
+    prob_C3 = c(0.1, 0.15, 0.2)
   )
-  data.table::fwrite(usgs_data, usgs_file)
+  data.table::fwrite(prob_data_local, prob_file)
 
-  epa_data <- data.frame(
+  conc_data <- data.frame(
     GEOID10 = c("06001", "06003"),
-    EPA_AS_meanlog = c(1.0, 1.5),
-    EPA_AS_sdlog = c(0.8, 0.9),
+    conc_meanlog = c(1.0, 1.5),
+    conc_sdlog = c(0.8, 0.9),
     PWELL_private_pct = c(15, 25)
   )
-  data.table::fwrite(epa_data, epa_file)
+  data.table::fwrite(conc_data, conc_file)
 
   health_data <- data.frame(
     FIPS = c("06001", "06003", "06005", "06007"),
@@ -3861,27 +3861,27 @@ test_that("validate_prepared_inputs returns summary statistics", {
   data.table::fwrite(health_data, health_file, sep = "\t")
 
   result <- validate_prepared_inputs(
-    usgs_file = usgs_file,
-    epa_file = epa_file,
+    prob_file = prob_file,
+    conc_file = conc_file,
     health_file = health_file
   )
 
   # Check summary statistics
-  expect_equal(result$summary$usgs$n_rows, 3)
-  expect_equal(result$summary$epa$n_rows, 2)
+  expect_equal(result$summary$prob$n_rows, 3)
+  expect_equal(result$summary$conc$n_rows, 2)
   expect_equal(result$summary$health$n_rows, 4)
 
-  unlink(c(usgs_file, epa_file, health_file))
+  unlink(c(prob_file, conc_file, health_file))
 })
 
 # ------------------------------------------------------------------------------
-# Tests for prepare_usgs_data() - requires terra and sf packages
+# Tests for prepare_prob_data() - requires terra and sf packages
 # ------------------------------------------------------------------------------
 
-test_that("prepare_usgs_data validates required packages", {
+test_that("prepare_prob_data validates required packages", {
   # Test with non-list input
   expect_error(
-    prepare_usgs_data(
+    prepare_prob_data(
       prob_rasters = "not_a_list",
       boundaries = NULL
     ),
@@ -3890,7 +3890,7 @@ test_that("prepare_usgs_data validates required packages", {
 
   # Test with empty list
   expect_error(
-    prepare_usgs_data(
+    prepare_prob_data(
       prob_rasters = list(),
       boundaries = NULL
     ),
@@ -3898,9 +3898,9 @@ test_that("prepare_usgs_data validates required packages", {
   )
 })
 
-test_that("prepare_usgs_data validates boundaries input", {
+test_that("prepare_prob_data validates boundaries input", {
   expect_error(
-    prepare_usgs_data(
+    prepare_prob_data(
       prob_rasters = list(gt5 = "test.tif"),
       boundaries = data.frame(x = 1)
     ),
@@ -3908,7 +3908,7 @@ test_that("prepare_usgs_data validates boundaries input", {
   )
 })
 
-test_that("prepare_usgs_data validates cutoffs", {
+test_that("prepare_prob_data validates cutoffs", {
   # Create a minimal sf object for testing
   boundaries <- sf::st_sf(
     GEOID = "06001",
@@ -3916,7 +3916,7 @@ test_that("prepare_usgs_data validates cutoffs", {
   )
 
   expect_error(
-    prepare_usgs_data(
+    prepare_prob_data(
       prob_rasters = list(gt5 = "test.tif"),
       boundaries = boundaries,
       cutoffs = c(10, 5)  # Invalid: first > second
@@ -3925,7 +3925,7 @@ test_that("prepare_usgs_data validates cutoffs", {
   )
 
   expect_error(
-    prepare_usgs_data(
+    prepare_prob_data(
       prob_rasters = list(gt5 = "test.tif"),
       boundaries = boundaries,
       cutoffs = c(5)  # Invalid: length 1
@@ -3934,14 +3934,14 @@ test_that("prepare_usgs_data validates cutoffs", {
   )
 })
 
-test_that("prepare_usgs_data validates geoid column exists", {
+test_that("prepare_prob_data validates geoid column exists", {
   boundaries <- sf::st_sf(
     wrong_col = "06001",
     geometry = sf::st_sfc(sf::st_point(c(-122, 38)))
   )
 
   expect_error(
-    prepare_usgs_data(
+    prepare_prob_data(
       prob_rasters = list(gt5 = "test.tif"),
       boundaries = boundaries,
       id_col = "GEOID"
@@ -3950,8 +3950,8 @@ test_that("prepare_usgs_data validates geoid column exists", {
   )
 })
 
-# Test prepare_usgs_data full workflow with mock rasters
-test_that("prepare_usgs_data processes rasters with centroid method", {
+# Test prepare_prob_data full workflow with mock rasters
+test_that("prepare_prob_data processes rasters with centroid method", {
   # Create temporary raster files
   temp_dir <- tempdir()
   gt5_file <- file.path(temp_dir, "prob_gt5.tif")
@@ -3974,7 +3974,7 @@ test_that("prepare_usgs_data processes rasters with centroid method", {
   sf::st_crs(poly) <- 4326
 
   # Test centroid extraction method
-  result <- prepare_usgs_data(
+  result <- prepare_prob_data(
     prob_rasters = list(gt5 = gt5_file, gt10 = gt10_file),
     boundaries = poly,
     id_col = "GEOID",
@@ -3985,19 +3985,19 @@ test_that("prepare_usgs_data processes rasters with centroid method", {
   expect_true(data.table::is.data.table(result))
   expect_equal(nrow(result), 1)
   expect_true("GEOID10" %in% names(result))
-  expect_true("RFC3_C1v2" %in% names(result))
-  expect_true("RFC3_C2v2" %in% names(result))
-  expect_true("RFC3_C3v2" %in% names(result))
+  expect_true("prob_C1" %in% names(result))
+  expect_true("prob_C2" %in% names(result))
+  expect_true("prob_C3" %in% names(result))
 
   # Probabilities should sum to approximately 1
-  prob_sum <- result$RFC3_C1v2 + result$RFC3_C2v2 + result$RFC3_C3v2
+  prob_sum <- result$prob_C1 + result$prob_C2 + result$prob_C3
   expect_equal(prob_sum, 1, tolerance = 0.01)
 
   # Clean up
   unlink(c(gt5_file, gt10_file))
 })
 
-test_that("prepare_usgs_data processes rasters with mean method", {
+test_that("prepare_prob_data processes rasters with mean method", {
   temp_dir <- tempdir()
   gt5_file <- file.path(temp_dir, "prob_gt5_mean.tif")
   gt10_file <- file.path(temp_dir, "prob_gt10_mean.tif")
@@ -4019,7 +4019,7 @@ test_that("prepare_usgs_data processes rasters with mean method", {
   sf::st_crs(poly) <- 4326
 
   # Test mean extraction method
-  result <- prepare_usgs_data(
+  result <- prepare_prob_data(
     prob_rasters = list(gt5 = gt5_file, gt10 = gt10_file),
     boundaries = poly,
     id_col = "GEOID",
@@ -4034,14 +4034,14 @@ test_that("prepare_usgs_data processes rasters with mean method", {
   # prob_cat1 = 1 - 0.3 = 0.7
   # prob_cat2 = 0.3 - 0.1 = 0.2
   # prob_cat3 = 0.1
-  expect_equal(result$RFC3_C1v2, 0.7, tolerance = 0.05)
-  expect_equal(result$RFC3_C2v2, 0.2, tolerance = 0.05)
-  expect_equal(result$RFC3_C3v2, 0.1, tolerance = 0.05)
+  expect_equal(result$prob_C1, 0.7, tolerance = 0.05)
+  expect_equal(result$prob_C2, 0.2, tolerance = 0.05)
+  expect_equal(result$prob_C3, 0.1, tolerance = 0.05)
 
   unlink(c(gt5_file, gt10_file))
 })
 
-test_that("prepare_usgs_data adds population data when provided", {
+test_that("prepare_prob_data adds population data when provided", {
   temp_dir <- tempdir()
   gt5_file <- file.path(temp_dir, "prob_gt5_pop.tif")
   gt10_file <- file.path(temp_dir, "prob_gt10_pop.tif")
@@ -4066,7 +4066,7 @@ test_that("prepare_usgs_data adds population data when provided", {
     private_well_pop = 15000
   )
 
-  result <- prepare_usgs_data(
+  result <- prepare_prob_data(
     prob_rasters = list(gt5 = gt5_file, gt10 = gt10_file),
     boundaries = poly,
     id_col = "GEOID",
@@ -4083,7 +4083,7 @@ test_that("prepare_usgs_data adds population data when provided", {
   unlink(c(gt5_file, gt10_file))
 })
 
-test_that("prepare_usgs_data warns on missing pop columns", {
+test_that("prepare_prob_data warns on missing pop columns", {
   temp_dir <- tempdir()
   gt5_file <- file.path(temp_dir, "prob_gt5_popwarn.tif")
   gt10_file <- file.path(temp_dir, "prob_gt10_popwarn.tif")
@@ -4109,7 +4109,7 @@ test_that("prepare_usgs_data warns on missing pop columns", {
   )
 
   expect_warning(
-    prepare_usgs_data(
+    prepare_prob_data(
       prob_rasters = list(gt5 = gt5_file, gt10 = gt10_file),
       boundaries = poly,
       id_col = "GEOID",
@@ -4129,7 +4129,7 @@ test_that("prepare_usgs_data warns on missing pop columns", {
   )
 
   expect_warning(
-    prepare_usgs_data(
+    prepare_prob_data(
       prob_rasters = list(gt5 = gt5_file, gt10 = gt10_file),
       boundaries = poly,
       id_col = "GEOID",
@@ -4145,11 +4145,11 @@ test_that("prepare_usgs_data warns on missing pop columns", {
   unlink(c(gt5_file, gt10_file))
 })
 
-test_that("prepare_usgs_data saves output file when requested", {
+test_that("prepare_prob_data saves output file when requested", {
   temp_dir <- tempdir()
   gt5_file <- file.path(temp_dir, "prob_gt5_save.tif")
   gt10_file <- file.path(temp_dir, "prob_gt10_save.tif")
-  output_file <- file.path(temp_dir, "usgs_output.csv")
+  output_file <- file.path(temp_dir, "prob_output.csv")
 
   r5 <- terra::rast(nrows = 5, ncols = 5, xmin = -122, xmax = -121, ymin = 37, ymax = 38)
   terra::values(r5) <- rep(0.3, 25)
@@ -4165,7 +4165,7 @@ test_that("prepare_usgs_data saves output file when requested", {
   poly$GEOID <- "06001"
   sf::st_crs(poly) <- 4326
 
-  result <- prepare_usgs_data(
+  result <- prepare_prob_data(
     prob_rasters = list(gt5 = gt5_file, gt10 = gt10_file),
     boundaries = poly,
     id_col = "GEOID",
@@ -4177,12 +4177,12 @@ test_that("prepare_usgs_data saves output file when requested", {
   expect_true(file.exists(output_file))
   saved_data <- data.table::fread(output_file)
   expect_equal(nrow(saved_data), 1)
-  expect_true("RFC3_C1v2" %in% names(saved_data))
+  expect_true("prob_C1" %in% names(saved_data))
 
   unlink(c(gt5_file, gt10_file, output_file))
 })
 
-test_that("prepare_usgs_data warns when cutoffs cannot be matched to columns", {
+test_that("prepare_prob_data warns when cutoffs cannot be matched to columns", {
   temp_dir <- tempdir()
   # Create rasters with non-standard names
   gt_low_file <- file.path(temp_dir, "prob_low.tif")
@@ -4204,7 +4204,7 @@ test_that("prepare_usgs_data warns when cutoffs cannot be matched to columns", {
 
   # Names don't contain cutoff values, should warn
   expect_warning(
-    prepare_usgs_data(
+    prepare_prob_data(
       prob_rasters = list(low = gt_low_file, high = gt_high_file),
       boundaries = poly,
       id_col = "GEOID",
@@ -4217,7 +4217,7 @@ test_that("prepare_usgs_data warns when cutoffs cannot be matched to columns", {
   unlink(c(gt_low_file, gt_high_file))
 })
 
-test_that("prepare_usgs_data handles missing raster file", {
+test_that("prepare_prob_data handles missing raster file", {
   poly <- sf::st_as_sf(sf::st_sfc(
     sf::st_polygon(list(matrix(c(-122, 37, -121, 37, -121, 38, -122, 38, -122, 37), ncol = 2, byrow = TRUE)))
   ))
@@ -4225,7 +4225,7 @@ test_that("prepare_usgs_data handles missing raster file", {
   sf::st_crs(poly) <- 4326
 
   expect_error(
-    prepare_usgs_data(
+    prepare_prob_data(
       prob_rasters = list(gt5 = "/nonexistent/path/file.tif"),
       boundaries = poly,
       id_col = "GEOID",
@@ -4235,7 +4235,7 @@ test_that("prepare_usgs_data handles missing raster file", {
   )
 })
 
-test_that("prepare_usgs_data processes multiple geographic units", {
+test_that("prepare_prob_data processes multiple geographic units", {
   temp_dir <- tempdir()
   gt5_file <- file.path(temp_dir, "prob_gt5_multi.tif")
   gt10_file <- file.path(temp_dir, "prob_gt10_multi.tif")
@@ -4257,7 +4257,7 @@ test_that("prepare_usgs_data processes multiple geographic units", {
   polys$GEOID <- c("06001", "06003")
   sf::st_crs(polys) <- 4326
 
-  result <- prepare_usgs_data(
+  result <- prepare_prob_data(
     prob_rasters = list(gt5 = gt5_file, gt10 = gt10_file),
     boundaries = polys,
     id_col = "GEOID",
@@ -4270,7 +4270,7 @@ test_that("prepare_usgs_data processes multiple geographic units", {
 
   # Each row should have probabilities summing to 1
   for (i in 1:nrow(result)) {
-    prob_sum <- result$RFC3_C1v2[i] + result$RFC3_C2v2[i] + result$RFC3_C3v2[i]
+    prob_sum <- result$prob_C1[i] + result$prob_C2[i] + result$prob_C3[i]
     expect_equal(prob_sum, 1, tolerance = 0.01)
   }
 
@@ -4281,27 +4281,27 @@ test_that("prepare_usgs_data processes multiple geographic units", {
 test_that("validate_prepared_inputs handles .txt health files", {
   temp_dir <- tempdir()
 
-  # Create USGS file - probabilities must sum to 1
-  usgs_file <- file.path(temp_dir, "usgs_txt_test.csv")
-  usgs_data <- data.frame(
+  # Create probability file - probabilities must sum to 1
+  prob_file <- file.path(temp_dir, "prob_txt_test.csv")
+  prob_data_local <- data.frame(
     GEOID10 = c("06001", "06003"),
-    RFC3_C1v2 = c(0.7, 0.6),
-    RFC3_C2v2 = c(0.2, 0.25),
-    RFC3_C3v2 = c(0.1, 0.15),
+    prob_C1 = c(0.7, 0.6),
+    prob_C2 = c(0.2, 0.25),
+    prob_C3 = c(0.1, 0.15),
     Wells_2010 = c(100, 200),
     PWELL = c(0.05, 0.08)
   )
-  data.table::fwrite(usgs_data, usgs_file)
+  data.table::fwrite(prob_data_local, prob_file)
 
-  # Create EPA file with expected column names
-  epa_file <- file.path(temp_dir, "epa_txt_test.csv")
-  epa_data <- data.frame(
+  # Create concentration file with expected column names
+  conc_file <- file.path(temp_dir, "conc_txt_test.csv")
+  conc_data <- data.frame(
     GEOID10 = c("06001", "06003"),
-    EPA_AS_meanlog = c(0.5, 0.8),
-    EPA_AS_sdlog = c(0.3, 0.4),
+    conc_meanlog = c(0.5, 0.8),
+    conc_sdlog = c(0.3, 0.4),
     PWELL_private_pct = c(0.05, 0.08)
   )
-  data.table::fwrite(epa_data, epa_file)
+  data.table::fwrite(conc_data, conc_file)
 
   # Create health file as .txt (tab-separated)
   health_file <- file.path(temp_dir, "health_test.txt")
@@ -4313,32 +4313,32 @@ test_that("validate_prepared_inputs handles .txt health files", {
   data.table::fwrite(health_data, health_file, sep = "\t")
 
   result <- validate_prepared_inputs(
-    usgs_file = usgs_file,
-    epa_file = epa_file,
+    prob_file = prob_file,
+    conc_file = conc_file,
     health_file = health_file
   )
 
   expect_true(result$valid)
   expect_equal(result$summary$health$n_rows, 2)
 
-  unlink(c(usgs_file, epa_file, health_file))
+  unlink(c(prob_file, conc_file, health_file))
 })
 
 # ------------------------------------------------------------------------------
 # Additional tests for improved coverage
 # ------------------------------------------------------------------------------
 
-test_that("prepare_epa_data handles population-weighted averaging without Hmisc", {
+test_that("prepare_conc_data handles population-weighted averaging without Hmisc", {
   # This tests the fallback when Hmisc is not available
-  epa_raw <- data.frame(
+  conc_raw_data <- data.frame(
     county_fips = c("06001", "06001", "06003", "06003"),
     arsenic_concentration = c(2.5, 3.1, 8.2, 7.5),
     population_served = c(50000, 25000, 10000, 15000)
   )
 
   # This will use population-weighted averaging
-  result <- prepare_epa_data(
-    epa_data = epa_raw,
+  result <- prepare_conc_data(
+    conc_data = conc_raw_data,
     id_col = "county_fips",
     concentration_col = "arsenic_concentration",
     population_col = "population_served",
@@ -4423,351 +4423,351 @@ test_that("subset_by_geography handles multiple filters simultaneously", {
   expect_true(all(result$GEOID10 %in% c("06001", "06003")))
 })
 
-test_that("validate_prepared_inputs warns on missing EPA sdlog column", {
+test_that("validate_prepared_inputs warns on missing concentration sdlog column", {
   temp_dir <- tempdir()
-  usgs_file <- file.path(temp_dir, "test_usgs_sdlog.csv")
-  epa_file <- file.path(temp_dir, "test_epa_sdlog.csv")
+  prob_file <- file.path(temp_dir, "test_prob_sdlog.csv")
+  conc_file <- file.path(temp_dir, "test_conc_sdlog.csv")
   health_file <- file.path(temp_dir, "test_health_sdlog.txt")
 
-  usgs_data <- data.frame(
+  prob_data_local <- data.frame(
     GEOID10 = c("06001"),
-    RFC3_C1v2 = c(0.7),
-    RFC3_C2v2 = c(0.2),
-    RFC3_C3v2 = c(0.1)
+    prob_C1 = c(0.7),
+    prob_C2 = c(0.2),
+    prob_C3 = c(0.1)
   )
-  data.table::fwrite(usgs_data, usgs_file)
+  data.table::fwrite(prob_data_local, prob_file)
 
-  # EPA file without sdlog column
-  epa_data <- data.frame(
+  # Concentration file without sdlog column
+  conc_data <- data.frame(
     GEOID10 = c("06001"),
-    EPA_AS_meanlog = c(1.0),
+    conc_meanlog = c(1.0),
     PWELL_private_pct = c(15)
   )
-  data.table::fwrite(epa_data, epa_file)
+  data.table::fwrite(conc_data, conc_file)
 
   health_data <- data.frame(FIPS = c("06001"), BWT = c(3200))
   data.table::fwrite(health_data, health_file, sep = "\t")
 
   result <- validate_prepared_inputs(
-    usgs_file = usgs_file,
-    epa_file = epa_file,
+    prob_file = prob_file,
+    conc_file = conc_file,
     health_file = health_file
   )
 
-  expect_true(any(grepl("EPA_AS_sdlog", result$warnings)))
+  expect_true(any(grepl("conc_sdlog", result$warnings)))
 
-  unlink(c(usgs_file, epa_file, health_file))
+  unlink(c(prob_file, conc_file, health_file))
 })
 
 test_that("validate_prepared_inputs warns on missing PWELL column", {
   temp_dir <- tempdir()
-  usgs_file <- file.path(temp_dir, "test_usgs_nopwell.csv")
-  epa_file <- file.path(temp_dir, "test_epa_nopwell.csv")
+  prob_file <- file.path(temp_dir, "test_prob_nopwell.csv")
+  conc_file <- file.path(temp_dir, "test_conc_nopwell.csv")
   health_file <- file.path(temp_dir, "test_health_nopwell.txt")
 
-  usgs_data <- data.frame(
+  prob_data_local <- data.frame(
     GEOID10 = c("06001"),
-    RFC3_C1v2 = c(0.7),
-    RFC3_C2v2 = c(0.2),
-    RFC3_C3v2 = c(0.1)
+    prob_C1 = c(0.7),
+    prob_C2 = c(0.2),
+    prob_C3 = c(0.1)
   )
-  data.table::fwrite(usgs_data, usgs_file)
+  data.table::fwrite(prob_data_local, prob_file)
 
-  # EPA file without PWELL column
-  epa_data <- data.frame(
+  # Concentration file without PWELL column
+  conc_data <- data.frame(
     GEOID10 = c("06001"),
-    EPA_AS_meanlog = c(1.0),
-    EPA_AS_sdlog = c(0.8)
+    conc_meanlog = c(1.0),
+    conc_sdlog = c(0.8)
   )
-  data.table::fwrite(epa_data, epa_file)
+  data.table::fwrite(conc_data, conc_file)
 
   health_data <- data.frame(FIPS = c("06001"), BWT = c(3200))
   data.table::fwrite(health_data, health_file, sep = "\t")
 
   result <- validate_prepared_inputs(
-    usgs_file = usgs_file,
-    epa_file = epa_file,
+    prob_file = prob_file,
+    conc_file = conc_file,
     health_file = health_file
   )
 
   expect_true(any(grepl("PWELL_private_pct", result$warnings)))
 
-  unlink(c(usgs_file, epa_file, health_file))
+  unlink(c(prob_file, conc_file, health_file))
 })
 
 test_that("validate_prepared_inputs warns on non-positive sdlog", {
   temp_dir <- tempdir()
-  usgs_file <- file.path(temp_dir, "test_usgs_badsd.csv")
-  epa_file <- file.path(temp_dir, "test_epa_badsd.csv")
+  prob_file <- file.path(temp_dir, "test_prob_badsd.csv")
+  conc_file <- file.path(temp_dir, "test_conc_badsd.csv")
   health_file <- file.path(temp_dir, "test_health_badsd.txt")
 
-  usgs_data <- data.frame(
+  prob_data_local <- data.frame(
     GEOID10 = c("06001"),
-    RFC3_C1v2 = c(0.7),
-    RFC3_C2v2 = c(0.2),
-    RFC3_C3v2 = c(0.1)
+    prob_C1 = c(0.7),
+    prob_C2 = c(0.2),
+    prob_C3 = c(0.1)
   )
-  data.table::fwrite(usgs_data, usgs_file)
+  data.table::fwrite(prob_data_local, prob_file)
 
-  # EPA file with non-positive sdlog
-  epa_data <- data.frame(
+  # Concentration file with non-positive sdlog
+  conc_data <- data.frame(
     GEOID10 = c("06001"),
-    EPA_AS_meanlog = c(1.0),
-    EPA_AS_sdlog = c(0),  # Invalid: must be positive
+    conc_meanlog = c(1.0),
+    conc_sdlog = c(0),  # Invalid: must be positive
     PWELL_private_pct = c(15)
   )
-  data.table::fwrite(epa_data, epa_file)
+  data.table::fwrite(conc_data, conc_file)
 
   health_data <- data.frame(FIPS = c("06001"), BWT = c(3200))
   data.table::fwrite(health_data, health_file, sep = "\t")
 
   result <- validate_prepared_inputs(
-    usgs_file = usgs_file,
-    epa_file = epa_file,
+    prob_file = prob_file,
+    conc_file = conc_file,
     health_file = health_file
   )
 
   expect_false(result$valid)
   expect_true(any(grepl("sdlog must be positive", result$issues)))
 
-  unlink(c(usgs_file, epa_file, health_file))
+  unlink(c(prob_file, conc_file, health_file))
 })
 
 test_that("validate_prepared_inputs detects missing health GEOID column", {
   temp_dir <- tempdir()
-  usgs_file <- file.path(temp_dir, "test_usgs_hgeo.csv")
-  epa_file <- file.path(temp_dir, "test_epa_hgeo.csv")
+  prob_file <- file.path(temp_dir, "test_prob_hgeo.csv")
+  conc_file <- file.path(temp_dir, "test_conc_hgeo.csv")
   health_file <- file.path(temp_dir, "test_health_hgeo.txt")
 
-  usgs_data <- data.frame(
+  prob_data_local <- data.frame(
     GEOID10 = c("06001"),
-    RFC3_C1v2 = c(0.7),
-    RFC3_C2v2 = c(0.2),
-    RFC3_C3v2 = c(0.1)
+    prob_C1 = c(0.7),
+    prob_C2 = c(0.2),
+    prob_C3 = c(0.1)
   )
-  data.table::fwrite(usgs_data, usgs_file)
+  data.table::fwrite(prob_data_local, prob_file)
 
-  epa_data <- data.frame(
+  conc_data <- data.frame(
     GEOID10 = c("06001"),
-    EPA_AS_meanlog = c(1.0),
-    EPA_AS_sdlog = c(0.8),
+    conc_meanlog = c(1.0),
+    conc_sdlog = c(0.8),
     PWELL_private_pct = c(15)
   )
-  data.table::fwrite(epa_data, epa_file)
+  data.table::fwrite(conc_data, conc_file)
 
   # Health file with wrong GEOID column name
   health_data <- data.frame(wrong_col = c("06001"), BWT = c(3200))
   data.table::fwrite(health_data, health_file, sep = "\t")
 
   result <- validate_prepared_inputs(
-    usgs_file = usgs_file,
-    epa_file = epa_file,
+    prob_file = prob_file,
+    conc_file = conc_file,
     health_file = health_file
   )
 
   expect_false(result$valid)
   expect_true(any(grepl("Health missing GEOID column", result$issues)))
 
-  unlink(c(usgs_file, epa_file, health_file))
+  unlink(c(prob_file, conc_file, health_file))
 })
 
 test_that("validate_prepared_inputs warns on FIPS format issues", {
   temp_dir <- tempdir()
-  usgs_file <- file.path(temp_dir, "test_usgs_fips.csv")
-  epa_file <- file.path(temp_dir, "test_epa_fips.csv")
+  prob_file <- file.path(temp_dir, "test_prob_fips.csv")
+  conc_file <- file.path(temp_dir, "test_conc_fips.csv")
   health_file <- file.path(temp_dir, "test_health_fips.txt")
 
-  usgs_data <- data.frame(
+  prob_data_local <- data.frame(
     GEOID10 = c("06001"),
-    RFC3_C1v2 = c(0.7),
-    RFC3_C2v2 = c(0.2),
-    RFC3_C3v2 = c(0.1)
+    prob_C1 = c(0.7),
+    prob_C2 = c(0.2),
+    prob_C3 = c(0.1)
   )
-  data.table::fwrite(usgs_data, usgs_file)
+  data.table::fwrite(prob_data_local, prob_file)
 
-  epa_data <- data.frame(
+  conc_data <- data.frame(
     GEOID10 = c("06001"),
-    EPA_AS_meanlog = c(1.0),
-    EPA_AS_sdlog = c(0.8),
+    conc_meanlog = c(1.0),
+    conc_sdlog = c(0.8),
     PWELL_private_pct = c(15)
   )
-  data.table::fwrite(epa_data, epa_file)
+  data.table::fwrite(conc_data, conc_file)
 
   # Health file with FIPS codes that aren't 5 digits
   health_data <- data.frame(FIPS = c("6001", "123456"), BWT = c(3200, 3100))
   data.table::fwrite(health_data, health_file, sep = "\t")
 
   result <- validate_prepared_inputs(
-    usgs_file = usgs_file,
-    epa_file = epa_file,
+    prob_file = prob_file,
+    conc_file = conc_file,
     health_file = health_file
   )
 
   expect_true(any(grepl("FIPS codes are not 5 digits", result$warnings)))
 
-  unlink(c(usgs_file, epa_file, health_file))
+  unlink(c(prob_file, conc_file, health_file))
 })
 
-test_that("validate_prepared_inputs detects missing USGS GEOID column", {
+test_that("validate_prepared_inputs detects missing probability data GEOID column", {
   temp_dir <- tempdir()
-  usgs_file <- file.path(temp_dir, "test_usgs_ugeo.csv")
-  epa_file <- file.path(temp_dir, "test_epa_ugeo.csv")
+  prob_file <- file.path(temp_dir, "test_prob_ugeo.csv")
+  conc_file <- file.path(temp_dir, "test_conc_ugeo.csv")
   health_file <- file.path(temp_dir, "test_health_ugeo.txt")
 
-  # USGS file with wrong GEOID column name
-  usgs_data <- data.frame(
+  # Probability file with wrong GEOID column name
+  prob_data_local <- data.frame(
     wrong_geoid = c("06001"),
-    RFC3_C1v2 = c(0.7),
-    RFC3_C2v2 = c(0.2),
-    RFC3_C3v2 = c(0.1)
+    prob_C1 = c(0.7),
+    prob_C2 = c(0.2),
+    prob_C3 = c(0.1)
   )
-  data.table::fwrite(usgs_data, usgs_file)
+  data.table::fwrite(prob_data_local, prob_file)
 
-  epa_data <- data.frame(
+  conc_data <- data.frame(
     GEOID10 = c("06001"),
-    EPA_AS_meanlog = c(1.0),
-    EPA_AS_sdlog = c(0.8),
+    conc_meanlog = c(1.0),
+    conc_sdlog = c(0.8),
     PWELL_private_pct = c(15)
   )
-  data.table::fwrite(epa_data, epa_file)
+  data.table::fwrite(conc_data, conc_file)
 
   health_data <- data.frame(FIPS = c("06001"), BWT = c(3200))
   data.table::fwrite(health_data, health_file, sep = "\t")
 
   result <- validate_prepared_inputs(
-    usgs_file = usgs_file,
-    epa_file = epa_file,
+    prob_file = prob_file,
+    conc_file = conc_file,
     health_file = health_file
   )
 
   expect_false(result$valid)
-  expect_true(any(grepl("USGS missing GEOID column", result$issues)))
+  expect_true(any(grepl("Probability data missing GEOID column", result$issues)))
 
-  unlink(c(usgs_file, epa_file, health_file))
+  unlink(c(prob_file, conc_file, health_file))
 })
 
-test_that("validate_prepared_inputs detects missing EPA GEOID column", {
+test_that("validate_prepared_inputs detects missing concentration data GEOID column", {
   temp_dir <- tempdir()
-  usgs_file <- file.path(temp_dir, "test_usgs_egeo.csv")
-  epa_file <- file.path(temp_dir, "test_epa_egeo.csv")
+  prob_file <- file.path(temp_dir, "test_prob_egeo.csv")
+  conc_file <- file.path(temp_dir, "test_conc_egeo.csv")
   health_file <- file.path(temp_dir, "test_health_egeo.txt")
 
-  usgs_data <- data.frame(
+  prob_data_local <- data.frame(
     GEOID10 = c("06001"),
-    RFC3_C1v2 = c(0.7),
-    RFC3_C2v2 = c(0.2),
-    RFC3_C3v2 = c(0.1)
+    prob_C1 = c(0.7),
+    prob_C2 = c(0.2),
+    prob_C3 = c(0.1)
   )
-  data.table::fwrite(usgs_data, usgs_file)
+  data.table::fwrite(prob_data_local, prob_file)
 
-  # EPA file with wrong GEOID column name
-  epa_data <- data.frame(
+  # Concentration file with wrong GEOID column name
+  conc_data <- data.frame(
     wrong_geoid = c("06001"),
-    EPA_AS_meanlog = c(1.0),
-    EPA_AS_sdlog = c(0.8),
+    conc_meanlog = c(1.0),
+    conc_sdlog = c(0.8),
     PWELL_private_pct = c(15)
   )
-  data.table::fwrite(epa_data, epa_file)
+  data.table::fwrite(conc_data, conc_file)
 
   health_data <- data.frame(FIPS = c("06001"), BWT = c(3200))
   data.table::fwrite(health_data, health_file, sep = "\t")
 
   result <- validate_prepared_inputs(
-    usgs_file = usgs_file,
-    epa_file = epa_file,
+    prob_file = prob_file,
+    conc_file = conc_file,
     health_file = health_file
   )
 
   expect_false(result$valid)
-  expect_true(any(grepl("EPA missing GEOID column", result$issues)))
+  expect_true(any(grepl("Concentration data missing GEOID column", result$issues)))
 
-  unlink(c(usgs_file, epa_file, health_file))
+  unlink(c(prob_file, conc_file, health_file))
 })
 
 test_that("validate_prepared_inputs warns on meanlog outside typical range", {
   temp_dir <- tempdir()
-  usgs_file <- file.path(temp_dir, "test_usgs_rng.csv")
-  epa_file <- file.path(temp_dir, "test_epa_rng.csv")
+  prob_file <- file.path(temp_dir, "test_prob_rng.csv")
+  conc_file <- file.path(temp_dir, "test_conc_rng.csv")
   health_file <- file.path(temp_dir, "test_health_rng.txt")
 
-  usgs_data <- data.frame(
+  prob_data_local <- data.frame(
     GEOID10 = c("06001"),
-    RFC3_C1v2 = c(0.7),
-    RFC3_C2v2 = c(0.2),
-    RFC3_C3v2 = c(0.1)
+    prob_C1 = c(0.7),
+    prob_C2 = c(0.2),
+    prob_C3 = c(0.1)
   )
-  data.table::fwrite(usgs_data, usgs_file)
+  data.table::fwrite(prob_data_local, prob_file)
 
-  # EPA file with meanlog outside typical range
-  epa_data <- data.frame(
+  # Concentration file with meanlog outside typical range
+  conc_data <- data.frame(
     GEOID10 = c("06001"),
-    EPA_AS_meanlog = c(15.0),  # Outside typical range [-5, 10]
-    EPA_AS_sdlog = c(0.8),
+    conc_meanlog = c(15.0),  # Outside typical range [-5, 10]
+    conc_sdlog = c(0.8),
     PWELL_private_pct = c(15)
   )
-  data.table::fwrite(epa_data, epa_file)
+  data.table::fwrite(conc_data, conc_file)
 
   health_data <- data.frame(FIPS = c("06001"), BWT = c(3200))
   data.table::fwrite(health_data, health_file, sep = "\t")
 
   result <- validate_prepared_inputs(
-    usgs_file = usgs_file,
-    epa_file = epa_file,
+    prob_file = prob_file,
+    conc_file = conc_file,
     health_file = health_file
   )
 
   expect_true(any(grepl("meanlog values outside typical range", result$warnings)))
 
-  unlink(c(usgs_file, epa_file, health_file))
+  unlink(c(prob_file, conc_file, health_file))
 })
 
 test_that("validate_prepared_inputs detects ID alignment issues", {
   temp_dir <- tempdir()
-  usgs_file <- file.path(temp_dir, "test_usgs_align.csv")
-  epa_file <- file.path(temp_dir, "test_epa_align.csv")
+  prob_file <- file.path(temp_dir, "test_prob_align.csv")
+  conc_file <- file.path(temp_dir, "test_conc_align.csv")
   health_file <- file.path(temp_dir, "test_health_align.txt")
 
-  # USGS has different IDs than EPA
-  usgs_data <- data.frame(
+  # Probability data has different IDs than concentration data
+  prob_data_local <- data.frame(
     GEOID10 = c("06001", "06003", "06005"),
-    RFC3_C1v2 = c(0.7, 0.6, 0.5),
-    RFC3_C2v2 = c(0.2, 0.25, 0.3),
-    RFC3_C3v2 = c(0.1, 0.15, 0.2)
+    prob_C1 = c(0.7, 0.6, 0.5),
+    prob_C2 = c(0.2, 0.25, 0.3),
+    prob_C3 = c(0.1, 0.15, 0.2)
   )
-  data.table::fwrite(usgs_data, usgs_file)
+  data.table::fwrite(prob_data_local, prob_file)
 
-  epa_data <- data.frame(
+  conc_data <- data.frame(
     GEOID10 = c("06001", "06007", "06009"),  # Different IDs
-    EPA_AS_meanlog = c(1.0, 1.5, 2.0),
-    EPA_AS_sdlog = c(0.8, 0.9, 1.0),
+    conc_meanlog = c(1.0, 1.5, 2.0),
+    conc_sdlog = c(0.8, 0.9, 1.0),
     PWELL_private_pct = c(15, 20, 25)
   )
-  data.table::fwrite(epa_data, epa_file)
+  data.table::fwrite(conc_data, conc_file)
 
   health_data <- data.frame(FIPS = c("06001"), BWT = c(3200))
   data.table::fwrite(health_data, health_file, sep = "\t")
 
   result <- validate_prepared_inputs(
-    usgs_file = usgs_file,
-    epa_file = epa_file,
+    prob_file = prob_file,
+    conc_file = conc_file,
     health_file = health_file
   )
 
   # Should have warnings about IDs only in one dataset
-  expect_true(any(grepl("IDs in USGS only", result$warnings)))
-  expect_true(any(grepl("IDs in EPA only", result$warnings)))
+  expect_true(any(grepl("IDs in probability data only", result$warnings)))
+  expect_true(any(grepl("IDs in concentration data only", result$warnings)))
 
-  unlink(c(usgs_file, epa_file, health_file))
+  unlink(c(prob_file, conc_file, health_file))
 })
 
-test_that("prepare_epa_data handles simple averaging without population weights", {
-  epa_raw <- data.frame(
+test_that("prepare_conc_data handles simple averaging without population weights", {
+  conc_raw_data <- data.frame(
     county_fips = c("06001", "06001", "06003"),
     arsenic_concentration = c(2.5, 3.5, 5.0)
   )
 
-  result <- prepare_epa_data(
-    epa_data = epa_raw,
+  result <- prepare_conc_data(
+    conc_data = conc_raw_data,
     id_col = "county_fips",
     concentration_col = "arsenic_concentration",
     population_col = NULL,  # No population weighting
@@ -4797,115 +4797,115 @@ test_that("format_health_data skips validation when disabled", {
 })
 
 # ==============================================================================
-# Tests for automatic EPA lognormal parameter calculation
+# Tests for automatic concentration lognormal parameter calculation
 # ==============================================================================
 
-test_that("calculate_epa_lognormal_params auto-calculates from concentration", {
-  # Create EPA data with raw concentration but no lognormal params
-  epa_data <- data.table::data.table(
+test_that("calculate_conc_lognormal_params auto-calculates from concentration", {
+  # Create concentration data with raw concentration but no lognormal params
+  conc_data <- data.table::data.table(
     GEOID10 = c("06001", "06002", "06003"),
     arsenic_conc = c(2.5, 7.0, 15.0),
     PWELL_private_pct = c(20, 35, 45)
   )
 
   # Call the internal function
-  result <- geoExposeR:::calculate_epa_lognormal_params(
-    datmatx_epa = epa_data,
-    epa_as_mean_col = "EPA_AS_meanlog",
-    epa_as_sd_col = "EPA_AS_sdlog",
-    epa_as_conc_col = "arsenic_conc",
-    epa_default_sdlog = 1.5
+  result <- geoExposeR:::calculate_conc_lognormal_params(
+    datmatx_conc = conc_data,
+    conc_mean_col = "conc_meanlog",
+    conc_sd_col = "conc_sdlog",
+    conc_raw_col = "arsenic_conc",
+    default_sdlog = 1.5
   )
 
   # Check that new columns were added
-  expect_true("EPA_AS_meanlog" %in% names(result))
-  expect_true("EPA_AS_sdlog" %in% names(result))
+  expect_true("conc_meanlog" %in% names(result))
+  expect_true("conc_sdlog" %in% names(result))
 
   # Check meanlog calculation: log(conc + 0.1)
-  expect_equal(result$EPA_AS_meanlog[1], log(2.5 + 0.1), tolerance = 1e-6)
-  expect_equal(result$EPA_AS_meanlog[2], log(7.0 + 0.1), tolerance = 1e-6)
-  expect_equal(result$EPA_AS_meanlog[3], log(15.0 + 0.1), tolerance = 1e-6)
+  expect_equal(result$conc_meanlog[1], log(2.5 + 0.1), tolerance = 1e-6)
+  expect_equal(result$conc_meanlog[2], log(7.0 + 0.1), tolerance = 1e-6)
+  expect_equal(result$conc_meanlog[3], log(15.0 + 0.1), tolerance = 1e-6)
 
   # Check sdlog uses default
-  expect_equal(result$EPA_AS_sdlog, rep(1.5, 3))
+  expect_equal(result$conc_sdlog, rep(1.5, 3))
 })
 
-test_that("calculate_epa_lognormal_params returns data unchanged when cols exist", {
-  # Create EPA data with existing lognormal params
-  epa_data <- data.table::data.table(
+test_that("calculate_conc_lognormal_params returns data unchanged when cols exist", {
+  # Create concentration data with existing lognormal params
+  conc_data <- data.table::data.table(
     GEOID10 = c("06001", "06002"),
-    EPA_AS_meanlog = c(1.0, 2.0),
-    EPA_AS_sdlog = c(0.8, 0.9),
+    conc_meanlog = c(1.0, 2.0),
+    conc_sdlog = c(0.8, 0.9),
     PWELL_private_pct = c(20, 35)
   )
 
   # Call the internal function
-  result <- geoExposeR:::calculate_epa_lognormal_params(
-    datmatx_epa = epa_data,
-    epa_as_mean_col = "EPA_AS_meanlog",
-    epa_as_sd_col = "EPA_AS_sdlog",
-    epa_as_conc_col = "arsenic_conc",  # Not used
-    epa_default_sdlog = 1.0
+  result <- geoExposeR:::calculate_conc_lognormal_params(
+    datmatx_conc = conc_data,
+    conc_mean_col = "conc_meanlog",
+    conc_sd_col = "conc_sdlog",
+    conc_raw_col = "arsenic_conc",  # Not used
+    default_sdlog = 1.0
   )
 
   # Check values unchanged
-  expect_equal(result$EPA_AS_meanlog, c(1.0, 2.0))
-  expect_equal(result$EPA_AS_sdlog, c(0.8, 0.9))
+  expect_equal(result$conc_meanlog, c(1.0, 2.0))
+  expect_equal(result$conc_sdlog, c(0.8, 0.9))
 })
 
-test_that("calculate_epa_lognormal_params handles NA in concentration", {
-  epa_data <- data.table::data.table(
+test_that("calculate_conc_lognormal_params handles NA in concentration", {
+  conc_data <- data.table::data.table(
     GEOID10 = c("06001", "06002", "06003"),
     arsenic_conc = c(2.5, NA, 15.0),
     PWELL_private_pct = c(20, 35, 45)
   )
 
-  result <- geoExposeR:::calculate_epa_lognormal_params(
-    datmatx_epa = epa_data,
-    epa_as_mean_col = "EPA_AS_meanlog",
-    epa_as_sd_col = "EPA_AS_sdlog",
-    epa_as_conc_col = "arsenic_conc",
-    epa_default_sdlog = 1.0
+  result <- geoExposeR:::calculate_conc_lognormal_params(
+    datmatx_conc = conc_data,
+    conc_mean_col = "conc_meanlog",
+    conc_sd_col = "conc_sdlog",
+    conc_raw_col = "arsenic_conc",
+    default_sdlog = 1.0
   )
 
   # First and third should have values, second should be NA
-  expect_false(is.na(result$EPA_AS_meanlog[1]))
-  expect_true(is.na(result$EPA_AS_meanlog[2]))
-  expect_false(is.na(result$EPA_AS_meanlog[3]))
+  expect_false(is.na(result$conc_meanlog[1]))
+  expect_true(is.na(result$conc_meanlog[2]))
+  expect_false(is.na(result$conc_meanlog[3]))
 })
 
-test_that("calculate_epa_lognormal_params errors when conc col not provided and meanlog missing", {
-  epa_data <- data.table::data.table(
+test_that("calculate_conc_lognormal_params errors when conc col not provided and meanlog missing", {
+  conc_data <- data.table::data.table(
     GEOID10 = c("06001", "06002"),
     arsenic_conc = c(2.5, 7.0),
     PWELL_private_pct = c(20, 35)
   )
 
   expect_error(
-    geoExposeR:::calculate_epa_lognormal_params(
-      datmatx_epa = epa_data,
-      epa_as_mean_col = "EPA_AS_meanlog",
-      epa_as_sd_col = "EPA_AS_sdlog",
-      epa_as_conc_col = NULL,  # Not provided!
-      epa_default_sdlog = 1.0
+    geoExposeR:::calculate_conc_lognormal_params(
+      datmatx_conc = conc_data,
+      conc_mean_col = "conc_meanlog",
+      conc_sd_col = "conc_sdlog",
+      conc_raw_col = NULL,  # Not provided!
+      default_sdlog = 1.0
     ),
-    "EPA lognormal meanlog column.*not found.*epa_as_conc_col"
+    "Concentration lognormal meanlog column.*not found.*conc_raw_col"
   )
 })
 
-test_that("validate_epa_default_sdlog validates input correctly", {
+test_that("validate_default_sdlog validates input correctly", {
   # Valid values should not error
-  expect_no_error(geoExposeR:::validate_epa_default_sdlog(1.0))
-  expect_no_error(geoExposeR:::validate_epa_default_sdlog(0.5))
+  expect_no_error(geoExposeR:::validate_default_sdlog(1.0))
+  expect_no_error(geoExposeR:::validate_default_sdlog(0.5))
 
   # Invalid values should error
-  expect_error(geoExposeR:::validate_epa_default_sdlog("1.0"), "must be a single numeric")
-  expect_error(geoExposeR:::validate_epa_default_sdlog(c(1.0, 2.0)), "must be a single numeric")
-  expect_error(geoExposeR:::validate_epa_default_sdlog(-1.0), "must be positive")
-  expect_error(geoExposeR:::validate_epa_default_sdlog(0), "must be positive")
+  expect_error(geoExposeR:::validate_default_sdlog("1.0"), "must be a single numeric")
+  expect_error(geoExposeR:::validate_default_sdlog(c(1.0, 2.0)), "must be a single numeric")
+  expect_error(geoExposeR:::validate_default_sdlog(-1.0), "must be positive")
+  expect_error(geoExposeR:::validate_default_sdlog(0), "must be positive")
 
   # Large values should warn
-  expect_warning(geoExposeR:::validate_epa_default_sdlog(15.0), "very large")
+  expect_warning(geoExposeR:::validate_default_sdlog(15.0), "very large")
 })
 
 # =============================================================================
@@ -5053,8 +5053,8 @@ test_that("perform_sensitivity_analysis works with format_ids = TRUE (default)",
   results <- expect_no_error(
     perform_sensitivity_analysis(
       birth_data_txt = dummy_files$births,
-      as_usgs_prob_csv = dummy_files$usgs,
-      as_epa_prob_csv = dummy_files$epa,
+      model_prob_csv = dummy_files$prob,
+      conc_data_csv = dummy_files$conc,
       ndraws = 2,
       regression_formula = "~ as.factor(AsLevel) + MAGE_R + (1 | MRSTATE)",
       targets = c("BWT"),
@@ -5085,8 +5085,8 @@ test_that("perform_sensitivity_analysis works with format_ids = FALSE", {
   results <- expect_no_error(
     perform_sensitivity_analysis(
       birth_data_txt = dummy_files$births,
-      as_usgs_prob_csv = dummy_files$usgs,
-      as_epa_prob_csv = dummy_files$epa,
+      model_prob_csv = dummy_files$prob,
+      conc_data_csv = dummy_files$conc,
       ndraws = 2,
       regression_formula = "~ as.factor(AsLevel) + MAGE_R + (1 | MRSTATE)",
       targets = c("BWT"),
@@ -5112,33 +5112,33 @@ test_that("load_and_process_arsenic_data respects format_ids parameter", {
   
   # Test with format_ids = TRUE
   result_formatted <- geoExposeR:::load_and_process_arsenic_data(
-    as_usgs_prob_csv = dummy_files$usgs,
-    as_epa_prob_csv = dummy_files$epa,
-    as_conc_cols = c("RFC3_C1v2", "RFC3_C2v2", "RFC3_C3v2"),
+    model_prob_csv = dummy_files$prob,
+    conc_data_csv = dummy_files$conc,
+    prob_cols = c("prob_C1", "prob_C2", "prob_C3"),
     pop_well_col = "Wells_2010",
-    epa_as_mean_col = "EPA_AS_meanlog",
-    epa_as_sd_col = "EPA_AS_sdlog",
-    epa_as_conc_col = NULL,
-    epa_default_sdlog = 1.0,
-    epa_pwell_col = "PWELL_private_pct",
+    conc_mean_col = "conc_meanlog",
+    conc_sd_col = "conc_sdlog",
+    conc_raw_col = NULL,
+    default_sdlog = 1.0,
+    pwell_col = "PWELL_private_pct",
     id_col = "GEOID10",
-    epa_cutoffs = c(5, 10),
+    conc_cutoffs = c(5, 10),
     format_ids = TRUE
   )
   
   # Test with format_ids = FALSE
   result_unformatted <- geoExposeR:::load_and_process_arsenic_data(
-    as_usgs_prob_csv = dummy_files$usgs,
-    as_epa_prob_csv = dummy_files$epa,
-    as_conc_cols = c("RFC3_C1v2", "RFC3_C2v2", "RFC3_C3v2"),
+    model_prob_csv = dummy_files$prob,
+    conc_data_csv = dummy_files$conc,
+    prob_cols = c("prob_C1", "prob_C2", "prob_C3"),
     pop_well_col = "Wells_2010",
-    epa_as_mean_col = "EPA_AS_meanlog",
-    epa_as_sd_col = "EPA_AS_sdlog",
-    epa_as_conc_col = NULL,
-    epa_default_sdlog = 1.0,
-    epa_pwell_col = "PWELL_private_pct",
+    conc_mean_col = "conc_meanlog",
+    conc_sd_col = "conc_sdlog",
+    conc_raw_col = NULL,
+    default_sdlog = 1.0,
+    pwell_col = "PWELL_private_pct",
     id_col = "GEOID10",
-    epa_cutoffs = c(5, 10),
+    conc_cutoffs = c(5, 10),
     format_ids = FALSE
   )
   
@@ -5147,8 +5147,8 @@ test_that("load_and_process_arsenic_data respects format_ids parameter", {
   expect_type(result_unformatted, "list")
   
   # IDs should be character in both cases
-  expect_type(result_formatted$datmatx_usgs$GEOID10, "character")
-  expect_type(result_unformatted$datmatx_usgs$GEOID10, "character")
+  expect_type(result_formatted$datmatx_prob$GEOID10, "character")
+  expect_type(result_unformatted$datmatx_prob$GEOID10, "character")
   
   # Cleanup
   unlink(temp_dir, recursive = TRUE)
@@ -5235,75 +5235,75 @@ test_that("format_ids parameter handles alphanumeric IDs correctly", {
 # Additional Tests for 100% Code Coverage
 # ==============================================================================
 
-test_that("validate_usgs_columns_param handles edge cases", {
+test_that("validate_prob_columns_param handles edge cases", {
   # Test non-character input
   expect_error(
-    geoExposeR:::validate_usgs_columns_param(123),
-    "usgs_columns must be a character vector"
+    geoExposeR:::validate_prob_columns_param(123),
+    "prob_columns must be a character vector"
   )
   
   # Test empty vector
   expect_error(
-    geoExposeR:::validate_usgs_columns_param(character(0)),
-    "usgs_columns cannot be empty"
+    geoExposeR:::validate_prob_columns_param(character(0)),
+    "prob_columns cannot be empty"
   )
   
   # Test NA values
   expect_error(
-    geoExposeR:::validate_usgs_columns_param(c("col1", NA)),
-    "usgs_columns cannot contain NA or empty strings"
+    geoExposeR:::validate_prob_columns_param(c("col1", NA)),
+    "prob_columns cannot contain NA or empty strings"
   )
   
   # Test empty strings
   expect_error(
-    geoExposeR:::validate_usgs_columns_param(c("col1", "")),
-    "usgs_columns cannot contain NA or empty strings"
+    geoExposeR:::validate_prob_columns_param(c("col1", "")),
+    "prob_columns cannot contain NA or empty strings"
   )
   
   # Test duplicate column names
   expect_error(
-    geoExposeR:::validate_usgs_columns_param(c("col1", "col1")),
-    "usgs_columns cannot contain duplicate column names"
+    geoExposeR:::validate_prob_columns_param(c("col1", "col1")),
+    "prob_columns cannot contain duplicate column names"
   )
   
   # Test NULL (should pass silently)
-  expect_silent(geoExposeR:::validate_usgs_columns_param(NULL))
+  expect_silent(geoExposeR:::validate_prob_columns_param(NULL))
   
   # Test valid input
-  expect_silent(geoExposeR:::validate_usgs_columns_param(c("col1", "col2")))
+  expect_silent(geoExposeR:::validate_prob_columns_param(c("col1", "col2")))
 })
 
-test_that("validate_epa_sd_values handles non-finite and non-positive values", {
-  temp_dir <- tempfile(pattern = "test_epa_sd_")
+test_that("validate_conc_sd_values handles non-finite and non-positive values", {
+  temp_dir <- tempfile(pattern = "test_conc_sd_")
   dir.create(temp_dir)
   
   # Test with Inf values in sdlog
-  epa_data_inf <- data.frame(
+  conc_data_inf <- data.frame(
     GEOID10 = c("01001", "01003", "01005"),
-    EPA_AS_meanlog = c(1.5, 2.0, 1.8),
-    EPA_AS_sdlog = c(0.5, Inf, 0.7),
+    conc_meanlog = c(1.5, 2.0, 1.8),
+    conc_sdlog = c(0.5, Inf, 0.7),
     PWELL_private_pct = c(30, 40, 35)
   )
-  epa_file_inf <- file.path(temp_dir, "epa_inf.csv")
-  data.table::fwrite(epa_data_inf, epa_file_inf)
+  conc_file_inf <- file.path(temp_dir, "conc_inf.csv")
+  data.table::fwrite(conc_data_inf, conc_file_inf)
   
   expect_error(
-    geoExposeR:::validate_epa_sd_values(epa_file_inf, "EPA_AS_sdlog"),
+    geoExposeR:::validate_conc_sd_values(conc_file_inf, "conc_sdlog"),
     "must contain only finite numeric values"
   )
   
   # Test with negative values in sdlog
-  epa_data_neg <- data.frame(
+  conc_data_neg <- data.frame(
     GEOID10 = c("01001", "01003", "01005"),
-    EPA_AS_meanlog = c(1.5, 2.0, 1.8),
-    EPA_AS_sdlog = c(0.5, -0.3, 0.7),
+    conc_meanlog = c(1.5, 2.0, 1.8),
+    conc_sdlog = c(0.5, -0.3, 0.7),
     PWELL_private_pct = c(30, 40, 35)
   )
-  epa_file_neg <- file.path(temp_dir, "epa_neg.csv")
-  data.table::fwrite(epa_data_neg, epa_file_neg)
+  conc_file_neg <- file.path(temp_dir, "conc_neg.csv")
+  data.table::fwrite(conc_data_neg, conc_file_neg)
   
   expect_error(
-    geoExposeR:::validate_epa_sd_values(epa_file_neg, "EPA_AS_sdlog"),
+    geoExposeR:::validate_conc_sd_values(conc_file_neg, "conc_sdlog"),
     "must contain only positive values"
   )
   
@@ -5311,30 +5311,30 @@ test_that("validate_epa_sd_values handles non-finite and non-positive values", {
   unlink(temp_dir, recursive = TRUE)
 })
 
-test_that("validate_epa_lognormal_input handles missing columns", {
-  temp_dir <- tempfile(pattern = "test_epa_lognormal_")
+test_that("validate_conc_lognormal_input handles missing columns", {
+  temp_dir <- tempfile(pattern = "test_conc_lognormal_")
   dir.create(temp_dir)
   
-  # EPA data without meanlog column and no concentration column
-  epa_data <- data.frame(
+  # Concentration data without meanlog column and no concentration column
+  conc_data <- data.frame(
     GEOID10 = c("01001", "01003", "01005"),
     PWELL_private_pct = c(30, 40, 35)
   )
-  epa_file <- file.path(temp_dir, "epa_no_meanlog.csv")
-  data.table::fwrite(epa_data, epa_file)
+  conc_file <- file.path(temp_dir, "conc_no_meanlog.csv")
+  data.table::fwrite(conc_data, conc_file)
   
   # Test missing meanlog without concentration column
   expect_error(
-    geoExposeR:::validate_epa_lognormal_input(
-      epa_file, "EPA_AS_meanlog", "EPA_AS_sdlog", NULL
+    geoExposeR:::validate_conc_lognormal_input(
+      conc_file, "conc_meanlog", "conc_sdlog", NULL
     ),
     "not found in data"
   )
   
   # Test with non-existent concentration column
   expect_error(
-    geoExposeR:::validate_epa_lognormal_input(
-      epa_file, "EPA_AS_meanlog", "EPA_AS_sdlog", "arsenic_conc"
+    geoExposeR:::validate_conc_lognormal_input(
+      conc_file, "conc_meanlog", "conc_sdlog", "arsenic_conc"
     ),
     "not found in the data"
   )
@@ -5347,26 +5347,26 @@ test_that("validate_file_contents handles file read errors", {
   temp_dir <- tempfile(pattern = "test_file_contents_")
   dir.create(temp_dir)
   
-  # Create valid USGS file
-  usgs_data <- data.frame(
+  # Create valid probability file
+  prob_data_local <- data.frame(
     GEOID10 = c("01001", "01003"),
-    RFC3_C1v2 = c(0.5, 0.6),
-    RFC3_C2v2 = c(0.3, 0.25),
-    RFC3_C3v2 = c(0.2, 0.15),
+    prob_C1 = c(0.5, 0.6),
+    prob_C2 = c(0.3, 0.25),
+    prob_C3 = c(0.2, 0.15),
     Wells_2010 = c(1000, 2000)
   )
-  usgs_file <- file.path(temp_dir, "usgs.csv")
-  data.table::fwrite(usgs_data, usgs_file)
+  prob_file <- file.path(temp_dir, "prob_data.csv")
+  data.table::fwrite(prob_data_local, prob_file)
   
-  # Create valid EPA file
-  epa_data <- data.frame(
+  # Create valid concentration file
+  conc_data <- data.frame(
     GEOID10 = c("01001", "01003"),
-    EPA_AS_meanlog = c(1.5, 2.0),
-    EPA_AS_sdlog = c(0.5, 0.6),
+    conc_meanlog = c(1.5, 2.0),
+    conc_sdlog = c(0.5, 0.6),
     PWELL_private_pct = c(30, 40)
   )
-  epa_file <- file.path(temp_dir, "epa.csv")
-  data.table::fwrite(epa_data, epa_file)
+  conc_file <- file.path(temp_dir, "conc_data.csv")
+  data.table::fwrite(conc_data, conc_file)
   
   # Create valid birth file
   birth_data <- data.frame(
@@ -5380,17 +5380,17 @@ test_that("validate_file_contents handles file read errors", {
   expect_silent(
     geoExposeR:::validate_file_contents(
       birth_data_txt = birth_file,
-      as_usgs_prob_csv = usgs_file,
-      as_epa_prob_csv = epa_file,
+      model_prob_csv = prob_file,
+      conc_data_csv = conc_file,
       rucc_col = NULL,
       record_id_col = "FIPS",
       id_col = "GEOID10",
-      as_conc_cols = c("RFC3_C1v2", "RFC3_C2v2", "RFC3_C3v2"),
+      prob_cols = c("prob_C1", "prob_C2", "prob_C3"),
       pop_well_col = "Wells_2010",
-      epa_as_mean_col = "EPA_AS_meanlog",
-      epa_as_sd_col = "EPA_AS_sdlog",
-      epa_as_conc_col = NULL,
-      epa_pwell_col = "PWELL_private_pct"
+      conc_mean_col = "conc_meanlog",
+      conc_sd_col = "conc_sdlog",
+      conc_raw_col = NULL,
+      pwell_col = "PWELL_private_pct"
     )
   )
   
@@ -5398,59 +5398,59 @@ test_that("validate_file_contents handles file read errors", {
   unlink(temp_dir, recursive = TRUE)
 })
 
-test_that("calculate_epa_lognormal_params handles missing epa_as_conc_col", {
-  temp_dir <- tempfile(pattern = "test_calc_epa_")
+test_that("calculate_conc_lognormal_params handles missing conc_raw_col", {
+  temp_dir <- tempfile(pattern = "test_calc_conc_")
   dir.create(temp_dir)
   
-  # EPA data without meanlog but with concentration
-  epa_data <- data.frame(
+  # Concentration data without meanlog but with concentration
+  conc_data <- data.frame(
     GEOID10 = c("01001", "01003", "01005"),
     arsenic_conc = c(5.0, 10.0, 15.0),
     PWELL_private_pct = c(30, 40, 35)
   )
-  epa_file <- file.path(temp_dir, "epa_conc.csv")
-  data.table::fwrite(epa_data, epa_file)
+  conc_file <- file.path(temp_dir, "conc_raw_values.csv")
+  data.table::fwrite(conc_data, conc_file)
   
-  datmatx_epa <- data.table::fread(epa_file)
+  datmatx_conc <- data.table::fread(conc_file)
   
   # Test with valid concentration column (auto-conversion)
-  result <- geoExposeR:::calculate_epa_lognormal_params(
-    datmatx_epa = data.table::copy(datmatx_epa),  # Use copy to avoid modifying original
-    epa_as_mean_col = "EPA_AS_meanlog",
-    epa_as_sd_col = "EPA_AS_sdlog",
-    epa_as_conc_col = "arsenic_conc",
-    epa_default_sdlog = 1.0
+  result <- geoExposeR:::calculate_conc_lognormal_params(
+    datmatx_conc = data.table::copy(datmatx_conc),  # Use copy to avoid modifying original
+    conc_mean_col = "conc_meanlog",
+    conc_sd_col = "conc_sdlog",
+    conc_raw_col = "arsenic_conc",
+    default_sdlog = 1.0
   )
   
-  expect_true("EPA_AS_meanlog" %in% names(result))
-  expect_true("EPA_AS_sdlog" %in% names(result))
+  expect_true("conc_meanlog" %in% names(result))
+  expect_true("conc_sdlog" %in% names(result))
   
   # Test error when concentration column doesn't exist (reload fresh data)
-  datmatx_epa_fresh <- data.table::fread(epa_file)
+  datmatx_conc_fresh <- data.table::fread(conc_file)
   expect_error(
-    geoExposeR:::calculate_epa_lognormal_params(
-      datmatx_epa = datmatx_epa_fresh,
-      epa_as_mean_col = "EPA_AS_meanlog",
-      epa_as_sd_col = "EPA_AS_sdlog",
-      epa_as_conc_col = "nonexistent_col",
-      epa_default_sdlog = 1.0
+    geoExposeR:::calculate_conc_lognormal_params(
+      datmatx_conc = datmatx_conc_fresh,
+      conc_mean_col = "conc_meanlog",
+      conc_sd_col = "conc_sdlog",
+      conc_raw_col = "nonexistent_col",
+      default_sdlog = 1.0
     ),
     "not found"
   )
   
   # Test error when neither meanlog nor conc_col exists
-  epa_data_no_cols <- data.table::as.data.table(data.frame(
+  conc_data_no_cols <- data.table::as.data.table(data.frame(
     GEOID10 = c("01001", "01003"),
     PWELL_private_pct = c(30, 40)
   ))
   
   expect_error(
-    geoExposeR:::calculate_epa_lognormal_params(
-      datmatx_epa = epa_data_no_cols,
-      epa_as_mean_col = "EPA_AS_meanlog",
-      epa_as_sd_col = "EPA_AS_sdlog",
-      epa_as_conc_col = NULL,
-      epa_default_sdlog = 1.0
+    geoExposeR:::calculate_conc_lognormal_params(
+      datmatx_conc = conc_data_no_cols,
+      conc_mean_col = "conc_meanlog",
+      conc_sd_col = "conc_sdlog",
+      conc_raw_col = NULL,
+      default_sdlog = 1.0
     ),
     "not found"
   )
@@ -5576,26 +5576,26 @@ test_that("validate_prepared_inputs handles unreadable health file", {
   temp_dir <- tempfile(pattern = "test_validate_unread_")
   dir.create(temp_dir)
   
-  # Create valid USGS file
-  usgs_data <- data.frame(
+  # Create valid probability file
+  prob_data_local <- data.frame(
     GEOID10 = c("01001", "01003"),
-    RFC3_C1v2 = c(0.5, 0.6),
-    RFC3_C2v2 = c(0.3, 0.25),
-    RFC3_C3v2 = c(0.2, 0.15),
+    prob_C1 = c(0.5, 0.6),
+    prob_C2 = c(0.3, 0.25),
+    prob_C3 = c(0.2, 0.15),
     Wells_2010 = c(1000, 2000)
   )
-  usgs_file <- file.path(temp_dir, "usgs.csv")
-  data.table::fwrite(usgs_data, usgs_file)
+  prob_file <- file.path(temp_dir, "prob_data.csv")
+  data.table::fwrite(prob_data_local, prob_file)
   
-  # Create valid EPA file
-  epa_data <- data.frame(
+  # Create valid concentration file
+  conc_data <- data.frame(
     GEOID10 = c("01001", "01003"),
-    EPA_AS_meanlog = c(1.5, 2.0),
-    EPA_AS_sdlog = c(0.5, 0.6),
+    conc_meanlog = c(1.5, 2.0),
+    conc_sdlog = c(0.5, 0.6),
     PWELL_private_pct = c(30, 40)
   )
-  epa_file <- file.path(temp_dir, "epa.csv")
-  data.table::fwrite(epa_data, epa_file)
+  conc_file <- file.path(temp_dir, "conc_data.csv")
+  data.table::fwrite(conc_data, conc_file)
   
   # Create a file with unexpected format (will cause parsing issues)
   health_file <- file.path(temp_dir, "health.txt")
@@ -5603,8 +5603,8 @@ test_that("validate_prepared_inputs handles unreadable health file", {
   
   # Should handle the read error gracefully
   result <- geoExposeR::validate_prepared_inputs(
-    usgs_file = usgs_file,
-    epa_file = epa_file,
+    prob_file = prob_file,
+    conc_file = conc_file,
     health_file = health_file
   )
   
@@ -5615,9 +5615,9 @@ test_that("validate_prepared_inputs handles unreadable health file", {
   unlink(temp_dir, recursive = TRUE)
 })
 
-test_that("prepare_usgs_data handles less than 2 probability rasters", {
+test_that("prepare_prob_data handles less than 2 probability rasters", {
   # This tests line 199 in data-ingestion.R
-  temp_dir <- tempfile(pattern = "test_usgs_rasters_")
+  temp_dir <- tempfile(pattern = "test_prob_rasters_")
   dir.create(temp_dir)
   
   # Create mock boundaries
@@ -5643,7 +5643,7 @@ test_that("prepare_usgs_data handles less than 2 probability rasters", {
   # Test with single raster (should error)
   expect_error(
     suppressWarnings(
-      geoExposeR::prepare_usgs_data(
+      geoExposeR::prepare_prob_data(
         prob_rasters = list(gt5 = raster_file),
         boundaries = boundaries,
         id_col = "GEOID"
@@ -5720,22 +5720,22 @@ test_that("validate_file_contents detects missing columns", {
   dir.create(temp_dir)
   
   # Create file with missing required columns
-  usgs_data <- data.frame(
+  prob_data_local <- data.frame(
     GEOID10 = c("01001", "01003"),
-    RFC3_C1v2 = c(0.5, 0.6)
-    # Missing RFC3_C2v2, RFC3_C3v2, Wells_2010
+    prob_C1 = c(0.5, 0.6)
+    # Missing prob_C2, prob_C3, Wells_2010
   )
-  usgs_file <- file.path(temp_dir, "usgs.csv")
-  data.table::fwrite(usgs_data, usgs_file)
+  prob_file <- file.path(temp_dir, "prob_data.csv")
+  data.table::fwrite(prob_data_local, prob_file)
   
-  epa_data <- data.frame(
+  conc_data <- data.frame(
     GEOID10 = c("01001", "01003"),
-    EPA_AS_meanlog = c(1.5, 2.0),
-    EPA_AS_sdlog = c(0.5, 0.6),
+    conc_meanlog = c(1.5, 2.0),
+    conc_sdlog = c(0.5, 0.6),
     PWELL_private_pct = c(30, 40)
   )
-  epa_file <- file.path(temp_dir, "epa.csv")
-  data.table::fwrite(epa_data, epa_file)
+  conc_file <- file.path(temp_dir, "conc_data.csv")
+  data.table::fwrite(conc_data, conc_file)
   
   birth_data <- data.frame(
     FIPS = c("01001", "01003"),
@@ -5744,21 +5744,21 @@ test_that("validate_file_contents detects missing columns", {
   birth_file <- file.path(temp_dir, "births.txt")
   data.table::fwrite(birth_data, birth_file, sep = "\t")
   
-  # Should error due to missing USGS columns
+  # Should error due to missing probability columns
   expect_error(
     geoExposeR:::validate_file_contents(
       birth_data_txt = birth_file,
-      as_usgs_prob_csv = usgs_file,
-      as_epa_prob_csv = epa_file,
+      model_prob_csv = prob_file,
+      conc_data_csv = conc_file,
       rucc_col = NULL,
       record_id_col = "FIPS",
       id_col = "GEOID10",
-      as_conc_cols = c("RFC3_C1v2", "RFC3_C2v2", "RFC3_C3v2"),
+      prob_cols = c("prob_C1", "prob_C2", "prob_C3"),
       pop_well_col = "Wells_2010",
-      epa_as_mean_col = "EPA_AS_meanlog",
-      epa_as_sd_col = "EPA_AS_sdlog",
-      epa_as_conc_col = NULL,
-      epa_pwell_col = "PWELL_private_pct"
+      conc_mean_col = "conc_meanlog",
+      conc_sd_col = "conc_sdlog",
+      conc_raw_col = NULL,
+      pwell_col = "PWELL_private_pct"
     ),
     "columns are missing"
   )
@@ -5773,32 +5773,32 @@ test_that("validate_prepared_inputs handles health file read error path", {
   dir.create(temp_dir)
   
   # Create valid files
-  usgs_data <- data.frame(
+  prob_data_local <- data.frame(
     GEOID10 = c("01001", "01003"),
-    RFC3_C1v2 = c(0.5, 0.6),
-    RFC3_C2v2 = c(0.3, 0.25),
-    RFC3_C3v2 = c(0.2, 0.15),
+    prob_C1 = c(0.5, 0.6),
+    prob_C2 = c(0.3, 0.25),
+    prob_C3 = c(0.2, 0.15),
     Wells_2010 = c(1000, 2000)
   )
-  usgs_file <- file.path(temp_dir, "usgs.csv")
-  data.table::fwrite(usgs_data, usgs_file)
+  prob_file <- file.path(temp_dir, "prob_data.csv")
+  data.table::fwrite(prob_data_local, prob_file)
   
-  epa_data <- data.frame(
+  conc_data <- data.frame(
     GEOID10 = c("01001", "01003"),
-    EPA_AS_meanlog = c(1.5, 2.0),
-    EPA_AS_sdlog = c(0.5, 0.6),
+    conc_meanlog = c(1.5, 2.0),
+    conc_sdlog = c(0.5, 0.6),
     PWELL_private_pct = c(30, 40)
   )
-  epa_file <- file.path(temp_dir, "epa.csv")
-  data.table::fwrite(epa_data, epa_file)
+  conc_file <- file.path(temp_dir, "conc_data.csv")
+  data.table::fwrite(conc_data, conc_file)
   
   # Create a non-existent health file path
   health_file <- file.path(temp_dir, "nonexistent.txt")
   
   # Should handle missing file
   result <- geoExposeR::validate_prepared_inputs(
-    usgs_file = usgs_file,
-    epa_file = epa_file,
+    prob_file = prob_file,
+    conc_file = conc_file,
     health_file = health_file
   )
   
@@ -5809,25 +5809,25 @@ test_that("validate_prepared_inputs handles health file read error path", {
   unlink(temp_dir, recursive = TRUE)
 })
 
-# Test validate_epa_lognormal_input with NULL file
-test_that("validate_epa_lognormal_input handles NULL and invalid files", {
+# Test validate_conc_lognormal_input with NULL file
+test_that("validate_conc_lognormal_input handles NULL and invalid files", {
   # Test with NULL
   expect_silent(
-    geoExposeR:::validate_epa_lognormal_input(
-      as_epa_prob_csv = NULL,
-      epa_as_mean_col = "EPA_AS_meanlog",
-      epa_as_sd_col = "EPA_AS_sdlog",
-      epa_as_conc_col = NULL
+    geoExposeR:::validate_conc_lognormal_input(
+      conc_data_csv = NULL,
+      conc_mean_col = "conc_meanlog",
+      conc_sd_col = "conc_sdlog",
+      conc_raw_col = NULL
     )
   )
   
   # Test with non-existent file
   expect_silent(
-    geoExposeR:::validate_epa_lognormal_input(
-      as_epa_prob_csv = "/nonexistent/path/file.csv",
-      epa_as_mean_col = "EPA_AS_meanlog",
-      epa_as_sd_col = "EPA_AS_sdlog",
-      epa_as_conc_col = NULL
+    geoExposeR:::validate_conc_lognormal_input(
+      conc_data_csv = "/nonexistent/path/file.csv",
+      conc_mean_col = "conc_meanlog",
+      conc_sd_col = "conc_sdlog",
+      conc_raw_col = NULL
     )
   )
 })
@@ -5841,8 +5841,8 @@ test_that("impute_arsenic_exposure handles county not in lookup", {
 
 # Test impute_arsenic_exposure with mismatched county IDs
 test_that("impute_arsenic_exposure skips counties not in lookup", {
-  # Create USGS data with one county
-  datmatx_usgs <- data.frame(
+  # Create probability data with one county
+  datmatx_prob <- data.frame(
     GEOID10 = c("01001", "01001"),
     Wells = c(100, 200)
   )
@@ -5855,14 +5855,14 @@ test_that("impute_arsenic_exposure skips counties not in lookup", {
   
   # Create births data
   births <- data.frame(
-    FIPS = c("01001", "01003"),  # 01003 exists in births but not in USGS
+    FIPS = c("01001", "01003"),  # 01003 exists in births but not in probability data
     BWT = c(3200, 3100)
   )
   
   # Run imputation - the 01003 county should be skipped
-  # but since county_id_list comes from datmatx_usgs, this won't trigger the next
+  # but since county_id_list comes from datmatx_prob, this won't trigger the next
   result <- geoExposeR:::impute_arsenic_exposure(
-    datmatx_usgs = datmatx_usgs,
+    datmatx_prob = datmatx_prob,
     rasterprob_combined = rasterprob_combined,
     cellpop = cellpop,
     births = births,
@@ -5897,26 +5897,26 @@ test_that("get_file_columns rejects unsupported file format", {
   unlink(temp_dir, recursive = TRUE)
 })
 
-# Test validate_epa_sd_values with column not in file (line 597)
-test_that("validate_epa_sd_values returns when column not in file", {
-  temp_dir <- tempfile(pattern = "test_epa_sd_col_")
+# Test validate_conc_sd_values with column not in file (line 597)
+test_that("validate_conc_sd_values returns when column not in file", {
+  temp_dir <- tempfile(pattern = "test_conc_sd_col_")
   dir.create(temp_dir)
   
-  # Create EPA file without the sd column
-  epa_data <- data.frame(
+  # Create concentration file without the sd column
+  conc_data <- data.frame(
     GEOID10 = c("01001", "01003"),
-    EPA_AS_meanlog = c(1.5, 2.0),
+    conc_meanlog = c(1.5, 2.0),
     PWELL_private_pct = c(30, 40)
-    # Missing EPA_AS_sdlog
+    # Missing conc_sdlog
   )
-  epa_file <- file.path(temp_dir, "epa.csv")
-  data.table::fwrite(epa_data, epa_file)
+  conc_file <- file.path(temp_dir, "conc_data.csv")
+  data.table::fwrite(conc_data, conc_file)
   
   # Should return silently when column doesn't exist
   expect_silent(
-    geoExposeR:::validate_epa_sd_values(
-      as_epa_prob_csv = epa_file,
-      epa_as_sd_col = "EPA_AS_sdlog"
+    geoExposeR:::validate_conc_sd_values(
+      conc_data_csv = conc_file,
+      conc_sd_col = "conc_sdlog"
     )
   )
   
@@ -5924,26 +5924,26 @@ test_that("validate_epa_sd_values returns when column not in file", {
   unlink(temp_dir, recursive = TRUE)
 })
 
-# Test validate_epa_sd_values with NA values (lines 611-612)
-test_that("validate_epa_sd_values warns on NA values", {
-  temp_dir <- tempfile(pattern = "test_epa_sd_na_")
+# Test validate_conc_sd_values with NA values (lines 611-612)
+test_that("validate_conc_sd_values warns on NA values", {
+  temp_dir <- tempfile(pattern = "test_conc_sd_na_")
   dir.create(temp_dir)
   
-  # Create EPA file with NA values in sd column
-  epa_data <- data.frame(
+  # Create concentration file with NA values in sd column
+  conc_data <- data.frame(
     GEOID10 = c("01001", "01003", "01005"),
-    EPA_AS_meanlog = c(1.5, 2.0, 1.8),
-    EPA_AS_sdlog = c(0.5, NA, 0.6),  # Contains NA
+    conc_meanlog = c(1.5, 2.0, 1.8),
+    conc_sdlog = c(0.5, NA, 0.6),  # Contains NA
     PWELL_private_pct = c(30, 40, 35)
   )
-  epa_file <- file.path(temp_dir, "epa.csv")
-  data.table::fwrite(epa_data, epa_file)
+  conc_file <- file.path(temp_dir, "conc_data.csv")
+  data.table::fwrite(conc_data, conc_file)
   
   # Should warn about NA values
   expect_warning(
-    geoExposeR:::validate_epa_sd_values(
-      as_epa_prob_csv = epa_file,
-      epa_as_sd_col = "EPA_AS_sdlog"
+    geoExposeR:::validate_conc_sd_values(
+      conc_data_csv = conc_file,
+      conc_sd_col = "conc_sdlog"
     ),
     "contains NA values"
   )
@@ -5957,25 +5957,25 @@ test_that("validate_file_contents uses concentration column when no meanlog", {
   temp_dir <- tempfile(pattern = "test_validate_conc_")
   dir.create(temp_dir)
   
-  # Create EPA file without meanlog but with concentration column
-  epa_data <- data.frame(
+  # Create concentration file without meanlog but with concentration column
+  conc_data <- data.frame(
     GEOID10 = c("01001", "01003"),
-    EPA_AS_conc = c(5.0, 8.0),  # Concentration instead of meanlog
+    raw_conc = c(5.0, 8.0),  # Concentration instead of meanlog
     PWELL_private_pct = c(30, 40)
-    # No EPA_AS_meanlog or EPA_AS_sdlog
+    # No conc_meanlog or conc_sdlog
   )
-  epa_file <- file.path(temp_dir, "epa.csv")
-  data.table::fwrite(epa_data, epa_file)
+  conc_file <- file.path(temp_dir, "conc_data.csv")
+  data.table::fwrite(conc_data, conc_file)
   
-  usgs_data <- data.frame(
+  prob_data_local <- data.frame(
     GEOID10 = c("01001", "01003"),
-    RFC3_C1v2 = c(0.5, 0.6),
-    RFC3_C2v2 = c(0.3, 0.25),
-    RFC3_C3v2 = c(0.2, 0.15),
+    prob_C1 = c(0.5, 0.6),
+    prob_C2 = c(0.3, 0.25),
+    prob_C3 = c(0.2, 0.15),
     Wells_2010 = c(1000, 2000)
   )
-  usgs_file <- file.path(temp_dir, "usgs.csv")
-  data.table::fwrite(usgs_data, usgs_file)
+  prob_file <- file.path(temp_dir, "prob_data.csv")
+  data.table::fwrite(prob_data_local, prob_file)
   
   birth_data <- data.frame(
     FIPS = c("01001", "01003"),
@@ -5988,17 +5988,17 @@ test_that("validate_file_contents uses concentration column when no meanlog", {
   expect_silent(
     geoExposeR:::validate_file_contents(
       birth_data_txt = birth_file,
-      as_usgs_prob_csv = usgs_file,
-      as_epa_prob_csv = epa_file,
+      model_prob_csv = prob_file,
+      conc_data_csv = conc_file,
       rucc_col = NULL,
       record_id_col = "FIPS",
       id_col = "GEOID10",
-      as_conc_cols = c("RFC3_C1v2", "RFC3_C2v2", "RFC3_C3v2"),
+      prob_cols = c("prob_C1", "prob_C2", "prob_C3"),
       pop_well_col = "Wells_2010",
-      epa_as_mean_col = "EPA_AS_meanlog",  # Not in file
-      epa_as_sd_col = NULL,
-      epa_as_conc_col = "EPA_AS_conc",  # This should be required
-      epa_pwell_col = "PWELL_private_pct"
+      conc_mean_col = "conc_meanlog",  # Not in file
+      conc_sd_col = NULL,
+      conc_raw_col = "raw_conc",  # This should be required
+      pwell_col = "PWELL_private_pct"
     )
   )
   
@@ -6011,25 +6011,25 @@ test_that("validate_prepared_inputs handles health file read error", {
   temp_dir <- tempfile(pattern = "test_health_read_err_")
   dir.create(temp_dir)
   
-  # Create valid USGS and EPA files
-  usgs_data <- data.frame(
+  # Create valid probability and concentration files
+  prob_data_local <- data.frame(
     GEOID10 = c("01001", "01003"),
-    RFC3_C1v2 = c(0.5, 0.6),
-    RFC3_C2v2 = c(0.3, 0.25),
-    RFC3_C3v2 = c(0.2, 0.15),
+    prob_C1 = c(0.5, 0.6),
+    prob_C2 = c(0.3, 0.25),
+    prob_C3 = c(0.2, 0.15),
     Wells_2010 = c(1000, 2000)
   )
-  usgs_file <- file.path(temp_dir, "usgs.csv")
-  data.table::fwrite(usgs_data, usgs_file)
+  prob_file <- file.path(temp_dir, "prob_data.csv")
+  data.table::fwrite(prob_data_local, prob_file)
   
-  epa_data <- data.frame(
+  conc_data <- data.frame(
     GEOID10 = c("01001", "01003"),
-    EPA_AS_meanlog = c(1.5, 2.0),
-    EPA_AS_sdlog = c(0.5, 0.6),
+    conc_meanlog = c(1.5, 2.0),
+    conc_sdlog = c(0.5, 0.6),
     PWELL_private_pct = c(30, 40)
   )
-  epa_file <- file.path(temp_dir, "epa.csv")
-  data.table::fwrite(epa_data, epa_file)
+  conc_file <- file.path(temp_dir, "conc_data.csv")
+  data.table::fwrite(conc_data, conc_file)
   
   # Create a directory instead of a file - fread will fail
   health_file <- file.path(temp_dir, "births.csv")
@@ -6037,8 +6037,8 @@ test_that("validate_prepared_inputs handles health file read error", {
   
   # Should return valid = FALSE with issue message about not being able to read
   result <- geoExposeR::validate_prepared_inputs(
-    usgs_file = usgs_file,
-    epa_file = epa_file,
+    prob_file = prob_file,
+    conc_file = conc_file,
     health_file = health_file
   )
   

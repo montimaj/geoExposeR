@@ -2,57 +2,58 @@
 % Please edit documentation in R/data-loading.R
 \name{load_and_process_arsenic_data}
 \alias{load_and_process_arsenic_data}
-\title{Load and Process Arsenic Data}
+\title{Load and Process Exposure Data}
 \usage{
 load_and_process_arsenic_data(
-  as_usgs_prob_csv,
-  as_epa_prob_csv,
-  as_conc_cols,
+  model_prob_csv,
+  conc_data_csv,
+  prob_cols,
   pop_well_col,
-  epa_as_mean_col,
-  epa_as_sd_col,
-  epa_as_conc_col = NULL,
-  epa_default_sdlog = 1,
-  epa_pwell_col,
+  conc_mean_col,
+  conc_sd_col,
+  conc_raw_col = NULL,
+  default_sdlog = 1,
+  pwell_col,
   id_col,
-  epa_cutoffs,
+  conc_cutoffs,
   format_ids = TRUE
 )
 }
 \arguments{
-\item{as_usgs_prob_csv}{Path to USGS probability CSV}
+\item{model_prob_csv}{Path to modeled probability data CSV}
 
-\item{as_epa_prob_csv}{Path to EPA probability CSV}
+\item{conc_data_csv}{Path to measured concentration data CSV}
 
-\item{as_conc_cols}{Column names for arsenic concentration probabilities}
+\item{prob_cols}{Column names for exposure probability categories}
 
 \item{pop_well_col}{Column name for population weights}
 
-\item{epa_as_mean_col}{Column name for EPA arsenic meanlog}
+\item{conc_mean_col}{Column name for concentration lognormal meanlog}
 
-\item{epa_as_sd_col}{Column name for EPA arsenic sdlog}
+\item{conc_sd_col}{Column name for concentration lognormal sdlog}
 
-\item{epa_as_conc_col}{Column name for raw EPA arsenic concentration (optional)}
+\item{conc_raw_col}{Column name for raw concentration values (optional)}
 
-\item{epa_default_sdlog}{Default sdlog value when not provided (default: 1.0)}
+\item{default_sdlog}{Default sdlog value when not provided (default: 1.0)}
 
-\item{epa_pwell_col}{Column name for private well percentage}
+\item{pwell_col}{Column name for private well percentage}
 
 \item{id_col}{Column name for geographic identifier}
 
-\item{epa_cutoffs}{A numeric vector of cutoffs for categorizing arsenic
-levels based on EPA data}
+\item{conc_cutoffs}{A numeric vector of cutoffs for categorizing exposure
+levels based on concentration data}
 
 \item{format_ids}{Logical. Whether to apply smart identifier formatting.
 If TRUE (default), numeric FIPS-like codes (1-5 digits) are zero-padded,
 while alphanumeric identifiers are preserved unchanged.}
 }
 \value{
-List containing processed arsenic data
+List containing processed exposure data
 }
 \description{
-Internal function to load USGS and EPA arsenic data, convert EPA lognormal
-to multinomial, and create weighted combined probability matrix.
+Internal function to load probability and concentration data, convert
+concentration lognormal to multinomial, and create weighted combined
+probability matrix.
 }
 \details{
 This function is used within the sensitivity analysis workflow.

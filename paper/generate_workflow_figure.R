@@ -74,12 +74,12 @@ digraph geoExposeR_joss {
     fillcolor = '#E3F2FD'
     margin = 4
     
-    usgs [label = 'USGS Arsenic\\nRasters', fillcolor = 'white', color = '#1976D2']
-    epa [label = 'EPA Water\\nSystem Data', fillcolor = 'white', color = '#1976D2']
+    prob [label = 'Probability\\nRaster Data', fillcolor = 'white', color = '#1976D2']
+    conc [label = 'Concentration\\nMeasurement Data', fillcolor = 'white', color = '#1976D2']
     wells [label = 'Private Well\\nData', fillcolor = 'white', color = '#1976D2']
     health [label = 'Health\\nOutcomes', fillcolor = 'white', color = '#1976D2']
-    
-    {rank = same; usgs; epa}
+
+    {rank = same; prob; conc}
     {rank = same; wells; health}
   }
   
@@ -95,7 +95,7 @@ digraph geoExposeR_joss {
     fillcolor = '#E8F5E9'
     margin = 4
     
-    ingest [label = 'prepare_usgs_data()\nprepare_epa_data()\nadd_well_percentages()\nformat_health_data()', fillcolor = 'white', color = '#388E3C', width = 2.0, height = 0.6]
+    ingest [label = 'prepare_prob_data()\nprepare_conc_data()\nadd_well_percentages()\nformat_health_data()', fillcolor = 'white', color = '#388E3C', width = 2.0, height = 0.6]
   }
   
   # ==== PROBABILITY INTEGRATION ====
@@ -110,7 +110,7 @@ digraph geoExposeR_joss {
     fillcolor = '#FFF3E0'
     margin = 4
     
-    convert [label = 'convert_epa_to_multinomial()\ncreate_weighted_prob_matrix()', fillcolor = 'white', color = '#F57C00', width = 2.0, height = 0.4]
+    convert [label = 'convert_conc_to_multinomial()\ncreate_weighted_prob_matrix()', fillcolor = 'white', color = '#F57C00', width = 2.0, height = 0.4]
   }
   
   # ==== MULTIPLE IMPUTATION ====
@@ -160,10 +160,10 @@ digraph geoExposeR_joss {
   }
   
   # ==== EDGES - Connect to cluster boundaries ====
-  usgs -> ingest [ltail = usgs, lhead = cluster_ingest]
-  epa -> ingest [ltail = epa, lhead = cluster_ingest]
+  prob -> ingest [ltail = prob, lhead = cluster_ingest]
+  conc -> ingest [ltail = conc, lhead = cluster_ingest]
   wells -> ingest [ltail = wells, lhead = cluster_ingest]
-  health -> ingest [ltail = health, lhead = cluster_ingest]  
+  health -> ingest [ltail = health, lhead = cluster_ingest]
   ingest -> convert [ltail = cluster_ingest, lhead = cluster_integrate]
   convert -> impute [ltail = cluster_integrate, lhead = cluster_impute]
   impute -> model [ltail = cluster_impute, lhead = cluster_model]

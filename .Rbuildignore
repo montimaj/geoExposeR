@@ -15,3 +15,5 @@
 ^README\.Rmd$
 ^doc$
 ^Meta$
+^\.claude$
+^REVIEW_RESPONSE\.md$

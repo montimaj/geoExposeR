@@ -4,7 +4,7 @@
 \alias{validate_file_paths}
 \title{Validate File Paths}
 \usage{
-validate_file_paths(birth_data_txt, as_usgs_prob_csv, as_epa_prob_csv)
+validate_file_paths(birth_data_txt, model_prob_csv, conc_data_csv)
 }
 \description{
 Validate File Paths
