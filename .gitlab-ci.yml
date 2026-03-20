@@ -42,13 +42,13 @@ variables:
 # Test job - R release only (package requires R >= 4.4.0)
 test:r-release:
   <<: *test_template
-  image: rocker/geospatial:4.4
+  image: rocker/geospatial:latest
 
 # Coverage job
 coverage:
   <<: *r_base
   stage: coverage
-  image: rocker/geospatial:4.4
+  image: rocker/geospatial:latest
   script:
     - mkdir -p coverage
     - R -e "install.packages(c('devtools', 'covr', 'testthat', 'DT', 'htmltools'), Ncpus = 4)"
@@ -103,7 +103,7 @@ coverage:
 docs:
   <<: *r_base
   stage: docs
-  image: rocker/geospatial:4.4
+  image: rocker/geospatial:latest
   script:
     - R -e "install.packages(c('roxygen2', 'devtools'), Ncpus = 4)"
     - R -e "remotes::install_deps(dependencies = TRUE)"
@@ -118,7 +118,7 @@ docs:
 pages:
   <<: *r_base
   stage: deploy
-  image: rocker/geospatial:4.4
+  image: rocker/geospatial:latest
   script:
     - apt-get update && apt-get install -qq -y texlive-latex-base texlive-fonts-recommended texlive-latex-extra
     - R -e "install.packages(c('pkgdown', 'devtools', 'rmarkdown', 'knitr', 'markdown', 'htmltools'), Ncpus = 4)"
