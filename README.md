@@ -131,11 +131,11 @@ Existing methods from studies like _Bulka and others (2022)_ and _Lombard and ot
 
 - 🔬 **Focus on science**, not statistical programming
 - 📊 **Ensure reproducibility** across studies  
-- ⚡ **Accelerate research** on arsenic health effects
+- ⚡ **Accelerate research** on environmental health effects
 - 🎯 **Apply best practices** for uncertainty quantification
 - 🗺️ **Work with multiple data formats** (GeoTIFF, CSV, shapefiles)
 
-By democratizing access to these methods, geoExposeR promotes more rigorous and comparable arsenic exposure research.
+By democratizing access to these methods, geoExposeR promotes more rigorous and comparable environmental exposure research.
 
 ## Installation
 ### System Dependencies: Pandoc
@@ -397,7 +397,7 @@ The examples use data files from the `examples/input_data/` folder:
 Demonstrates the standard analysis workflow using pre-formatted CSV data:
 
 1. **Data Loading**: Using custom column names to work with original data formats
-2. **Concentration Data Preprocessing**: Converting raw arsenic concentrations to lognormal parameters
+2. **Concentration Data Preprocessing**: Converting raw concentrations to lognormal parameters
 3. **Custom Column Mapping**: Specifying non-standard column names via function parameters
 4. **Sensitivity Analysis**: Running multiple imputation with mixed-effects regression
 5. **Result Interpretation**: Understanding the pooled estimates and confidence intervals
@@ -523,14 +523,14 @@ The package includes comprehensive testing with 100% code coverage:
 While users primarily interact with `perform_sensitivity_analysis()`, the package includes several internal functions organized by functionality:
 
 **Data Loading (`data-loading.R`):**
-- `load_and_process_arsenic_data()`: Orchestrates probability and concentration data loading
+- `load_and_process_arsenic_data()`: Orchestrates modeled probability and measured concentration data loading
 - `load_prob_data()`: Loads modeled probability data
 - `convert_conc_to_multinomial()`: Converts concentration lognormal parameters to multinomial probabilities
 - `create_weighted_prob_matrix()`: Creates weighted combined probability matrix
 - `load_and_process_birth_data()`: Loads and processes birth/health outcome data
 
 **Multiple Imputation (`imputation.R`):**
-- `impute_arsenic_exposure()`: Creates multiple imputed datasets with arsenic exposure
+- `impute_arsenic_exposure()`: Creates multiple imputed datasets with exposure levels
 - `impute_additional_variables()`: Imputes missing covariates using MICE
 - `validate_imputed_datasets()`: Validates imputation results
 
@@ -549,7 +549,7 @@ While users primarily interact with `perform_sensitivity_analysis()`, the packag
 
 **Utilities (`utils.R`):**
 - `validate_all_inputs()`: Input validation and error checking
-- `format_ids()`: Smart identifier formatting with automatic type detection (zero-pads numeric FIPS codes, preserves alphanumeric IDs)
+- `format_ids_func()`: Smart identifier formatting with automatic type detection (zero-pads numeric FIPS codes, preserves alphanumeric IDs)
 - Additional helper functions for data validation and formatting
 
 ## Core Functions
@@ -560,7 +560,7 @@ While users primarily interact with `perform_sensitivity_analysis()`, the packag
 
 1. **Data Loading**: Loads and processes modeled probability data, measured concentration parameters, and birth/health outcome data
 2. **Probability Integration**: Combines probability and concentration models using weighted averages based on private well usage
-3. **Multiple Imputation**: Creates multiple datasets with probabilistically assigned arsenic exposure levels
+3. **Multiple Imputation**: Creates multiple datasets with probabilistically assigned exposure levels
 4. **Covariate Imputation**: Optionally imputes missing values in additional covariates using MICE
 5. **Statistical Analysis**: Fits mixed-effects regression models to assess exposure-outcome relationships
 6. **Results Pooling**: Applies Rubin's Rules to pool results across imputed datasets
@@ -730,7 +730,7 @@ See the `examples/` folder for complete working examples demonstrating nitrate, 
 
 ### Core Analysis
 - ✅ **Automated workflow**: Single function handles entire analysis pipeline
-- ✅ **Multiple imputation**: Accounts for uncertainty in arsenic exposure assignment
+- ✅ **Multiple imputation**: Accounts for uncertainty in exposure assignment
 - ✅ **Flexible modeling**: Supports custom regression formulas and multiple outcomes
 - ✅ **Robust statistics**: Implements Rubin's Rules for proper inference pooling
 - ✅ **Missing data handling**: Optional MICE imputation for covariates
@@ -848,7 +848,7 @@ The health data file can use **any column names** as long as they are correctly 
 
 | Parameter | Default Column Name | Description | Can Be Customized? |
 |-----------|---------------------|-------------|-------------------|
-| `record_id_col` | `"FIPS"` | Geographic/participant identifier matching arsenic data | Yes |
+| `record_id_col` | `"FIPS"` | Geographic/participant identifier matching exposure data | Yes |
 | `targets` | `c("OEGEST", "BWT")` | Health outcome columns for regression | Yes |
 | Covariates | (user-defined) | Any columns referenced in `regression_formula` | Yes |
 
@@ -865,12 +865,12 @@ results <- perform_sensitivity_analysis(
 
 **Key points:**
 - The `regression_formula` must reference actual column names in your health data
-- The identifier column specified by `record_id_col` must have matching values in the arsenic data
+- The identifier column specified by `record_id_col` must have matching values in the exposure data
 - All covariates in the formula must exist in the health data file
 
 ## Data Preparation Workflow
 
-This section describes how to prepare input files for geoExposeR from raw data sources. This workflow is relevant for users who want to analyze arsenic exposure for specific states, counties, aquifers, or custom geographic areas.
+This section describes how to prepare input files for geoExposeR from raw data sources. This workflow is relevant for users who want to analyze environmental exposure for specific states, counties, aquifers, or custom geographic areas.
 
 ### Overview of Data Sources
 
@@ -955,7 +955,7 @@ For arsenic, download monitoring data from:
 - [EPA Envirofacts](https://enviro.epa.gov/)
 - State environmental agency databases
 
-For other contaminants, any measured concentration dataset can be used (see [Terminology](#terminology-usgs-vs-epa-data-types)).
+For other contaminants, any measured concentration dataset can be used (see [Terminology](#terminology-two-input-data-types)).
 
 #### 2.2 Process Using `prepare_conc_data()`
 
@@ -1021,7 +1021,7 @@ Health outcome data should include individual or aggregated health records with 
 
 ```r
 # Health data should have:
-# 1. Geographic or participant identifier (must match arsenic data)
+# 1. Geographic or participant identifier (must match exposure data)
 # 2. Health outcome variable(s)
 # 3. Relevant covariates
 
