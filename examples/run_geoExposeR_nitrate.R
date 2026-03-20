@@ -11,15 +11,11 @@
 #' can cause methemoglobinemia in infants by interfering with oxygen transport.
 #' 
 #' ADAPTATION NOTES:
-#' - The geoExposeR framework uses "EPA" and "USGS" terminology internally,
-#'   but these can represent ANY two probability data sources
-#' - "EPA" data = concentration measurements from monitored water systems
-#' - "USGS" data = model-predicted probability distributions (any source)
 #' - Cutoffs are customized for nitrate: <5, 5-10, >=10 mg/L NO3-N
-#' 
+#'
 #' DATA FILES:
-#'   - USGS_nitrate.csv: Multinomial probabilities of nitrate concentration categories
-#'   - EPA_nitrate.csv: Nitrate concentration data with lognormal parameters
+#'   - prob_nitrate.csv: Multinomial probabilities of nitrate concentration categories
+#'   - conc_nitrate.csv: Nitrate concentration data with lognormal parameters
 #'   - Health_nitrate.txt: Infant health data (methemoglobin levels)
 #' 
 #' Author: Dr. Sayantan Majumdar (sayantan.majumdar@dri.edu)
@@ -40,8 +36,8 @@ if (file.exists("DESCRIPTION")) {
 pkg_dir <- getwd()
 
 # Data files for nitrate analysis
-usgs_data_path <- file.path(pkg_dir, "examples", "input_data", "USGS_nitrate.csv")
-epa_data_path <- file.path(pkg_dir, "examples", "input_data", "EPA_nitrate.csv")
+prob_data_path <- file.path(pkg_dir, "examples", "input_data", "prob_nitrate.csv")
+conc_data_path <- file.path(pkg_dir, "examples", "input_data", "conc_nitrate.csv")
 health_data_path <- file.path(pkg_dir, "examples", "input_data", "Health_nitrate.txt")
 
 # Output directory
@@ -52,15 +48,15 @@ if (!dir.exists(output_dir)) {
 
 # Verify files exist
 stopifnot(
-  "USGS data file not found" = file.exists(usgs_data_path),
-  "EPA data file not found" = file.exists(epa_data_path),
+  "Probability data file not found" = file.exists(prob_data_path),
+  "Concentration data file not found" = file.exists(conc_data_path),
   "Health data file not found" = file.exists(health_data_path)
 )
 
 cat("=== Nitrate Exposure Analysis ===\n\n")
 cat("Data files:\n")
-cat("  Probability data (USGS):", usgs_data_path, "\n")
-cat("  Concentration data (EPA):", epa_data_path, "\n")
+cat("  Probability data:", prob_data_path, "\n")
+cat("  Concentration data:", conc_data_path, "\n")
 cat("  Health outcomes:", health_data_path, "\n\n")
 
 # ==============================================================================
@@ -80,7 +76,7 @@ ndraws <- 5
 # methemoglobin_pct = percentage of hemoglobin converted to methemoglobin
 targets <- c("methemoglobin_pct")
 
-# Column containing nitrate concentration in EPA data
+# Column containing nitrate concentration in concentration data
 conc_col <- "weighted_nitrate"
 
 # Regression formula
@@ -114,28 +110,28 @@ results <- perform_sensitivity_analysis(
   # Number of imputed datasets
   ndraws = ndraws,
   
-  # Data file paths (using EPA/USGS terminology for any data sources)
-  as_usgs_prob_csv = usgs_data_path,
-  as_epa_prob_csv = epa_data_path,
+  # Data file paths
+  model_prob_csv = prob_data_path,
+  conc_data_csv = conc_data_path,
   birth_data_txt = health_data_path,
   
-  # EPA data configuration - auto-convert concentration to lognormal
-  epa_as_conc_col = conc_col,
-  epa_default_sdlog = 0.8,  # Typically lower variance for nitrate
+  # Concentration data configuration - auto-convert concentration to lognormal
+  conc_raw_col = conc_col,
+  default_sdlog = 0.8,  # Typically lower variance for nitrate
   
   # Custom cutoffs for nitrate
-  epa_cutoffs = nitrate_cutoffs,
+  conc_cutoffs = nitrate_cutoffs,
   
   # Category labels for results display
   as_cat_label = as_cat_labels,
   drop_as_cat_label_reg = drop_as_cat_label_reg,
   
-  # Column name mappings (adapting package parameters for nitrate data)
-  id_col = "id",                                    # ID column in USGS/EPA data
-  as_conc_cols = c("RFCprobC1", "RFCprobC2", "RFCprobC3"),  # Probability columns
+  # Column name mappings for nitrate data
+  id_col = "id",                                    # ID column in prob/conc data
+  prob_cols = c("RFCprobC1", "RFCprobC2", "RFCprobC3"),  # Probability columns
   pop_well_col = "pub_water_pop",                   # Population column
   record_id_col = "id",                             # ID column in health data
-  epa_pwell_col = "Dom_Pop_Percent",                # Private well percentage
+  pwell_col = "Dom_Pop_Percent",                # Private well percentage
   
   # Regression configuration
   regression_formula = regression_formula,

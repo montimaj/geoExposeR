@@ -1,103 +1,104 @@
-#' Load and Process Arsenic Data
+#' Load and Process Exposure Data
 #'
-#' Internal function to load USGS and EPA arsenic data, convert EPA lognormal
-#' to multinomial, and create weighted combined probability matrix.
+#' Internal function to load probability and concentration data, convert
+#' concentration lognormal to multinomial, and create weighted combined
+#' probability matrix.
 #'
 #' This function is used within the sensitivity analysis workflow.
-#' @param as_usgs_prob_csv Path to USGS probability CSV
-#' @param as_epa_prob_csv Path to EPA probability CSV
-#' @param as_conc_cols Column names for arsenic concentration probabilities
+#' @param model_prob_csv Path to modeled probability data CSV
+#' @param conc_data_csv Path to measured concentration data CSV
+#' @param prob_cols Column names for exposure probability categories
 #' @param pop_well_col Column name for population weights
-#' @param epa_as_mean_col Column name for EPA arsenic meanlog
-#' @param epa_as_sd_col Column name for EPA arsenic sdlog
-#' @param epa_as_conc_col Column name for raw EPA arsenic concentration (optional)
-#' @param epa_default_sdlog Default sdlog value when not provided (default: 1.0)
-#' @param epa_pwell_col Column name for private well percentage
+#' @param conc_mean_col Column name for concentration lognormal meanlog
+#' @param conc_sd_col Column name for concentration lognormal sdlog
+#' @param conc_raw_col Column name for raw concentration values (optional)
+#' @param default_sdlog Default sdlog value when not provided (default: 1.0)
+#' @param pwell_col Column name for private well percentage
 #' @param id_col Column name for geographic identifier
-#' @param epa_cutoffs A numeric vector of cutoffs for categorizing arsenic
-#' levels based on EPA data
+#' @param conc_cutoffs A numeric vector of cutoffs for categorizing exposure
+#' levels based on concentration data
 #' @param format_ids Logical. Whether to apply smart identifier formatting.
 #'   If TRUE (default), numeric FIPS-like codes (1-5 digits) are zero-padded,
 #'   while alphanumeric identifiers are preserved unchanged.
-#' @return List containing processed arsenic data
+#' @return List containing processed exposure data
 #'
 #' @keywords internal
 load_and_process_arsenic_data <- function(
-  as_usgs_prob_csv,
-  as_epa_prob_csv,
-  as_conc_cols,
+  model_prob_csv,
+  conc_data_csv,
+  prob_cols,
   pop_well_col,
-  epa_as_mean_col,
-  epa_as_sd_col,
-  epa_as_conc_col = NULL,
-  epa_default_sdlog = 1.0,
-  epa_pwell_col,
+  conc_mean_col,
+  conc_sd_col,
+  conc_raw_col = NULL,
+  default_sdlog = 1.0,
+  pwell_col,
   id_col,
-  epa_cutoffs,
+  conc_cutoffs,
   format_ids = TRUE
 ) {
-  # Load USGS data (returns a list)
-  usgs_data <- load_usgs_data(as_usgs_prob_csv, as_conc_cols, pop_well_col)
+  # Load probability data (returns a list)
+  prob_input <- load_prob_data(model_prob_csv, prob_cols, pop_well_col)
 
-  # Load EPA data
-  datmatx_epa <- data.table::fread(
-    as_epa_prob_csv,
+  # Load concentration data
+  datmatx_conc <- data.table::fread(
+    conc_data_csv,
     header = TRUE,
     showProgress = FALSE,
     nThread = parallel::detectCores()
   )
 
   # Auto-calculate lognormal parameters if needed
-  datmatx_epa <- calculate_epa_lognormal_params(
-    datmatx_epa = datmatx_epa,
-    epa_as_mean_col = epa_as_mean_col,
-    epa_as_sd_col = epa_as_sd_col,
-    epa_as_conc_col = epa_as_conc_col,
-    epa_default_sdlog = epa_default_sdlog
+  datmatx_conc <- calculate_conc_lognormal_params(
+    datmatx_conc = datmatx_conc,
+    conc_mean_col = conc_mean_col,
+    conc_sd_col = conc_sd_col,
+    conc_raw_col = conc_raw_col,
+    default_sdlog = default_sdlog
   )
 
   # Validate data alignment - use the actual data frames
-  validate_data_alignment(usgs_data$datmatx_usgs, datmatx_epa)
-  n_usgs_categories <- length(as_conc_cols)
+  validate_data_alignment(prob_input$datmatx_prob, datmatx_conc)
+  n_prob_categories <- length(prob_cols)
 
-  # Auto-generate EPA cutoffs based on USGS column count
-  if (is.null(epa_cutoffs)) {
-    epa_cutoffs <- generate_default_epa_cutoffs(n_usgs_categories)
+  # Auto-generate concentration cutoffs based on probability column count
+  if (is.null(conc_cutoffs)) {
+    conc_cutoffs <- generate_default_conc_cutoffs(n_prob_categories)
 
-    # Validate that EPA categories match USGS categories
-    validate_category_alignment(n_usgs_categories, epa_cutoffs)
+    # Validate that concentration categories match probability categories
+    validate_category_alignment(n_prob_categories, conc_cutoffs)
 
     # Process cutoffs
-    cutoff_config <- validate_epa_cutoffs(epa_cutoffs)
+    cutoff_config <- validate_conc_cutoffs(conc_cutoffs)
 
-    message("Detected ", n_usgs_categories, " exposure categories\n")
+    message("Detected ", n_prob_categories, " exposure categories\n")
     message("Using auto-generated cutoffs:",
             paste(cutoff_config$cutoffs), "\n")
   } else {
-    # User provided cutoffs are already validated and aligned with USGS
-    cutoff_config <- validate_epa_cutoffs(
-      epa_cutoffs, validate_cutoffs = FALSE
+    # User provided cutoffs are already validated and aligned
+    cutoff_config <- validate_conc_cutoffs(
+      conc_cutoffs, validate_cutoffs = FALSE
     )
-    message("Detected ", n_usgs_categories, " exposure categories\n")
+    message("Detected ", n_prob_categories, " exposure categories\n")
     message("Using user-provided cutoffs:",
             paste(cutoff_config$cutoffs), "\n")
   }
 
-  # Convert EPA lognormal to multinomial
-  rasterprob_epa <- convert_epa_to_multinomial(
-    datmatx_epa = datmatx_epa,
-    epa_as_mean_col = epa_as_mean_col,
-    epa_as_sd_col = epa_as_sd_col,
+  # Convert concentration lognormal to multinomial
+  rasterprob_conc <- convert_conc_to_multinomial(
+    datmatx_conc = datmatx_conc,
+    conc_mean_col = conc_mean_col,
+    conc_sd_col = conc_sd_col,
     cutoff_config = cutoff_config,
     return_prob_matrix = TRUE
   )
 
   # Create weighted combined probability matrix
   rasterprob_combined <- create_weighted_prob_matrix(
-    rasterprob_usgs = usgs_data$rasterprob_usgs,  # Use the extracted matrix
-    rasterprob_epa = rasterprob_epa,
-    datmatx_epa = datmatx_epa,
-    epa_pwell_col = epa_pwell_col
+    rasterprob_model = prob_input$rasterprob_model,  # Use the extracted matrix
+    rasterprob_conc = rasterprob_conc,
+    datmatx_conc = datmatx_conc,
+    pwell_col = pwell_col
   )
 
   # replace negative values with zero
@@ -105,55 +106,55 @@ load_and_process_arsenic_data <- function(
 
   # Format identifiers if requested
   if (format_ids) {
-    formatted_usgs <- format_ids_func(
-      usgs_data$datmatx_usgs,
+    formatted_prob <- format_ids_func(
+      prob_input$datmatx_prob,
       id_col
     )
   } else {
     # Just ensure character type without formatting
-    formatted_usgs <- usgs_data$datmatx_usgs
-    formatted_usgs[[id_col]] <- as.character(formatted_usgs[[id_col]])
+    formatted_prob <- prob_input$datmatx_prob
+    formatted_prob[[id_col]] <- as.character(formatted_prob[[id_col]])
   }
 
   return(list(
-    datmatx_usgs = formatted_usgs,
+    datmatx_prob = formatted_prob,
     rasterprob_combined = rasterprob_combined,
-    cellpop = usgs_data$cellpop
+    cellpop = prob_input$cellpop
   ))
 }
 
-#' Load USGS Data
+#' Load Probability Data
 #'
-#' @param as_usgs_prob_csv Path to USGS CSV file
-#' @param as_conc_cols Column names for concentration probabilities
+#' @param model_prob_csv Path to modeled probability data CSV file
+#' @param prob_cols Column names for exposure probability categories
 #' @param pop_well_col Column name for population weights
-#' @return List with USGS data, probability matrix, and cell populations
+#' @return List with probability data, probability matrix, and cell populations
 #'
 #' @keywords internal
-load_usgs_data <- function(as_usgs_prob_csv, as_conc_cols, pop_well_col) {
-  datmatx_usgs <- data.table::fread(
-    as_usgs_prob_csv,
+load_prob_data <- function(model_prob_csv, prob_cols, pop_well_col) {
+  datmatx_prob <- data.table::fread(
+    model_prob_csv,
     header = TRUE,
     showProgress = FALSE,
     nThread = parallel::detectCores()
   )
 
   # Validate required columns
-  missing_cols <- setdiff(as_conc_cols, names(datmatx_usgs))
+  missing_cols <- setdiff(prob_cols, names(datmatx_prob))
   if (length(missing_cols) > 0) {
     stop(
-      "The following columns are missing in USGS data: ",
+      "The following columns are missing in probability data: ",
       paste(missing_cols, collapse = ", ")
     )
   }
 
   # Extract probability matrix and population weights
-  rasterprob_usgs <- as.matrix(datmatx_usgs[, as_conc_cols, with = FALSE])
-  cellpop <- datmatx_usgs[[pop_well_col]]
+  rasterprob_model <- as.matrix(datmatx_prob[, prob_cols, with = FALSE])
+  cellpop <- datmatx_prob[[pop_well_col]]
 
   return(list(
-    datmatx_usgs = datmatx_usgs,
-    rasterprob_usgs = rasterprob_usgs,
+    datmatx_prob = datmatx_prob,
+    rasterprob_model = rasterprob_model,
     cellpop = cellpop
   ))
 }
@@ -209,59 +210,59 @@ load_and_process_birth_data <- function(
   return(births)
 }
 
-#' Calculate EPA Lognormal Parameters
+#' Calculate Concentration Lognormal Parameters
 #'
 #' Automatically calculates lognormal parameters (meanlog, sdlog) from raw
-#' arsenic concentration values if the lognormal columns don't exist.
+#' concentration values if the lognormal columns don't exist.
 #'
-#' @param datmatx_epa EPA data frame
-#' @param epa_as_mean_col Column name for EPA arsenic meanlog
-#' @param epa_as_sd_col Column name for EPA arsenic sdlog
-#' @param epa_as_conc_col Column name for raw arsenic concentration (optional)
-#' @param epa_default_sdlog Default sdlog value (default: 1.0)
-#' @return Modified EPA data frame with lognormal parameters
+#' @param datmatx_conc Concentration data frame
+#' @param conc_mean_col Column name for concentration lognormal meanlog
+#' @param conc_sd_col Column name for concentration lognormal sdlog
+#' @param conc_raw_col Column name for raw concentration values (optional)
+#' @param default_sdlog Default sdlog value (default: 1.0)
+#' @return Modified concentration data frame with lognormal parameters
 #'
 #' @keywords internal
-calculate_epa_lognormal_params <- function(
-  datmatx_epa,
-  epa_as_mean_col,
-  epa_as_sd_col,
-  epa_as_conc_col = NULL,
-  epa_default_sdlog = 1.0
+calculate_conc_lognormal_params <- function(
+  datmatx_conc,
+  conc_mean_col,
+  conc_sd_col,
+  conc_raw_col = NULL,
+  default_sdlog = 1.0
 ) {
   # Check if lognormal columns already exist
- has_meanlog <- epa_as_mean_col %in% names(datmatx_epa)
- has_sdlog <- epa_as_sd_col %in% names(datmatx_epa)
+ has_meanlog <- conc_mean_col %in% names(datmatx_conc)
+ has_sdlog <- conc_sd_col %in% names(datmatx_conc)
 
   # If both columns exist, return as-is
   if (has_meanlog && has_sdlog) {
-    return(datmatx_epa)
+    return(datmatx_conc)
   }
 
   # If meanlog doesn't exist, we need to calculate it
   if (!has_meanlog) {
-    if (is.null(epa_as_conc_col)) {
+    if (is.null(conc_raw_col)) {
       stop(
-        "EPA lognormal meanlog column '", epa_as_mean_col, "' not found. ",
-        "Please provide 'epa_as_conc_col' to specify the raw arsenic ",
+        "Concentration lognormal meanlog column '", conc_mean_col,
+        "' not found. Please provide 'conc_raw_col' to specify the raw ",
         "concentration column for automatic conversion."
       )
     }
 
-    if (!epa_as_conc_col %in% names(datmatx_epa)) {
+    if (!conc_raw_col %in% names(datmatx_conc)) {
       stop(
-        "EPA arsenic concentration column '", epa_as_conc_col,
+        "Concentration column '", conc_raw_col,
         "' not found in the data."
       )
     }
 
     # Calculate meanlog from concentration: log(conc + 0.1) to avoid log(0)
-    conc_values <- datmatx_epa[[epa_as_conc_col]]
+    conc_values <- datmatx_conc[[conc_raw_col]]
 
     # Use data.table::set() to avoid shallow copy warnings
     data.table::set(
-      datmatx_epa,
-      j = epa_as_mean_col,
+      datmatx_conc,
+      j = conc_mean_col,
       value = ifelse(
         !is.na(conc_values) & conc_values > 0,
         log(conc_values + 0.1),
@@ -270,7 +271,7 @@ calculate_epa_lognormal_params <- function(
     )
 
     message(
-      "Calculated EPA lognormal meanlog from '", epa_as_conc_col,
+      "Calculated lognormal meanlog from '", conc_raw_col,
       "' column using: log(concentration + 0.1)"
     )
   }
@@ -279,46 +280,46 @@ calculate_epa_lognormal_params <- function(
   if (!has_sdlog) {
     # Use data.table::set() to avoid shallow copy warnings
     data.table::set(
-      datmatx_epa,
-      j = epa_as_sd_col,
-      value = epa_default_sdlog
+      datmatx_conc,
+      j = conc_sd_col,
+      value = default_sdlog
     )
 
     message(
-      "Using default EPA lognormal sdlog = ", epa_default_sdlog
+      "Using default lognormal sdlog = ", default_sdlog
     )
   }
 
-  return(datmatx_epa)
+  return(datmatx_conc)
 }
 
 #' Validate Data Alignment
 #'
-#' @param datmatx_usgs USGS data frame
-#' @param datmatx_epa EPA data frame
+#' @param datmatx_prob Probability data frame
+#' @param datmatx_conc Concentration data frame
 #'
 #' @keywords internal
-validate_data_alignment <- function(datmatx_usgs, datmatx_epa) {
-  if (nrow(datmatx_usgs) != nrow(datmatx_epa)) {
-    stop("USGS and EPA data files have different numbers of rows.")
+validate_data_alignment <- function(datmatx_prob, datmatx_conc) {
+  if (nrow(datmatx_prob) != nrow(datmatx_conc)) {
+    stop("Probability and concentration data files have different numbers of rows.")
   }
 }
 
-#' Convert EPA Lognormal to Multinomial
+#' Convert Concentration Lognormal to Multinomial
 #'
-#' @param datmatx_epa EPA data frame
-#' @param epa_as_mean_col Column name for EPA arsenic meanlog
-#' @param epa_as_sd_col Column name for EPA arsenic sdlog
+#' @param datmatx_conc Concentration data frame
+#' @param conc_mean_col Column name for concentration lognormal meanlog
+#' @param conc_sd_col Column name for concentration lognormal sdlog
 #' @param cutoff_config List with cutoff values and number of categories
 #' @param return_prob_matrix Whether to return the probability matrix. Default
 #'   TRUE. If FALSE, returns the modified data frame.
 #' @return Probability matrix or modified data frame
 #'
 #' @keywords internal
-convert_epa_to_multinomial <- function(
-  datmatx_epa,
-  epa_as_mean_col,
-  epa_as_sd_col,
+convert_conc_to_multinomial <- function(
+  datmatx_conc,
+  conc_mean_col,
+  conc_sd_col,
   cutoff_config,
   return_prob_matrix = TRUE
 ) {
@@ -326,16 +327,16 @@ convert_epa_to_multinomial <- function(
   n_categories <- cutoff_config$n_categories
 
   # Create column names dynamically
-  prob_cols <- paste0("EPA_C", seq_len(n_categories), "v2")
+  prob_cols <- paste0("conc_C", seq_len(n_categories), "v2")
 
   # Initialize probability columns
   for (col in prob_cols) {
-    datmatx_epa[[col]] <- 0
+    datmatx_conc[[col]] <- 0
   }
 
-  # If datamatx_epa is a data.frame, convert to data.table
-  if (!data.table::is.data.table(datmatx_epa)) {
-    datmatx_epa <- data.table::as.data.table(datmatx_epa, header = TRUE)
+  # If data.frame, convert to data.table
+  if (!data.table::is.data.table(datmatx_conc)) {
+    datmatx_conc <- data.table::as.data.table(datmatx_conc, header = TRUE)
   }
 
   # Calculate probabilities for each category
@@ -360,27 +361,27 @@ convert_epa_to_multinomial <- function(
     } else {
       prob_upper <- plnorm(
         upper_bound,
-        meanlog = datmatx_epa[[epa_as_mean_col]],
-        sdlog = datmatx_epa[[epa_as_sd_col]]
+        meanlog = datmatx_conc[[conc_mean_col]],
+        sdlog = datmatx_conc[[conc_sd_col]]
       )
     }
 
     prob_lower <- plnorm(
       lower_bound,
-      meanlog = datmatx_epa[[epa_as_mean_col]],
-      sdlog = datmatx_epa[[epa_as_sd_col]]
+      meanlog = datmatx_conc[[conc_mean_col]],
+      sdlog = datmatx_conc[[conc_sd_col]]
     )
 
     # Assign probability for this category
-    datmatx_epa[[prob_cols[i]]] <- prob_upper - prob_lower
+    datmatx_conc[[prob_cols[i]]] <- prob_upper - prob_lower
   }
 
-  # After calculating probabilities in convert_epa_to_multinomial
-  prob_cols <- paste0("EPA_C", seq_len(n_categories), "v2")
-  row_sums <- rowSums(datmatx_epa[, prob_cols, with = FALSE])
+  # After calculating probabilities in convert_conc_to_multinomial
+  prob_cols <- paste0("conc_C", seq_len(n_categories), "v2")
+  row_sums <- rowSums(datmatx_conc[, prob_cols, with = FALSE])
   for (col in prob_cols) {
     # Normalize probabilities
-    datmatx_epa[[col]] <- datmatx_epa[[col]] / row_sums
+    datmatx_conc[[col]] <- datmatx_conc[[col]] / row_sums
   }
 
   # Check if normalization is needed
@@ -396,59 +397,59 @@ convert_epa_to_multinomial <- function(
   #   # Normalize only if needed
   #   for (col in prob_cols) {
   #   # Normalize probabilities
-  #   datmatx_epa[[col]] <- datmatx_epa[[col]] / row_sums
+  #   datmatx_conc[[col]] <- datmatx_conc[[col]] / row_sums
   # }
   # } else {
   #   message("Row sums are within tolerance, no normalization needed")
   # }
 
   if (!return_prob_matrix) {
-    return(datmatx_epa)
+    return(datmatx_conc)
   }
   # Extract and return the probability matrix
-  rasterprob_epa <- as.matrix(datmatx_epa[, prob_cols, with = FALSE])
-  return(rasterprob_epa)
+  rasterprob_conc <- as.matrix(datmatx_conc[, prob_cols, with = FALSE])
+  return(rasterprob_conc)
 }
 
 #' Create Weighted Probability Matrix
 #'
-#' @param rasterprob_usgs USGS probability matrix
-#' @param rasterprob_epa EPA probability matrix
-#' @param datmatx_epa EPA data frame
-#' @param epa_pwell_col Column name for private well percentage
+#' @param rasterprob_model Modeled probability matrix
+#' @param rasterprob_conc Concentration-derived probability matrix
+#' @param datmatx_conc Concentration data frame
+#' @param pwell_col Column name for private well percentage
 #' @return Combined weighted probability matrix
 #'
 #' @keywords internal
 create_weighted_prob_matrix <- function(
-  rasterprob_usgs,
-  rasterprob_epa,
-  datmatx_epa,
-  epa_pwell_col
+  rasterprob_model,
+  rasterprob_conc,
+  datmatx_conc,
+  pwell_col
 ) {
-  w_private <- datmatx_epa[[epa_pwell_col]] / 100
+  w_private <- datmatx_conc[[pwell_col]] / 100
   w_public <- 1 - w_private
 
   # Element-wise multiplication and addition for final weighted probability
-  result <- (rasterprob_usgs * w_private) + (rasterprob_epa * w_public)
+  result <- (rasterprob_model * w_private) + (rasterprob_conc * w_public)
 
-  # Handle NA values in EPA probabilities by falling back to USGS probabilities
-  # This happens when EPA meanlog/sdlog are NA
+  # Handle NA values in concentration probabilities by falling back to model probabilities
+  # This happens when concentration meanlog/sdlog are NA
   na_rows <- which(apply(result, 1, function(x) any(is.na(x))))
   if (length(na_rows) > 0) {
-    result[na_rows, ] <- rasterprob_usgs[na_rows, , drop = FALSE]
+    result[na_rows, ] <- rasterprob_model[na_rows, , drop = FALSE]
   }
 
   return(result)
 }
 
 
-#' Generate Default EPA Cutoffs Based on USGS Categories
+#' Generate Default Concentration Cutoffs Based on Probability Categories
 #'
-#' @param n_categories Number of USGS categories
-#' @return Numeric vector of EPA cutoffs
+#' @param n_categories Number of probability categories
+#' @return Numeric vector of concentration cutoffs
 #' 
 #' @keywords internal
-generate_default_epa_cutoffs <- function(n_categories) {
+generate_default_conc_cutoffs <- function(n_categories) {
 
   # Define cutoff schemes for different numbers of categories
   cutoff_schemes <- list(
@@ -470,7 +471,7 @@ generate_default_epa_cutoffs <- function(n_categories) {
   return(cutoffs)
 }
 
-#' Generate Logarithmic EPA Cutoffs for Unusual Category Counts
+#' Generate Logarithmic Cutoffs for Unusual Category Counts
 #'
 #' @param n_categories Number of categories
 #' @return Numeric vector of logarithmically spaced cutoffs
@@ -500,55 +501,56 @@ generate_logarithmic_cutoffs <- function(n_categories) {
   return(cutoffs)
 }
 
-#' Validate and Process EPA Cutoffs
-#' @param epa_cutoffs Numeric vector of cutoff values
+#' Validate and Process Concentration Cutoffs
+#' @param conc_cutoffs Numeric vector of cutoff values
 #' @param validate_cutoffs Whether to perform validation
 #' @return List with processed cutoffs
 #'
 #' @keywords internal
-validate_epa_cutoffs <- function(epa_cutoffs, validate_cutoffs = TRUE) {
+validate_conc_cutoffs <- function(conc_cutoffs, validate_cutoffs = TRUE) {
 
   if (validate_cutoffs) {
     # Check cutoffs are numeric and sorted
-    if (!is.numeric(epa_cutoffs)) {
-      stop("epa_cutoffs must be numeric")
+    if (!is.numeric(conc_cutoffs)) {
+      stop("conc_cutoffs must be numeric")
     }
 
-    if (!identical(epa_cutoffs, sort(epa_cutoffs))) {
-      stop("epa_cutoffs must be in ascending order")
+    if (!identical(conc_cutoffs, sort(conc_cutoffs))) {
+      stop("conc_cutoffs must be in ascending order")
     }
 
     # Check for negative values
-    if (any(epa_cutoffs < 0)) {
-      stop("epa_cutoffs cannot contain negative values")
+    if (any(conc_cutoffs < 0)) {
+      stop("conc_cutoffs cannot contain negative values")
     }
   }
 
   return(list(
-    cutoffs = epa_cutoffs,
-    n_categories = length(epa_cutoffs) + 1
+    cutoffs = conc_cutoffs,
+    n_categories = length(conc_cutoffs) + 1
   ))
 }
 
-#' Validate Category Alignment Between USGS and EPA
+#' Validate Category Alignment Between Probability and Concentration Data
 #'
-#' @param n_usgs_categories Number of USGS categories
-#' @param epa_cutoffs EPA cutoff values
+#' @param n_prob_categories Number of probability categories
+#' @param conc_cutoffs Concentration cutoff values
 #' @return TRUE if aligned, otherwise stops with error
 #'
 #' @keywords internal
-validate_category_alignment <- function(n_usgs_categories, epa_cutoffs) {
+validate_category_alignment <- function(n_prob_categories, conc_cutoffs) {
 
-  n_epa_categories <- length(epa_cutoffs) + 1
+  n_conc_categories <- length(conc_cutoffs) + 1
 
-  if (n_usgs_categories != n_epa_categories) {
+  if (n_prob_categories != n_conc_categories) {
     stop(sprintf(
       paste0(
-        "Category mismatch: USGS has %d categories but EPA cutoffs define ",
-        "%d categories. Please adjust epa_cutoffs or usgs_columns to have ",
+        "Category mismatch: probability data has %d categories but ",
+        "concentration cutoffs define %d categories. ",
+        "Please adjust conc_cutoffs or prob_cols to have ",
         "matching numbers of categories."
       ),
-      n_usgs_categories, n_epa_categories
+      n_prob_categories, n_conc_categories
     ))
   }
 

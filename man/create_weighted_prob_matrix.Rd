@@ -5,20 +5,20 @@
 \title{Create Weighted Probability Matrix}
 \usage{
 create_weighted_prob_matrix(
-  rasterprob_usgs,
-  rasterprob_epa,
-  datmatx_epa,
-  epa_pwell_col
+  rasterprob_model,
+  rasterprob_conc,
+  datmatx_conc,
+  pwell_col
 )
 }
 \arguments{
-\item{rasterprob_usgs}{USGS probability matrix}
+\item{rasterprob_model}{Modeled probability matrix}
 
-\item{rasterprob_epa}{EPA probability matrix}
+\item{rasterprob_conc}{Concentration-derived probability matrix}
 
-\item{datmatx_epa}{EPA data frame}
+\item{datmatx_conc}{Concentration data frame}
 
-\item{epa_pwell_col}{Column name for private well percentage}
+\item{pwell_col}{Column name for private well percentage}
 }
 \value{
 Combined weighted probability matrix

@@ -6,8 +6,8 @@
 \usage{
 validate_all_inputs(
   birth_data_txt = NULL,
-  as_usgs_prob_csv = NULL,
-  as_epa_prob_csv = NULL,
+  model_prob_csv = NULL,
+  conc_data_csv = NULL,
   ndraws = NULL,
   regression_formula = NULL,
   targets = NULL,
@@ -16,32 +16,32 @@ validate_all_inputs(
   mice_m = NULL,
   mice_maxit = NULL,
   mice_method = NULL,
-  epa_as_mean_col = NULL,
-  epa_as_sd_col = NULL,
-  epa_as_conc_col = NULL,
-  epa_default_sdlog = 1,
+  conc_mean_col = NULL,
+  conc_sd_col = NULL,
+  conc_raw_col = NULL,
+  default_sdlog = 1,
   seed = NULL,
   as_cat_label = NULL,
   as_level_col = "AsLevel",
   drop_as_cat_label_reg = NULL,
-  epa_cutoffs = NULL,
-  usgs_columns = NULL,
+  conc_cutoffs = NULL,
+  prob_columns = NULL,
   validate_cutoffs = TRUE,
   columns_to_select = NULL,
   rucc_col = NULL,
   id_col = NULL,
-  as_conc_cols = NULL,
+  prob_cols = NULL,
   pop_well_col = NULL,
   record_id_col = NULL,
-  epa_pwell_col = NULL,
+  pwell_col = NULL,
   mice_covs = NULL,
   apply_imputation_fallback = TRUE
 )
 }
 \arguments{
-\item{as_usgs_prob_csv}{Path to USGS arsenic probability CSV file}
+\item{model_prob_csv}{Path to modeled probability data CSV file}
 
-\item{as_epa_prob_csv}{Path to EPA arsenic probability CSV file}
+\item{conc_data_csv}{Path to measured concentration data CSV file}
 
 \item{ndraws}{Number of draws for sensitivity analysis}
 
@@ -59,9 +59,9 @@ validate_all_inputs(
 
 \item{mice_method}{MICE method for imputation}
 
-\item{epa_as_mean_col}{Column name for EPA arsenic meanlog}
+\item{conc_mean_col}{Column name for concentration lognormal meanlog}
 
-\item{epa_as_sd_col}{Column name for EPA arsenic sdlog}
+\item{conc_sd_col}{Column name for concentration lognormal sdlog}
 
 \item{seed}{Random seed for reproducibility}
 
@@ -71,9 +71,9 @@ validate_all_inputs(
 
 \item{drop_as_cat_label_reg}{Regular expression to drop arsenic categories}
 
-\item{epa_cutoffs}{EPA cutoffs for arsenic categories}
+\item{conc_cutoffs}{Concentration cutoffs for exposure categories}
 
-\item{usgs_columns}{USGS columns to include in analysis}
+\item{prob_columns}{Probability columns to include in analysis}
 
 \item{validate_cutoffs}{Whether to validate cutoffs}
 
@@ -83,13 +83,13 @@ validate_all_inputs(
 
 \item{id_col}{Column name for geographic identifier}
 
-\item{as_conc_cols}{Arsenic concentration columns}
+\item{prob_cols}{Arsenic concentration columns}
 
 \item{pop_well_col}{Column name for population well}
 
 \item{record_id_col}{Column name for birth county}
 
-\item{epa_pwell_col}{Column name for EPA population well}
+\item{pwell_col}{Column name for private well percentage}
 
 \item{mice_covs}{Covariates for MICE imputation}
 

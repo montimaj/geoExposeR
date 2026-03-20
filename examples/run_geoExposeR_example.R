@@ -7,11 +7,11 @@
 #' pressure (SBP) using data from the examples/input_data/ folder.
 #' 
 #' The data files include:
-#'   - USGS_dom.csv: USGS model-based multinomial probabilities of arsenic levels
+#'   - prob_dom.csv: Modeled probability data with multinomial probabilities of arsenic levels
 #'       Columns: id (FIPS code), pub_water_pop (public water population),
 #'       RFCprobC1/C2/C3 (P(As<5), P(5<=As<10), P(As>=10) in µg/L),
 #'       RFC_maxprob, RFC_maxprob_num, Dom_Pop_Percent (% on private wells)
-#'   - EPA_dom.csv: EPA arsenic concentration data from public water systems
+#'   - conc_dom.csv: Measured concentration data from public water systems
 #'       Columns: id (FIPS code), weighted_as20062008 (pop-weighted mean As in µg/L),
 #'       county_pop_served20062008, well, Dom_Pop_Percent (% on private wells)
 #'   - Demographics_dom.txt: Demographics data with health outcomes
@@ -42,8 +42,8 @@ if (file.exists("DESCRIPTION")) {
 pkg_dir <- getwd()
 
 # Define paths to the data files in the examples/input_data/ folder
-usgs_data_path <- file.path(pkg_dir, "examples", "input_data", "USGS_dom.csv")
-epa_data_path <- file.path(pkg_dir, "examples", "input_data", "EPA_dom.csv")
+prob_data_path <- file.path(pkg_dir, "examples", "input_data", "prob_dom.csv")
+conc_data_path <- file.path(pkg_dir, "examples", "input_data", "conc_dom.csv")
 demographics_data_path <- file.path(pkg_dir, "examples", "input_data", "Demographics_dom.txt")
 
 # Create output directory for results
@@ -54,35 +54,35 @@ if (!dir.exists(output_dir)) {
 
 # Verify files exist
 stopifnot(
-  "USGS data file not found" = file.exists(usgs_data_path),
-  "EPA data file not found" = file.exists(epa_data_path),
+  "Probability data file not found" = file.exists(prob_data_path),
+  "Concentration data file not found" = file.exists(conc_data_path),
   "Demographics data file not found" = file.exists(demographics_data_path)
 )
 
 cat("Data files found:\n")
-cat("  USGS data:", usgs_data_path, "\n")
-cat("  EPA data:", epa_data_path, "\n")
+cat("  Probability data:", prob_data_path, "\n")
+cat("  Concentration data:", conc_data_path, "\n")
 cat("  Demographics data:", demographics_data_path, "\n\n")
 
 # ==============================================================================
-# Step 3: EPA Data - Automatic Lognormal Conversion
+# Step 3: Concentration Data - Automatic Lognormal Conversion
 # ==============================================================================
-# 
+#
 # The geoExposeR package now supports automatic conversion of raw arsenic
 # concentration values to lognormal parameters. Simply specify:
-#   - epa_as_conc_col: The column containing raw arsenic concentrations
-#   - epa_default_sdlog: Default sdlog value (optional, defaults to 1.0)
+#   - conc_raw_col: The column containing raw arsenic concentrations
+#   - default_sdlog: Default sdlog value (optional, defaults to 1.0)
 #
 # The package will automatically calculate:
 #   - meanlog = log(concentration + 0.1)
-#   - sdlog = epa_default_sdlog (or from epa_as_sd_col if provided)
+#   - sdlog = default_sdlog (or from conc_sd_col if provided)
 #
 # This eliminates the need for manual preprocessing!
 # ==============================================================================
 
-# Read EPA data to show available columns
-epa_raw <- data.table::fread(epa_data_path)
-cat("EPA data columns:", paste(names(epa_raw), collapse = ", "), "\n")
+# Read concentration data to show available columns
+conc_raw <- data.table::fread(conc_data_path)
+cat("Concentration data columns:", paste(names(conc_raw), collapse = ", "), "\n")
 cat("Using 'weighted_as20062008' for automatic lognormal conversion.\n\n")
 
 # ==============================================================================
@@ -108,7 +108,7 @@ regression_formula <- paste0(
   "(1 | age_decade)"
 )
 
-# Arsenic category labels (matching USGS 3-category model)
+# Arsenic category labels (matching 3-category probability model)
 as_cat_labels <- c("As<5", "As5-10", "As10+")
 
 # Reference category for regression (typically lowest exposure)
@@ -133,29 +133,29 @@ cat("Starting sensitivity analysis...\n")
 cat("This may take a few minutes depending on the number of draws.\n\n")
 
 # Run the main analysis function using AUTOMATIC LOGNORMAL CONVERSION
-# This approach uses the original EPA file directly - no preprocessing needed!
+# This approach uses the original concentration file directly - no preprocessing needed!
 results <- tryCatch({
   perform_sensitivity_analysis(
     ndraws = ndraws,
-    as_usgs_prob_csv = usgs_data_path,           # Original USGS file
-    as_epa_prob_csv = epa_data_path,             # Original EPA file (no preprocessing!)
-    birth_data_txt = demographics_data_path,     # Original demographics file
+    model_prob_csv = prob_data_path,             # Probability data file
+    conc_data_csv = conc_data_path,              # Concentration data file (no preprocessing!)
+    birth_data_txt = demographics_data_path,     # Demographics file
     regression_formula = regression_formula,
     output_dir = output_dir,
     targets = targets,
     as_cat_label = as_cat_labels,
     drop_as_cat_label_reg = drop_as_cat_label_reg,
     # Custom column names matching the original data files
-    id_col = "id",                            # ID column in USGS/EPA data
-    as_conc_cols = c("RFCprobC1", "RFCprobC2", "RFCprobC3"),  # USGS probability cols
-    pop_well_col = "pub_water_pop",              # Population column in USGS
+    id_col = "id",                            # ID column in prob/conc data
+    prob_cols = c("RFCprobC1", "RFCprobC2", "RFCprobC3"),  # Probability columns
+    pop_well_col = "pub_water_pop",              # Population column in prob data
     record_id_col = "id",                     # ID column in demographics
     as_level_col = as_level_col,
     # Use raw concentration column for automatic lognormal conversion
-    epa_as_conc_col = "weighted_as20062008",     # Raw concentration column
-    epa_default_sdlog = 1.0,                     # Default sdlog value
-    epa_pwell_col = "Dom_Pop_Percent",           # Private well percentage
-    epa_cutoffs = c(5, 10),
+    conc_raw_col = "weighted_as20062008",     # Raw concentration column
+    default_sdlog = 1.0,                     # Default sdlog value
+    pwell_col = "Dom_Pop_Percent",           # Private well percentage
+    conc_cutoffs = c(5, 10),
     # Imputation settings
     seed = seed,
     mice_m = 1,

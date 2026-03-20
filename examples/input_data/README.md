@@ -4,9 +4,9 @@
 
 ## Core Arsenic Data
 
-### USGS_dom.csv — Modeled Arsenic Probability Data
+### prob_dom.csv — Modeled Arsenic Probability Data
 
-Multinomial probability distributions of arsenic concentration categories derived from USGS machine learning predictions for private domestic wells. This represents the **modeled probability** input ("USGS" data type).
+Multinomial probability distributions of arsenic concentration categories derived from modeled predictions (e.g., USGS machine learning predictions) for private domestic wells. This represents the **modeled probability** input.
 
 | Column | Description | Units / Format |
 |--------|-------------|----------------|
@@ -23,19 +23,19 @@ Multinomial probability distributions of arsenic concentration categories derive
 
 ---
 
-### EPA_dom.csv — Measured Arsenic Concentration Data
+### conc_dom.csv — Measured Arsenic Concentration Data
 
-Arsenic concentrations measured in public water supply systems, aggregated at the county level. This represents the **measured concentration** input ("EPA" data type).
+Arsenic concentrations measured in public water supply systems, aggregated at the county level. This represents the **measured concentration** input.
 
 | Column | Description | Units / Format |
 |--------|-------------|----------------|
-| `id` | Geographic identifier (county FIPS code), matching USGS data | Integer (e.g., 1001 = FIPS 01001) |
+| `id` | Geographic identifier (county FIPS code), matching probability data | Integer (e.g., 1001 = FIPS 01001) |
 | `weighted_as20062008` | Population-weighted mean arsenic concentration for 2006–2008 | µg/L (micrograms per liter); some values may be `NA` |
 | `county_pop_served20062008` | Total county population served by public water systems during 2006–2008 | Count (persons) |
 | `well` | Well indicator variable | Numeric (0.5 in dummy data) |
 | `Dom_Pop_Percent` | Percentage of population using domestic (private) wells | Percentage (0–100) |
 
-**Notes:** Missing `weighted_as20062008` values indicate counties without EPA monitoring data. The package handles these by falling back to USGS-only probability estimates.
+**Notes:** Missing `weighted_as20062008` values indicate counties without monitoring data. The package handles these by falling back to probability-only estimates.
 
 ---
 
@@ -45,7 +45,7 @@ Tab-delimited file containing health outcome measurements and demographic covari
 
 | Column | Description | Units / Format |
 |--------|-------------|----------------|
-| `id` | Geographic identifier (county FIPS code), matching USGS and EPA data | Integer (e.g., 1001 = FIPS 01001) |
+| `id` | Geographic identifier (county FIPS code), matching probability and concentration data | Integer (e.g., 1001 = FIPS 01001) |
 | `SBP` | Systolic Blood Pressure — the primary health outcome | mmHg (millimeters of mercury) |
 | `age_decade` | Age group of the participant, used as a random effect in regression | Character (e.g., "30-39", "40-49", "50-59", "60-69", "70-79") |
 
@@ -53,9 +53,9 @@ Tab-delimited file containing health outcome measurements and demographic covari
 
 ## Nitrate Data
 
-### USGS_nitrate.csv — Modeled Nitrate Probability Data
+### prob_nitrate.csv — Modeled Nitrate Probability Data
 
-Multinomial probability distributions of nitrate concentration categories. Same column structure as `USGS_dom.csv`.
+Multinomial probability distributions of nitrate concentration categories. Same column structure as `prob_dom.csv`.
 
 | Column | Description | Units / Format |
 |--------|-------------|----------------|
@@ -70,7 +70,7 @@ Multinomial probability distributions of nitrate concentration categories. Same 
 
 **Notes:** The EPA MCL for nitrate is 10 mg/L as NO₃-N.
 
-### EPA_nitrate.csv — Measured Nitrate Concentration Data
+### conc_nitrate.csv — Measured Nitrate Concentration Data
 
 | Column | Description | Units / Format |
 |--------|-------------|----------------|
@@ -95,9 +95,9 @@ Tab-delimited file with infant health outcomes relevant to nitrate exposure.
 
 ## Uranium Data
 
-### USGS_uranium.csv — Modeled Uranium Probability Data
+### prob_uranium.csv — Modeled Uranium Probability Data
 
-Multinomial probability distributions of uranium concentration categories. Same column structure as `USGS_dom.csv`.
+Multinomial probability distributions of uranium concentration categories. Same column structure as `prob_dom.csv`.
 
 | Column | Description | Units / Format |
 |--------|-------------|----------------|
@@ -112,7 +112,7 @@ Multinomial probability distributions of uranium concentration categories. Same 
 
 **Notes:** The EPA MCL for uranium is 30 µg/L.
 
-### EPA_uranium.csv — Measured Uranium Concentration Data
+### conc_uranium.csv — Measured Uranium Concentration Data
 
 | Column | Description | Units / Format |
 |--------|-------------|----------------|
@@ -137,9 +137,9 @@ Tab-delimited file with kidney function outcomes relevant to uranium exposure.
 
 ## PM2.5 (Air Quality) Data
 
-### Model_pm25.csv — Modeled PM2.5 Probability Data
+### prob_pm25.csv — Modeled PM2.5 Probability Data
 
-Multinomial probability distributions of PM2.5 concentration categories from satellite/hybrid models. Same column structure as `USGS_dom.csv`. This example demonstrates that the "USGS" data slot can accept any modeled probability data, not just USGS-specific predictions.
+Multinomial probability distributions of PM2.5 concentration categories from satellite/hybrid models. Same column structure as `prob_dom.csv`. This example demonstrates that the probability data slot can accept any model-based probability data, not just predictions from a specific agency.
 
 | Column | Description | Units / Format |
 |--------|-------------|----------------|
@@ -154,7 +154,7 @@ Multinomial probability distributions of PM2.5 concentration categories from sat
 
 **Notes:** EPA annual PM2.5 standard is 9 µg/m³ (updated 2024). EPA 24-hour standard is 35 µg/m³. WHO annual guideline is 5 µg/m³.
 
-### EPA_pm25.csv — Ground Monitor PM2.5 Data
+### conc_pm25.csv — Ground Monitor PM2.5 Data
 
 | Column | Description | Units / Format |
 |--------|-------------|----------------|

@@ -37,13 +37,13 @@ or custom list of geographic IDs).
 \dontrun{
 # Subset to California counties (state FIPS = "06")
 ca_data <- subset_by_geography(
-  data = usgs_data,
+  data = prob_data,
   state_fips = "06"
 )
 
 # Subset to specific counties
 selected <- subset_by_geography(
-  data = usgs_data,
+  data = prob_data,
   geoid_list = c("06001", "06003", "06005")
 )
 }

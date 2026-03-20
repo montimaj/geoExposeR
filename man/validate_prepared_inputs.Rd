@@ -5,30 +5,30 @@
 \title{Validate Prepared Input Files}
 \usage{
 validate_prepared_inputs(
-  usgs_file,
-  epa_file,
+  prob_file,
+  conc_file,
   health_file,
-  usgs_id_col = "GEOID10",
-  epa_id_col = "GEOID10",
+  prob_id_col = "GEOID10",
+  conc_id_col = "GEOID10",
   health_id_col = "FIPS",
-  usgs_prob_cols = c("RFC3_C1v2", "RFC3_C2v2", "RFC3_C3v2"),
+  prob_data_cols = c("prob_C1", "prob_C2", "prob_C3"),
   fix_issues = FALSE
 )
 }
 \arguments{
-\item{usgs_file}{Path to the prepared USGS probability CSV file.}
+\item{prob_file}{Path to the prepared probability data CSV file.}
 
-\item{epa_file}{Path to the prepared EPA lognormal parameters CSV file.}
+\item{conc_file}{Path to the prepared concentration lognormal parameters CSV file.}
 
 \item{health_file}{Path to the prepared health outcome file.}
 
-\item{usgs_id_col}{Character. GEOID column in USGS data. Default "GEOID10".}
+\item{prob_id_col}{Character. GEOID column in probability data. Default "GEOID10".}
 
-\item{epa_id_col}{Character. GEOID column in EPA data. Default "GEOID10".}
+\item{conc_id_col}{Character. GEOID column in concentration data. Default "GEOID10".}
 
 \item{health_id_col}{Character. GEOID column in health data. Default "FIPS".}
 
-\item{usgs_prob_cols}{Character vector. Probability column names in USGS data.}
+\item{prob_data_cols}{Character vector. Probability column names in probability data.}
 
 \item{fix_issues}{Logical. Whether to attempt automatic fixes for common
 issues. Default is FALSE.}
@@ -49,8 +49,8 @@ are ready for use with geoExposeR.
 \examples{
 \dontrun{
 validation <- validate_prepared_inputs(
-  usgs_file = "usgs_probs.csv",
-  epa_file = "epa_params.csv",
+  prob_file = "prob_model.csv",
+  conc_file = "conc_params.csv",
   health_file = "health_outcomes.txt"
 )
 

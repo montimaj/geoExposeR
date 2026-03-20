@@ -51,8 +51,8 @@ reference:
   - title: "Data Ingestion"
     desc: "Functions for preparing input data from raw sources"
     contents:
-    - prepare_usgs_data
-    - prepare_epa_data
+    - prepare_prob_data
+    - prepare_conc_data
     - format_health_data
     - add_well_percentages
     - subset_by_geography

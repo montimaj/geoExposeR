@@ -64,8 +64,8 @@ format_ids_func <- function(data_frame, id_col) {
 #' Validate Input Parameters for Sensitivity Analysis
 #'
 # @param birth_data_txt Path to birth data text file
-#' @param as_usgs_prob_csv Path to USGS arsenic probability CSV file
-#' @param as_epa_prob_csv Path to EPA arsenic probability CSV file
+#' @param model_prob_csv Path to modeled probability data CSV file
+#' @param conc_data_csv Path to measured concentration data CSV file
 #' @param ndraws Number of draws for sensitivity analysis
 #' @param regression_formula Regression formula for modeling
 #' @param targets Target variables for analysis
@@ -74,30 +74,30 @@ format_ids_func <- function(data_frame, id_col) {
 #' @param mice_m Number of multiple imputations
 #' @param mice_maxit Maximum iterations for MICE
 #' @param mice_method MICE method for imputation
-#' @param epa_as_mean_col Column name for EPA arsenic meanlog
-#' @param epa_as_sd_col Column name for EPA arsenic sdlog
+#' @param conc_mean_col Column name for concentration lognormal meanlog
+#' @param conc_sd_col Column name for concentration lognormal sdlog
 #' @param seed Random seed for reproducibility
 #' @param as_cat_label Arsenic category label
 #' @param as_level_col Column name for arsenic level
 #' @param drop_as_cat_label_reg Regular expression to drop arsenic categories
-#' @param epa_cutoffs EPA cutoffs for arsenic categories
-#' @param usgs_columns USGS columns to include in analysis
+#' @param conc_cutoffs Concentration cutoffs for exposure categories
+#' @param prob_columns Probability columns to include in analysis
 #' @param validate_cutoffs Whether to validate cutoffs
 #' @param columns_to_select Columns to select from the data
 #' @param rucc_col Column name for RUCC classification
 #' @param id_col Column name for geographic identifier
-#' @param as_conc_cols Arsenic concentration columns
+#' @param prob_cols Arsenic concentration columns
 #' @param pop_well_col Column name for population well
 #' @param record_id_col Column name for birth county
-#' @param epa_pwell_col Column name for EPA population well
+#' @param pwell_col Column name for private well percentage
 #' @param mice_covs Covariates for MICE imputation
 #' @param apply_imputation_fallback Whether to apply imputation fallback
 #' @return NULL (throws error if validation fails)
 #' @keywords internal
 validate_all_inputs <- function(
   birth_data_txt = NULL,
-  as_usgs_prob_csv = NULL,
-  as_epa_prob_csv = NULL,
+  model_prob_csv = NULL,
+  conc_data_csv = NULL,
   ndraws = NULL,
   regression_formula = NULL,
   targets = NULL,
@@ -106,30 +106,30 @@ validate_all_inputs <- function(
   mice_m = NULL,
   mice_maxit = NULL,
   mice_method = NULL,
-  epa_as_mean_col = NULL,
-  epa_as_sd_col = NULL,
-  epa_as_conc_col = NULL,
-  epa_default_sdlog = 1.0,
+  conc_mean_col = NULL,
+  conc_sd_col = NULL,
+  conc_raw_col = NULL,
+  default_sdlog = 1.0,
   seed = NULL,
   as_cat_label = NULL,
   as_level_col = "AsLevel",
   drop_as_cat_label_reg = NULL,
-  epa_cutoffs = NULL,
-  usgs_columns = NULL,
+  conc_cutoffs = NULL,
+  prob_columns = NULL,
   validate_cutoffs = TRUE,
   columns_to_select = NULL,
   rucc_col = NULL,
   id_col = NULL,
-  as_conc_cols = NULL,
+  prob_cols = NULL,
   pop_well_col = NULL,
   record_id_col = NULL,
-  epa_pwell_col = NULL,
+  pwell_col = NULL,
   mice_covs = NULL,
   apply_imputation_fallback = TRUE
 ) {
 
   # Validate required file paths
-  validate_file_paths(birth_data_txt, as_usgs_prob_csv, as_epa_prob_csv)
+  validate_file_paths(birth_data_txt, model_prob_csv, conc_data_csv)
 
   # Validate numeric parameters
   validate_numeric_params(ndraws, mice_m, mice_maxit, seed)
@@ -137,8 +137,8 @@ validate_all_inputs <- function(
   # Validate imputation fallback parameter
   validate_imputation_fallback(apply_imputation_fallback)
 
-  # Validate epa_default_sdlog
-  validate_epa_default_sdlog(epa_default_sdlog)
+  # Validate default_sdlog
+  validate_default_sdlog(default_sdlog)
 
   # Validate character vectors
   validate_character_vectors(
@@ -147,14 +147,14 @@ validate_all_inputs <- function(
     as_cat_label = as_cat_label,
     mice_covs = mice_covs,
     columns_to_select = columns_to_select,
-    as_conc_cols = as_conc_cols
+    prob_cols = prob_cols
   )
 
   # Validate character scalars (column names)
   validate_column_names(
     as_level_col, rucc_col, id_col, pop_well_col,
-    record_id_col, epa_as_mean_col, epa_as_sd_col,
-    epa_pwell_col
+    record_id_col, conc_mean_col, conc_sd_col,
+    pwell_col
   )
 
   # Validate MICE parameters
@@ -166,23 +166,23 @@ validate_all_inputs <- function(
   # Validate arsenic category parameters
   validate_arsenic_categories(as_cat_label, drop_as_cat_label_reg)
 
-  # Validate EPA cutoffs
-  validate_epa_cutoff_params(epa_cutoffs, as_conc_cols)
+  # Validate concentration cutoffs
+  validate_conc_cutoff_params(conc_cutoffs, prob_cols)
 
-  # Validate EPA lognormal columns (either lognormal cols or concentration col)
-  validate_epa_lognormal_input(
-    as_epa_prob_csv, epa_as_mean_col, epa_as_sd_col, epa_as_conc_col
+  # Validate concentration lognormal columns (either lognormal cols or concentration col)
+  validate_conc_lognormal_input(
+    conc_data_csv, conc_mean_col, conc_sd_col, conc_raw_col
   )
 
-  # Validate USGS columns
-  validate_usgs_columns_param(usgs_columns)
+  # Validate probability columns
+  validate_prob_columns_param(prob_columns)
 
   # Validate file contents and column existence
   validate_file_contents(
-    birth_data_txt, as_usgs_prob_csv, as_epa_prob_csv,
-    rucc_col, record_id_col, id_col, as_conc_cols,
-    pop_well_col, epa_as_mean_col, epa_as_sd_col,
-    epa_as_conc_col, epa_pwell_col
+    birth_data_txt, model_prob_csv, conc_data_csv,
+    rucc_col, record_id_col, id_col, prob_cols,
+    pop_well_col, conc_mean_col, conc_sd_col,
+    conc_raw_col, pwell_col
   )
 
   # Validate regression formula
@@ -194,24 +194,24 @@ validate_all_inputs <- function(
 #' Validate File Paths
 #' @keywords internal
 validate_file_paths <- function(
-    birth_data_txt, as_usgs_prob_csv,
-    as_epa_prob_csv) {
+    birth_data_txt, model_prob_csv,
+    conc_data_csv) {
   # Check required parameters
   if (is.null(birth_data_txt)) {
     stop("birth_data_txt is required and cannot be NULL")
   }
-  if (is.null(as_usgs_prob_csv)) {
-    stop("as_usgs_prob_csv is required and cannot be NULL")
+  if (is.null(model_prob_csv)) {
+    stop("model_prob_csv is required and cannot be NULL")
   }
-  if (is.null(as_epa_prob_csv)) {
-    stop("as_epa_prob_csv is required and cannot be NULL")
+  if (is.null(conc_data_csv)) {
+    stop("conc_data_csv is required and cannot be NULL")
   }
 
   # Check parameter types
   file_params <- list(
     birth_data_txt = birth_data_txt,
-    as_usgs_prob_csv = as_usgs_prob_csv,
-    as_epa_prob_csv = as_epa_prob_csv
+    model_prob_csv = model_prob_csv,
+    conc_data_csv = conc_data_csv
   )
 
   for (param_name in names(file_params)) {
@@ -323,7 +323,7 @@ validate_regression_formula <- function(regression_formula, as_level_col) {
 validate_character_vectors <- function(
     targets, impute_vars, as_cat_label,
     mice_covs, columns_to_select,
-    as_conc_cols) {
+    prob_cols) {
 
   char_vector_params <- list(
     targets = targets,
@@ -331,7 +331,7 @@ validate_character_vectors <- function(
     as_cat_label = as_cat_label,
     mice_covs = mice_covs,
     columns_to_select = columns_to_select,
-    as_conc_cols = as_conc_cols
+    prob_cols = prob_cols
   )
 
   for (param_name in names(char_vector_params)) {
@@ -367,8 +367,8 @@ validate_character_vectors <- function(
 validate_column_names <- function(
     as_level_col, rucc_col, id_col,
     pop_well_col, record_id_col,
-    epa_as_mean_col, epa_as_sd_col,
-    epa_pwell_col) {
+    conc_mean_col, conc_sd_col,
+    pwell_col) {
 
   char_scalar_params <- list(
     as_level_col = as_level_col,
@@ -376,9 +376,9 @@ validate_column_names <- function(
     id_col = id_col,
     pop_well_col = pop_well_col,
     record_id_col = record_id_col,
-    epa_as_mean_col = epa_as_mean_col,
-    epa_as_sd_col = epa_as_sd_col,
-    epa_pwell_col = epa_pwell_col
+    conc_mean_col = conc_mean_col,
+    conc_sd_col = conc_sd_col,
+    pwell_col = pwell_col
   )
 
   for (param_name in names(char_scalar_params)) {
@@ -459,51 +459,51 @@ validate_arsenic_categories <- function(as_cat_label, drop_as_cat_label_reg) {
   }
 }
 
-#' Validate EPA Cutoffs Parameter
+#' Validate Concentration Cutoffs Parameter
 #' @keywords internal
-validate_epa_cutoff_params <- function(epa_cutoffs, as_conc_cols) {
-  if (!is.null(epa_cutoffs)) {
-    if (!is.numeric(epa_cutoffs)) {
-      stop("epa_cutoffs must be a numeric vector")
+validate_conc_cutoff_params <- function(conc_cutoffs, prob_cols) {
+  if (!is.null(conc_cutoffs)) {
+    if (!is.numeric(conc_cutoffs)) {
+      stop("conc_cutoffs must be a numeric vector")
     }
-    if (any(is.na(epa_cutoffs))) {
-      stop("epa_cutoffs cannot contain NA values")
+    if (any(is.na(conc_cutoffs))) {
+      stop("conc_cutoffs cannot contain NA values")
     }
-    if (any(epa_cutoffs <= 0)) {
-      stop("epa_cutoffs must contain only positive values")
+    if (any(conc_cutoffs <= 0)) {
+      stop("conc_cutoffs must contain only positive values")
     }
-    if (is.unsorted(epa_cutoffs)) {
-      stop("epa_cutoffs must be in ascending order")
+    if (is.unsorted(conc_cutoffs)) {
+      stop("conc_cutoffs must be in ascending order")
     }
-    if (length(unique(epa_cutoffs)) != length(epa_cutoffs)) {
-      stop("epa_cutoffs cannot contain duplicate values")
+    if (length(unique(conc_cutoffs)) != length(conc_cutoffs)) {
+      stop("conc_cutoffs cannot contain duplicate values")
     }
 
-    # Check alignment with as_conc_cols if both are provided
-    if (!is.null(as_conc_cols)) {
-      epa_categories <- length(epa_cutoffs) + 1
-      if (length(as_conc_cols) != epa_categories) {
-        stop("as_conc_cols must have length equal to length(epa_cutoffs) + 1")
+    # Check alignment with prob_cols if both are provided
+    if (!is.null(prob_cols)) {
+      conc_categories <- length(conc_cutoffs) + 1
+      if (length(prob_cols) != conc_categories) {
+        stop("prob_cols must have length equal to length(conc_cutoffs) + 1")
       }
     }
   }
 }
 
-#' Validate USGS Columns Parameter
+#' Validate Probability Columns Parameter
 #' @keywords internal
-validate_usgs_columns_param <- function(usgs_columns) {
-  if (!is.null(usgs_columns)) {
-    if (!is.character(usgs_columns)) {
-      stop("usgs_columns must be a character vector")
+validate_prob_columns_param <- function(prob_columns) {
+  if (!is.null(prob_columns)) {
+    if (!is.character(prob_columns)) {
+      stop("prob_columns must be a character vector")
     }
-    if (length(usgs_columns) == 0) {
-      stop("usgs_columns cannot be empty")
+    if (length(prob_columns) == 0) {
+      stop("prob_columns cannot be empty")
     }
-    if (any(is.na(usgs_columns)) || any(nchar(usgs_columns) == 0)) {
-      stop("usgs_columns cannot contain NA or empty strings")
+    if (any(is.na(prob_columns)) || any(nchar(prob_columns) == 0)) {
+      stop("prob_columns cannot contain NA or empty strings")
     }
-    if (length(unique(usgs_columns)) != length(usgs_columns)) {
-      stop("usgs_columns cannot contain duplicate column names")
+    if (length(unique(prob_columns)) != length(prob_columns)) {
+      stop("prob_columns cannot contain duplicate column names")
     }
   }
 }
@@ -511,53 +511,53 @@ validate_usgs_columns_param <- function(usgs_columns) {
 #' Validate File Contents and Column Existence
 #' @keywords internal
 validate_file_contents <- function(
-    birth_data_txt, as_usgs_prob_csv,
-    as_epa_prob_csv, rucc_col, record_id_col,
-    id_col, as_conc_cols, pop_well_col,
-    epa_as_mean_col, epa_as_sd_col,
-    epa_as_conc_col, epa_pwell_col) {
+    birth_data_txt, model_prob_csv,
+    conc_data_csv, rucc_col, record_id_col,
+    id_col, prob_cols, pop_well_col,
+    conc_mean_col, conc_sd_col,
+    conc_raw_col, pwell_col) {
 
   # Define required columns for each file
   birth_cols <- c(rucc_col, record_id_col)
   if (is.null(rucc_col)) {
     birth_cols <- c(record_id_col)
   }
-  usgs_cols <- c(id_col, as_conc_cols, pop_well_col)
+  prob_required_cols <- c(id_col, prob_cols, pop_well_col)
 
-  # For EPA columns, check what's available in the file first
-  epa_cols_in_file <- tryCatch(
-    get_file_columns(as_epa_prob_csv),
+  # For concentration columns, check what's available in the file first
+  conc_cols_in_file <- tryCatch(
+    get_file_columns(conc_data_csv),
     error = function(e) character(0)
   )
 
-  # EPA required columns depend on whether lognormal cols exist or conc col
+  # Concentration required columns depend on whether lognormal cols exist or conc col
   # Handle NULL values properly
-  has_meanlog <- !is.null(epa_as_mean_col) && epa_as_mean_col %in% epa_cols_in_file
-  has_sdlog <- !is.null(epa_as_sd_col) && epa_as_sd_col %in% epa_cols_in_file
-  has_conc <- !is.null(epa_as_conc_col) && epa_as_conc_col %in% epa_cols_in_file
+  has_meanlog <- !is.null(conc_mean_col) && conc_mean_col %in% conc_cols_in_file
+  has_sdlog <- !is.null(conc_sd_col) && conc_sd_col %in% conc_cols_in_file
+  has_conc <- !is.null(conc_raw_col) && conc_raw_col %in% conc_cols_in_file
 
-  # Build EPA required columns based on available data
-  epa_cols <- c(id_col, epa_pwell_col)
+  # Build concentration required columns based on available data
+  conc_cols <- c(id_col, pwell_col)
   if (has_meanlog) {
-    epa_cols <- c(epa_cols, epa_as_mean_col)
+    conc_cols <- c(conc_cols, conc_mean_col)
   }
   if (has_sdlog) {
-    epa_cols <- c(epa_cols, epa_as_sd_col)
+    conc_cols <- c(conc_cols, conc_sd_col)
   }
   if (!has_meanlog && has_conc) {
-    epa_cols <- c(epa_cols, epa_as_conc_col)
+    conc_cols <- c(conc_cols, conc_raw_col)
   }
 
   data_list <- list(
     birth_data_txt = birth_data_txt,
-    as_usgs_prob_csv = as_usgs_prob_csv,
-    as_epa_prob_csv = as_epa_prob_csv
+    model_prob_csv = model_prob_csv,
+    conc_data_csv = conc_data_csv
   )
 
   data_col_checks <- list(
     birth_data_txt = birth_cols,
-    as_usgs_prob_csv = usgs_cols,
-    as_epa_prob_csv = epa_cols
+    model_prob_csv = prob_required_cols,
+    conc_data_csv = conc_cols
   )
 
   # Check column existence in each file
@@ -574,9 +574,9 @@ validate_file_contents <- function(
     }
   }
 
-  # Validate EPA standard deviation column values only if column exists
+  # Validate concentration standard deviation column values only if column exists
   if (has_sdlog) {
-    validate_epa_sd_values(as_epa_prob_csv, epa_as_sd_col)
+    validate_conc_sd_values(conc_data_csv, conc_sd_col)
   }
 }
 
@@ -603,46 +603,46 @@ get_file_columns <- function(file_path) {
   return(cols_in_file)
 }
 
-#' Validate EPA Standard Deviation Values
+#' Validate Concentration Standard Deviation Values
 #' @keywords internal
-validate_epa_sd_values <- function(as_epa_prob_csv, epa_as_sd_col) {
-  if (!is.null(epa_as_sd_col)) {
+validate_conc_sd_values <- function(conc_data_csv, conc_sd_col) {
+  if (!is.null(conc_sd_col)) {
     # Check if the column exists first
-    cols_in_file <- get_file_columns(as_epa_prob_csv)
-    if (!epa_as_sd_col %in% cols_in_file) {
+    cols_in_file <- get_file_columns(conc_data_csv)
+    if (!conc_sd_col %in% cols_in_file) {
       # Column doesn't exist, will be auto-generated - skip validation
       return(invisible(NULL))
     }
 
-    # Read the EPA data to check the column
-    epa_data <- data.table::fread(
-      as_epa_prob_csv, header = TRUE,
+    # Read the concentration data to check the column
+    conc_data <- data.table::fread(
+      conc_data_csv, header = TRUE,
       showProgress = FALSE,
       nThread = parallel::detectCores()
     )
 
-    epa_sd_log_values <- epa_data[[epa_as_sd_col]]
+    conc_sd_log_values <- conc_data[[conc_sd_col]]
 
     # Check for NA values first
-    if (any(is.na(epa_sd_log_values))) {
-      warning("epa_as_sd_col contains NA values. These rows will use ",
+    if (any(is.na(conc_sd_log_values))) {
+      warning("conc_sd_col contains NA values. These rows will use ",
               "fallback probability calculations.")
     }
 
     # Check non-numeric values (excluding NAs)
-    non_na_values <- epa_sd_log_values[!is.na(epa_sd_log_values)]
+    non_na_values <- conc_sd_log_values[!is.na(conc_sd_log_values)]
     if (length(non_na_values) > 0 && !all(is.finite(non_na_values))) {
-      stop("epa_as_sd_col must contain only finite numeric values. ",
+      stop("conc_sd_col must contain only finite numeric values. ",
            "Check for non-numeric values or extreme outliers.")
     }
 
     if (length(non_na_values) > 0 && any(non_na_values <= 0)) {
-      stop("epa_as_sd_col must contain only positive values ")
+      stop("conc_sd_col must contain only positive values ")
     }
 
     # Check large values
     if (length(non_na_values) > 0 && any(non_na_values > 10)) {
-      warning("epa_as_sd_col contains very large values (> 10). This may ",
+      warning("conc_sd_col contains very large values (> 10). This may ",
               "lead to extreme probabilities in the lognormal distribution.")
     }
   }
@@ -658,40 +658,40 @@ validate_imputation_fallback <- function(apply_imputation_fallback) {
   }
 }
 
-#' Validate EPA Default Sdlog Parameter
+#' Validate Default Sdlog Parameter
 #' @keywords internal
-validate_epa_default_sdlog <- function(epa_default_sdlog) {
-  if (!is.numeric(epa_default_sdlog) || length(epa_default_sdlog) != 1) {
-    stop("epa_default_sdlog must be a single numeric value")
+validate_default_sdlog <- function(default_sdlog) {
+  if (!is.numeric(default_sdlog) || length(default_sdlog) != 1) {
+    stop("default_sdlog must be a single numeric value")
   }
-  if (epa_default_sdlog <= 0) {
-    stop("epa_default_sdlog must be positive")
+  if (default_sdlog <= 0) {
+    stop("default_sdlog must be positive")
   }
-  if (epa_default_sdlog > 10) {
-    warning("epa_default_sdlog is very large (> 10). This may lead to ",
+  if (default_sdlog > 10) {
+    warning("default_sdlog is very large (> 10). This may lead to ",
             "extreme probabilities in the lognormal distribution.")
   }
 }
 
-#' Validate EPA Lognormal Input Parameters
+#' Validate Concentration Lognormal Input Parameters
 #'
 #' Validates that either lognormal columns exist or concentration column
 #' is provided for automatic calculation.
 #' @keywords internal
-validate_epa_lognormal_input <- function(
-    as_epa_prob_csv,
-    epa_as_mean_col,
-    epa_as_sd_col,
-    epa_as_conc_col
+validate_conc_lognormal_input <- function(
+    conc_data_csv,
+    conc_mean_col,
+    conc_sd_col,
+    conc_raw_col
 ) {
-  # Skip validation if EPA file path is NULL or doesn't exist
-  if (is.null(as_epa_prob_csv) || !file.exists(as_epa_prob_csv)) {
+  # Skip validation if concentration file path is NULL or doesn't exist
+  if (is.null(conc_data_csv) || !file.exists(conc_data_csv)) {
     return(invisible(NULL))
   }
 
   # Try to get columns from file, skip if parsing fails
   cols_in_file <- tryCatch(
-    get_file_columns(as_epa_prob_csv),
+    get_file_columns(conc_data_csv),
     error = function(e) NULL
   )
 
@@ -702,29 +702,29 @@ validate_epa_lognormal_input <- function(
     return(invisible(NULL))
   }
 
-  has_meanlog <- epa_as_mean_col %in% cols_in_file
-  has_sdlog <- epa_as_sd_col %in% cols_in_file
+  has_meanlog <- conc_mean_col %in% cols_in_file
+  has_sdlog <- conc_sd_col %in% cols_in_file
 
   # If meanlog doesn't exist and no concentration column provided, error
-  if (!has_meanlog && is.null(epa_as_conc_col)) {
+  if (!has_meanlog && is.null(conc_raw_col)) {
     stop(
-      "EPA lognormal meanlog column '", epa_as_mean_col, "' not found in data. ",
-      "Either provide EPA data with lognormal parameters, or specify ",
-      "'epa_as_conc_col' to enable automatic conversion from raw ",
+      "Concentration lognormal meanlog column '", conc_mean_col, "' not found in data. ",
+      "Either provide data with lognormal parameters, or specify ",
+      "'conc_raw_col' to enable automatic conversion from raw ",
       "concentration values."
     )
   }
 
   # If concentration column specified but doesn't exist in file
-  if (!is.null(epa_as_conc_col) && !epa_as_conc_col %in% cols_in_file) {
+  if (!is.null(conc_raw_col) && !conc_raw_col %in% cols_in_file) {
     stop(
-      "EPA arsenic concentration column '", epa_as_conc_col,
+      "Concentration column '", conc_raw_col,
       "' not found in the data."
     )
   }
 
   # Validate sdlog values if column exists
   if (has_sdlog) {
-    validate_epa_sd_values(as_epa_prob_csv, epa_as_sd_col)
+    validate_conc_sd_values(conc_data_csv, conc_sd_col)
   }
 }

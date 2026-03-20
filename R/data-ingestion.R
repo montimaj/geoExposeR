@@ -1,7 +1,7 @@
 #' Data Ingestion Functions for geoExposeR
 #'
 #' Functions for preparing input data from raw sources including:
-#' USGS GeoTIFF probability rasters, EPA public water system data,
+#' GeoTIFF probability rasters, measured concentration data,
 #' health outcome data formatting, and Census/population data integration.
 #'
 #' @name data-ingestion
@@ -10,14 +10,14 @@ NULL
 
 # Declare global variables for data.table/dplyr NSE
 utils::globalVariables(c(
-  ".", ".N", "FIPS", "mean_as", "sd_as", "EPA_AS_sdlog", "EPA_AS_meanlog",
+  ".", ".N", "FIPS", "mean_as", "sd_as", "conc_sdlog", "conc_meanlog",
   "prob_cat1", "prob_cat2", "prob_cat3", "total", "..cols_to_keep",
-  "..usgs_prob_cols"
+  "..prob_data_cols"
 ))
 
-#' Prepare USGS Arsenic Probability Data from GeoTIFFs
+#' Prepare Modeled Probability Data from GeoTIFFs
 #'
-#' Extracts arsenic concentration probabilities from USGS GeoTIFF rasters
+#' Extracts exposure probability estimates from GeoTIFF rasters
 #' and aggregates them by geographic unit (e.g., county) to create the
 #' CSV format required by geoExposeR.
 #'
@@ -66,25 +66,25 @@ utils::globalVariables(c(
 #'
 #' # Define raster paths
 #' rasters <- list(
-#'   gt5 = "path/to/usgs_prob_gt5.tif",
-#'   gt10 = "path/to/usgs_prob_gt10.tif"
+#'   gt5 = "path/to/prob_gt5.tif",
+#'   gt10 = "path/to/prob_gt10.tif"
 #' )
 #'
 #' # Load county boundaries
 #' counties <- st_read("path/to/counties.shp")
 #'
-#' # Extract and format USGS data
-#' usgs_data <- prepare_usgs_data(
+#' # Extract and format probability data
+#' prob_data <- prepare_prob_data(
 #'   prob_rasters = rasters,
 #'   boundaries = counties,
 #'   id_col = "GEOID",
 #'   cutoffs = c(5, 10),
-#'   output_file = "usgs_arsenic_probs.csv"
+#'   output_file = "prob_model_output.csv"
 #' )
 #' }
 #'
 #' @export
-prepare_usgs_data <- function(
+prepare_prob_data <- function(
   prob_rasters,
   boundaries,
   id_col = "GEOID",
@@ -221,7 +221,7 @@ prepare_usgs_data <- function(
   data.table::setnames(
     result,
     c("prob_cat1", "prob_cat2", "prob_cat3"),
-    c("RFC3_C1v2", "RFC3_C2v2", "RFC3_C3v2")
+    c("prob_C1", "prob_C2", "prob_C3")
   )
 
   # Remove intermediate probability columns
@@ -261,17 +261,17 @@ prepare_usgs_data <- function(
     data.table::fwrite(result, output_file)
   }
 
-  message("Done! Created USGS data with ", nrow(result), " geographic units.")
+  message("Done! Created probability data with ", nrow(result), " geographic units.")
   return(result)
 }
 
 
-#' Prepare EPA Arsenic Data with Lognormal Parameters
+#' Prepare Measured Concentration Data with Lognormal Parameters
 #'
-#' Processes EPA public water system arsenic data and converts concentrations
-#' to lognormal distribution parameters required by geoExposeR.
+#' Processes measured concentration data and converts to lognormal
+#' distribution parameters required by geoExposeR.
 #'
-#' @param epa_data A data frame containing EPA arsenic measurements. Can be
+#' @param conc_data A data frame containing concentration measurements. Can be
 #'   raw measurements or summary statistics.
 #' @param id_col Character. Column name containing geographic identifiers.
 #'   Default is "county_fips".
@@ -294,8 +294,9 @@ prepare_usgs_data <- function(
 #'   Default is 0.1.
 #' @param output_file Optional file path to save the resulting CSV.
 #'
-#' @return A data.table with columns for geographic ID, EPA_AS_meanlog,
-#'   EPA_AS_sdlog, and optionally PWELL_private_pct.
+#' @return A data.table with columns for geographic ID, conc_meanlog
+#'   (lognormal mean), conc_sdlog (lognormal SD), and optionally
+#'   PWELL_private_pct.
 #'
 #' @details
 #' The function converts arithmetic mean and standard deviation to lognormal
@@ -308,26 +309,26 @@ prepare_usgs_data <- function(
 #'
 #' @examples
 #' \dontrun{
-#' # Example with raw EPA data
-#' epa_raw <- data.frame(
+#' # Example with raw concentration data
+#' conc_raw <- data.frame(
 #'   county_fips = c("06001", "06001", "06003", "06003"),
 #'   arsenic_concentration = c(2.5, 3.1, 8.2, 7.5),
 #'   population_served = c(50000, 25000, 10000, 15000)
 #' )
 #'
-#' epa_processed <- prepare_epa_data(
-#'   epa_data = epa_raw,
+#' conc_processed <- prepare_conc_data(
+#'   conc_data = conc_raw,
 #'   id_col = "county_fips",
 #'   concentration_col = "arsenic_concentration",
 #'   population_col = "population_served",
 #'   input_type = "raw",
-#'   output_file = "epa_lognormal.csv"
+#'   output_file = "conc_lognormal.csv"
 #' )
 #' }
 #'
 #' @export
-prepare_epa_data <- function(
-  epa_data,
+prepare_conc_data <- function(
+  conc_data,
   id_col = "county_fips",
   concentration_col = "arsenic_concentration",
   population_col = NULL,
@@ -342,7 +343,7 @@ prepare_epa_data <- function(
   input_type <- match.arg(input_type)
 
   # Convert to data.table
-  dt <- data.table::as.data.table(epa_data)
+  dt <- data.table::as.data.table(conc_data)
 
   # Validate geoid column
   if (!id_col %in% names(dt)) {
@@ -361,7 +362,7 @@ prepare_epa_data <- function(
       )
     }
 
-    message("Processing raw EPA measurements...")
+    message("Processing raw concentration measurements...")
 
     # Filter positive concentrations
     dt <- dt[get(concentration_col) > 0]
@@ -399,7 +400,7 @@ prepare_epa_data <- function(
 
   } else {
     # Summary input type
-    message("Processing summary EPA statistics...")
+    message("Processing summary concentration statistics...")
 
     # Validate required columns
     if (!mean_col %in% names(dt)) {
@@ -434,14 +435,14 @@ prepare_epa_data <- function(
   # meanlog = log(mu^2 / sqrt(sigma^2 + mu^2))
   # sdlog = sqrt(log(1 + sigma^2/mu^2))
   result[, `:=`(
-    EPA_AS_meanlog = log(mean_as^2 / sqrt(sd_as^2 + mean_as^2)),
-    EPA_AS_sdlog = sqrt(log(1 + (sd_as^2 / mean_as^2)))
+    conc_meanlog = log(mean_as^2 / sqrt(sd_as^2 + mean_as^2)),
+    conc_sdlog = sqrt(log(1 + (sd_as^2 / mean_as^2)))
   )]
 
   # Handle edge cases
-  result[is.na(EPA_AS_sdlog) | !is.finite(EPA_AS_sdlog), EPA_AS_sdlog := default_sdlog]
-  result[is.na(EPA_AS_meanlog) | !is.finite(EPA_AS_meanlog),
-         EPA_AS_meanlog := log(min_concentration)]
+  result[is.na(conc_sdlog) | !is.finite(conc_sdlog), conc_sdlog := default_sdlog]
+  result[is.na(conc_meanlog) | !is.finite(conc_meanlog),
+         conc_meanlog := log(min_concentration)]
 
   # Add private well percentage if provided
   if (!is.null(private_well_pct_col) && private_well_pct_col %in% names(dt)) {
@@ -452,7 +453,7 @@ prepare_epa_data <- function(
   }
 
   # Select and rename columns
-  cols_to_keep <- c(id_col, "EPA_AS_meanlog", "EPA_AS_sdlog")
+  cols_to_keep <- c(id_col, "conc_meanlog", "conc_sdlog")
   if ("PWELL_private_pct" %in% names(result)) {
     cols_to_keep <- c(cols_to_keep, "PWELL_private_pct")
   }
@@ -471,7 +472,7 @@ prepare_epa_data <- function(
     data.table::fwrite(result, output_file)
   }
 
-  message("Done! Created EPA data with ", nrow(result), " geographic units.")
+  message("Done! Created concentration data with ", nrow(result), " geographic units.")
   return(result)
 }
 
@@ -656,7 +657,7 @@ format_health_data <- function(
 
 #' Add Private Well Population Percentages
 #'
-#' Merges private well percentage data into EPA or USGS datasets.
+#' Merges private well percentage data into probability or concentration datasets.
 #'
 #' @param target_data A data.table or data frame to add well percentages to.
 #' @param well_data A data frame containing private well percentages by
@@ -674,14 +675,14 @@ format_health_data <- function(
 #'
 #' @examples
 #' \dontrun{
-#' # Add well percentages to EPA data
+#' # Add well percentages to concentration data
 #' census_wells <- data.frame(
 #'   GEOID = c("06001", "06003"),
 #'   private_well_pct = c(15.2, 28.7)
 #' )
 #'
-#' epa_with_wells <- add_well_percentages(
-#'   target_data = epa_data,
+#' conc_with_wells <- add_well_percentages(
+#'   target_data = conc_data,
 #'   well_data = census_wells,
 #'   well_pct_col = "private_well_pct"
 #' )
@@ -751,13 +752,13 @@ add_well_percentages <- function(
 #' \dontrun{
 #' # Subset to California counties (state FIPS = "06")
 #' ca_data <- subset_by_geography(
-#'   data = usgs_data,
+#'   data = prob_data,
 #'   state_fips = "06"
 #' )
 #'
 #' # Subset to specific counties
 #' selected <- subset_by_geography(
-#'   data = usgs_data,
+#'   data = prob_data,
 #'   geoid_list = c("06001", "06003", "06005")
 #' )
 #' }
@@ -809,13 +810,13 @@ subset_by_geography <- function(
 #' Performs comprehensive validation of prepared input files to ensure they
 #' are ready for use with geoExposeR.
 #'
-#' @param usgs_file Path to the prepared USGS probability CSV file.
-#' @param epa_file Path to the prepared EPA lognormal parameters CSV file.
+#' @param prob_file Path to the prepared probability data CSV file.
+#' @param conc_file Path to the prepared concentration lognormal parameters CSV file.
 #' @param health_file Path to the prepared health outcome file.
-#' @param usgs_id_col Character. GEOID column in USGS data. Default "GEOID10".
-#' @param epa_id_col Character. GEOID column in EPA data. Default "GEOID10".
+#' @param prob_id_col Character. GEOID column in probability data. Default "GEOID10".
+#' @param conc_id_col Character. GEOID column in concentration data. Default "GEOID10".
 #' @param health_id_col Character. GEOID column in health data. Default "FIPS".
-#' @param usgs_prob_cols Character vector. Probability column names in USGS data.
+#' @param prob_data_cols Character vector. Probability column names in probability data.
 #' @param fix_issues Logical. Whether to attempt automatic fixes for common
 #'   issues. Default is FALSE.
 #'
@@ -830,8 +831,8 @@ subset_by_geography <- function(
 #' @examples
 #' \dontrun{
 #' validation <- validate_prepared_inputs(
-#'   usgs_file = "usgs_probs.csv",
-#'   epa_file = "epa_params.csv",
+#'   prob_file = "prob_model.csv",
+#'   conc_file = "conc_params.csv",
 #'   health_file = "health_outcomes.txt"
 #' )
 #'
@@ -845,13 +846,13 @@ subset_by_geography <- function(
 #'
 #' @export
 validate_prepared_inputs <- function(
-  usgs_file,
-  epa_file,
+  prob_file,
+  conc_file,
   health_file,
-  usgs_id_col = "GEOID10",
-  epa_id_col = "GEOID10",
+  prob_id_col = "GEOID10",
+  conc_id_col = "GEOID10",
   health_id_col = "FIPS",
-  usgs_prob_cols = c("RFC3_C1v2", "RFC3_C2v2", "RFC3_C3v2"),
+  prob_data_cols = c("prob_C1", "prob_C2", "prob_C3"),
   fix_issues = FALSE
 ) {
   issues <- character(0)
@@ -860,104 +861,104 @@ validate_prepared_inputs <- function(
 
   message("Validating prepared input files...\n")
 
-  # ===== USGS Validation =====
-  message("Checking USGS data...")
-  if (!file.exists(usgs_file)) {
-    issues <- c(issues, paste("USGS file not found:", usgs_file))
+  # ===== Probability Data Validation =====
+  message("Checking probability data...")
+  if (!file.exists(prob_file)) {
+    issues <- c(issues, paste("Probability file not found:", prob_file))
   } else {
-    usgs <- data.table::fread(usgs_file)
-    summary_list$usgs <- list(
-      n_rows = nrow(usgs),
-      n_cols = ncol(usgs),
-      columns = names(usgs)
+    prob_dt <- data.table::fread(prob_file)
+    summary_list$prob <- list(
+      n_rows = nrow(prob_dt),
+      n_cols = ncol(prob_dt),
+      columns = names(prob_dt)
     )
 
     # Check GEOID column
-    if (!usgs_id_col %in% names(usgs)) {
-      issues <- c(issues, paste("USGS missing GEOID column:", usgs_id_col))
+    if (!prob_id_col %in% names(prob_dt)) {
+      issues <- c(issues, paste("Probability data missing GEOID column:", prob_id_col))
     }
 
     # Check probability columns
-    missing_prob <- usgs_prob_cols[!usgs_prob_cols %in% names(usgs)]
+    missing_prob <- prob_data_cols[!prob_data_cols %in% names(prob_dt)]
     if (length(missing_prob) > 0) {
       issues <- c(issues, paste(
-        "USGS missing probability columns:",
+        "Probability data missing probability columns:",
         paste(missing_prob, collapse = ", ")
       ))
     } else {
       # Check probability sums
-      prob_sums <- rowSums(usgs[, ..usgs_prob_cols], na.rm = TRUE)
+      prob_sums <- rowSums(prob_dt[, ..prob_data_cols], na.rm = TRUE)
       bad_sums <- sum(abs(prob_sums - 1) > 0.01, na.rm = TRUE)
       if (bad_sums > 0) {
         warnings <- c(warnings, paste(
-          "USGS:", bad_sums, "rows have probability sums != 1"
+          "Probability data:", bad_sums, "rows have probability sums != 1"
         ))
       }
 
       # Check for negative probabilities
-      has_negative <- any(usgs[, ..usgs_prob_cols] < 0, na.rm = TRUE)
+      has_negative <- any(prob_dt[, ..prob_data_cols] < 0, na.rm = TRUE)
       if (has_negative) {
-        issues <- c(issues, "USGS: Negative probabilities found")
+        issues <- c(issues, "Probability data: Negative probabilities found")
       }
     }
 
-    message("  ", nrow(usgs), " geographic units")
+    message("  ", nrow(prob_dt), " geographic units")
   }
 
-  # ===== EPA Validation =====
-  message("Checking EPA data...")
-  if (!file.exists(epa_file)) {
-    issues <- c(issues, paste("EPA file not found:", epa_file))
+  # ===== Concentration Data Validation =====
+  message("Checking concentration data...")
+  if (!file.exists(conc_file)) {
+    issues <- c(issues, paste("Concentration file not found:", conc_file))
   } else {
-    epa <- data.table::fread(epa_file)
-    summary_list$epa <- list(
-      n_rows = nrow(epa),
-      n_cols = ncol(epa),
-      columns = names(epa)
+    conc_dt <- data.table::fread(conc_file)
+    summary_list$conc <- list(
+      n_rows = nrow(conc_dt),
+      n_cols = ncol(conc_dt),
+      columns = names(conc_dt)
     )
 
     # Check GEOID column
-    if (!epa_id_col %in% names(epa)) {
-      issues <- c(issues, paste("EPA missing GEOID column:", epa_id_col))
+    if (!conc_id_col %in% names(conc_dt)) {
+      issues <- c(issues, paste("Concentration data missing GEOID column:", conc_id_col))
     }
 
     # Check lognormal columns
-    if (!"EPA_AS_meanlog" %in% names(epa)) {
-      issues <- c(issues, "EPA missing 'EPA_AS_meanlog' column")
+    if (!"conc_meanlog" %in% names(conc_dt)) {
+      issues <- c(issues, "Concentration data missing 'conc_meanlog' column")
     } else {
       # Check meanlog range
-      meanlog_range <- range(epa$EPA_AS_meanlog, na.rm = TRUE)
+      meanlog_range <- range(conc_dt$conc_meanlog, na.rm = TRUE)
       if (meanlog_range[1] < -5 || meanlog_range[2] > 10) {
         warnings <- c(warnings, paste(
-          "EPA: meanlog values outside typical range [-5, 10]:",
+          "Concentration data: meanlog values outside typical range [-5, 10]:",
           "actual [", meanlog_range[1], ",", meanlog_range[2], "]"
         ))
       }
     }
 
-    if (!"EPA_AS_sdlog" %in% names(epa)) {
-      warnings <- c(warnings, "EPA missing 'EPA_AS_sdlog' column (will use default)")
+    if (!"conc_sdlog" %in% names(conc_dt)) {
+      warnings <- c(warnings, "Concentration data missing 'conc_sdlog' column (will use default)")
     } else {
       # Check sdlog is positive
-      if (any(epa$EPA_AS_sdlog <= 0, na.rm = TRUE)) {
-        issues <- c(issues, "EPA: sdlog must be positive")
+      if (any(conc_dt$conc_sdlog <= 0, na.rm = TRUE)) {
+        issues <- c(issues, "Concentration data: sdlog must be positive")
       }
     }
 
     # Check private well percentage
-    if (!"PWELL_private_pct" %in% names(epa)) {
-      warnings <- c(warnings, "EPA missing 'PWELL_private_pct' column")
+    if (!"PWELL_private_pct" %in% names(conc_dt)) {
+      warnings <- c(warnings, "Concentration data missing 'PWELL_private_pct' column")
     } else {
-      pwell_range <- range(epa$PWELL_private_pct, na.rm = TRUE)
+      pwell_range <- range(conc_dt$PWELL_private_pct, na.rm = TRUE)
       if (pwell_range[1] < 0 || pwell_range[2] > 100) {
         issues <- c(issues, paste(
-          "EPA: PWELL_private_pct must be between 0 and 100:",
+          "Concentration data: PWELL_private_pct must be between 0 and 100:",
           "actual [", pwell_range[1], ",", pwell_range[2], "]"
         ))
       }
     }
 
-    message("  ", nrow(epa), " geographic units")
+    message("  ", nrow(conc_dt), " geographic units")
   }
 
   # ===== Health Data Validation =====
@@ -1001,21 +1002,21 @@ validate_prepared_inputs <- function(
 
   # ===== Cross-file validation =====
   message("Checking geographic ID alignment...")
-  if (exists("usgs") && exists("epa") &&
-      usgs_id_col %in% names(usgs) && epa_id_col %in% names(epa)) {
-    usgs_ids <- unique(usgs[[usgs_id_col]])
-    epa_ids <- unique(epa[[epa_id_col]])
+  if (exists("prob_dt") && exists("conc_dt") &&
+      prob_id_col %in% names(prob_dt) && conc_id_col %in% names(conc_dt)) {
+    prob_ids <- unique(prob_dt[[prob_id_col]])
+    conc_ids <- unique(conc_dt[[conc_id_col]])
 
-    common_ids <- intersect(usgs_ids, epa_ids)
-    usgs_only <- setdiff(usgs_ids, epa_ids)
-    epa_only <- setdiff(epa_ids, usgs_ids)
+    common_ids <- intersect(prob_ids, conc_ids)
+    prob_only <- setdiff(prob_ids, conc_ids)
+    conc_only <- setdiff(conc_ids, prob_ids)
 
-    message("  ", length(common_ids), " geographic IDs in both USGS and EPA")
-    if (length(usgs_only) > 0) {
-      warnings <- c(warnings, paste(length(usgs_only), "IDs in USGS only"))
+    message("  ", length(common_ids), " geographic IDs in both datasets")
+    if (length(prob_only) > 0) {
+      warnings <- c(warnings, paste(length(prob_only), "IDs in probability data only"))
     }
-    if (length(epa_only) > 0) {
-      warnings <- c(warnings, paste(length(epa_only), "IDs in EPA only"))
+    if (length(conc_only) > 0) {
+      warnings <- c(warnings, paste(length(conc_only), "IDs in concentration data only"))
     }
   }
 

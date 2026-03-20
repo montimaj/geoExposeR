@@ -2,19 +2,19 @@
 % Please edit documentation in R/data-loading.R
 \name{validate_category_alignment}
 \alias{validate_category_alignment}
-\title{Validate Category Alignment Between USGS and EPA}
+\title{Validate Category Alignment Between Probability and Concentration Data}
 \usage{
-validate_category_alignment(n_usgs_categories, epa_cutoffs)
+validate_category_alignment(n_prob_categories, conc_cutoffs)
 }
 \arguments{
-\item{n_usgs_categories}{Number of USGS categories}
+\item{n_prob_categories}{Number of probability categories}
 
-\item{epa_cutoffs}{EPA cutoff values}
+\item{conc_cutoffs}{Concentration cutoff values}
 }
 \value{
 TRUE if aligned, otherwise stops with error
 }
 \description{
-Validate Category Alignment Between USGS and EPA
+Validate Category Alignment Between Probability and Concentration Data
 }
 \keyword{internal}

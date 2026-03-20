@@ -29,6 +29,7 @@ Authors@R: c(
            comment = c(ORCID = "0000-0002-1614-2981"))
     )    
 Description: An analytical workflow that automates integration of probabilistic exposure estimates from multiple data sources, population-weighted combination of exposure probabilities, multiple imputation to propagate exposure uncertainty, mixed-effects regression modeling with proper clustering adjustment, and result pooling via Rubin's Rules with appropriate variance estimation.  Originally designed for drinking water arsenic exposure estimates but broadly applicable to other environmental contaminants. 
+License: CC0
 Encoding: UTF-8
 Roxygen: list(markdown = TRUE)
 RoxygenNote: 7.3.3

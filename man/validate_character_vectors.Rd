@@ -10,7 +10,7 @@ validate_character_vectors(
   as_cat_label,
   mice_covs,
   columns_to_select,
-  as_conc_cols
+  prob_cols
 )
 }
 \description{

@@ -5,8 +5,8 @@
 #' This script demonstrates a complete data ingestion pipeline using all
 #' the data preparation functions in geoExposeR:
 #' 
-#'   - prepare_usgs_data(): Extract probabilities from GeoTIFF rasters
-#'   - prepare_epa_data(): Convert EPA arsenic data to lognormal parameters
+#'   - prepare_prob_data(): Extract probabilities from GeoTIFF rasters
+#'   - prepare_conc_data(): Convert concentration data to lognormal parameters
 #'   - format_health_data(): Standardize health outcome data
 #'   - add_well_percentages(): Merge private well population data
 #'   - subset_by_geography(): Filter data by geographic region
@@ -46,37 +46,37 @@ output_dir <- file.path(pkg_dir, "examples", "output_pipeline")
 if (!dir.exists(output_dir)) dir.create(output_dir, recursive = TRUE)
 
 # Load original data for reference (from examples/input_data/)
-usgs_orig <- fread(file.path(pkg_dir, "examples", "input_data", "USGS_dom.csv"))
-epa_orig <- fread(file.path(pkg_dir, "examples", "input_data", "EPA_dom.csv"))
+prob_orig <- fread(file.path(pkg_dir, "examples", "input_data", "prob_dom.csv"))
+conc_orig <- fread(file.path(pkg_dir, "examples", "input_data", "conc_dom.csv"))
 demo_orig <- fread(file.path(pkg_dir, "examples", "input_data", "Demographics_dom.txt"))
 
 cat("Loaded original data:\n")
-cat("  USGS:", nrow(usgs_orig), "records\n")
-cat("  EPA:", nrow(epa_orig), "records\n")
+cat("  Probability data:", nrow(prob_orig), "records\n")
+cat("  Concentration data:", nrow(conc_orig), "records\n")
 cat("  Demographics:", nrow(demo_orig), "records\n\n")
 
 # ==============================================================================
-# Step 3: Demonstrate prepare_epa_data() with Different Input Types
+# Step 3: Demonstrate prepare_conc_data() with Different Input Types
 # ==============================================================================
 
-cat("=== Testing prepare_epa_data() ===\n\n")
+cat("=== Testing prepare_conc_data() ===\n\n")
 
-# 3a. Raw EPA data with population weighting
-cat("3a. Processing raw EPA data with population weighting...\n")
+# 3a. Raw concentration data with population weighting
+cat("3a. Processing raw concentration data with population weighting...\n")
 
-epa_raw <- data.frame(
-  county_fips = epa_orig$id,
-  arsenic_conc = ifelse(is.na(epa_orig$weighted_as20062008), 
-                        runif(nrow(epa_orig), 0.5, 15),  # Fill NAs with random
-                        epa_orig$weighted_as20062008),
-  pop_served = ifelse(is.na(epa_orig$county_pop_served20062008),
-                      sample(1000:50000, nrow(epa_orig), replace = TRUE),
-                      epa_orig$county_pop_served20062008),
-  pwell_pct = epa_orig$Dom_Pop_Percent
+conc_raw <- data.frame(
+  county_fips = conc_orig$id,
+  arsenic_conc = ifelse(is.na(conc_orig$weighted_as20062008),
+                        runif(nrow(conc_orig), 0.5, 15),  # Fill NAs with random
+                        conc_orig$weighted_as20062008),
+  pop_served = ifelse(is.na(conc_orig$county_pop_served20062008),
+                      sample(1000:50000, nrow(conc_orig), replace = TRUE),
+                      conc_orig$county_pop_served20062008),
+  pwell_pct = conc_orig$Dom_Pop_Percent
 )
 
-epa_processed_raw <- prepare_epa_data(
-  epa_data = epa_raw,
+conc_processed_raw <- prepare_conc_data(
+  conc_data = conc_raw,
   id_col = "county_fips",
   concentration_col = "arsenic_conc",
   population_col = "pop_served",
@@ -84,21 +84,21 @@ epa_processed_raw <- prepare_epa_data(
   input_type = "raw"
 )
 
-cat("  Result columns:", paste(names(epa_processed_raw), collapse = ", "), "\n")
-cat("  Number of geographic units:", nrow(epa_processed_raw), "\n\n")
+cat("  Result columns:", paste(names(conc_processed_raw), collapse = ", "), "\n")
+cat("  Number of geographic units:", nrow(conc_processed_raw), "\n\n")
 
 # 3b. Pre-aggregated data (already has mean/sd)
-cat("3b. Processing pre-aggregated EPA data...\n")
+cat("3b. Processing pre-aggregated concentration data...\n")
 
-epa_aggregated <- data.frame(
-  geoid = epa_orig$id,
-  mean_as = runif(nrow(epa_orig), 1, 10),
-  sd_as = runif(nrow(epa_orig), 0.5, 3),
-  pwell = epa_orig$Dom_Pop_Percent
+conc_aggregated <- data.frame(
+  geoid = conc_orig$id,
+  mean_as = runif(nrow(conc_orig), 1, 10),
+  sd_as = runif(nrow(conc_orig), 0.5, 3),
+  pwell = conc_orig$Dom_Pop_Percent
 )
 
-epa_processed_agg <- prepare_epa_data(
-  epa_data = epa_aggregated,
+conc_processed_agg <- prepare_conc_data(
+  conc_data = conc_aggregated,
   id_col = "geoid",
   mean_col = "mean_as",
   sd_col = "sd_as",
@@ -106,8 +106,8 @@ epa_processed_agg <- prepare_epa_data(
   input_type = "summary"
 )
 
-cat("  Result has meanlog and sdlog columns:", 
-    all(c("meanlog", "sdlog") %in% names(epa_processed_agg)), "\n\n")
+cat("  Result has meanlog and sdlog columns:",
+    all(c("meanlog", "sdlog") %in% names(conc_processed_agg)), "\n\n")
 
 # ==============================================================================
 # Step 4: Demonstrate format_health_data() with Various Formats
@@ -165,17 +165,17 @@ cat("=== Testing add_well_percentages() ===\n\n")
 
 # Create base dataset
 base_data <- data.frame(
-  GEOID = sprintf("%05d", usgs_orig$id),
-  prob_low = usgs_orig$RFCprobC1,
-  prob_med = usgs_orig$RFCprobC2,
-  prob_high = usgs_orig$RFCprobC3
+  GEOID = sprintf("%05d", prob_orig$id),
+  prob_low = prob_orig$RFCprobC1,
+  prob_med = prob_orig$RFCprobC2,
+  prob_high = prob_orig$RFCprobC3
 )
 
 # Create well percentage dataset (simulating Census data)
 well_data <- data.frame(
-  fips_code = sprintf("%05d", usgs_orig$id),
-  total_pop = sample(10000:500000, nrow(usgs_orig), replace = TRUE),
-  well_pop = sample(500:50000, nrow(usgs_orig), replace = TRUE)
+  fips_code = sprintf("%05d", prob_orig$id),
+  total_pop = sample(10000:500000, nrow(prob_orig), replace = TRUE),
+  well_pop = sample(500:50000, nrow(prob_orig), replace = TRUE)
 )
 well_data$well_pct <- well_data$well_pop / well_data$total_pop * 100
 
@@ -238,28 +238,28 @@ cat("=== Testing validate_prepared_inputs() ===\n\n")
 # Create properly formatted files for validation
 temp_dir <- tempdir()
 
-# USGS file
-usgs_valid <- data.frame(
-  GEOID10 = sprintf("%05d", usgs_orig$id),
-  RFC3_C1v2 = usgs_orig$RFCprobC1,
-  RFC3_C2v2 = usgs_orig$RFCprobC2,
-  RFC3_C3v2 = usgs_orig$RFCprobC3,
-  Wells_2010 = ifelse(is.na(usgs_orig$pub_water_pop), 1000, usgs_orig$pub_water_pop),
-  PWELL = usgs_orig$Dom_Pop_Percent / 100
+# Probability file
+prob_valid <- data.frame(
+  GEOID10 = sprintf("%05d", prob_orig$id),
+  prob_C1 = prob_orig$RFCprobC1,
+  prob_C2 = prob_orig$RFCprobC2,
+  prob_C3 = prob_orig$RFCprobC3,
+  Wells_2010 = ifelse(is.na(prob_orig$pub_water_pop), 1000, prob_orig$pub_water_pop),
+  PWELL = prob_orig$Dom_Pop_Percent / 100
 )
-usgs_path <- file.path(temp_dir, "usgs_valid.csv")
-fwrite(usgs_valid, usgs_path)
+prob_path <- file.path(temp_dir, "prob_valid.csv")
+fwrite(prob_valid, prob_path)
 
-# EPA file
-epa_valid <- data.frame(
-  GEOID10 = sprintf("%05d", epa_orig$id),
-  EPA_AS_meanlog = log(pmax(0.1, ifelse(is.na(epa_orig$weighted_as20062008), 
-                                         1, epa_orig$weighted_as20062008))),
-  EPA_AS_sdlog = 1.0,
-  PWELL_private_pct = epa_orig$Dom_Pop_Percent / 100
+# Concentration file
+conc_valid <- data.frame(
+  GEOID10 = sprintf("%05d", conc_orig$id),
+  conc_meanlog = log(pmax(0.1, ifelse(is.na(conc_orig$weighted_as20062008),
+                                         1, conc_orig$weighted_as20062008))),
+  conc_sdlog = 1.0,
+  PWELL_private_pct = conc_orig$Dom_Pop_Percent / 100
 )
-epa_path <- file.path(temp_dir, "epa_valid.csv")
-fwrite(epa_valid, epa_path)
+conc_path <- file.path(temp_dir, "conc_valid.csv")
+fwrite(conc_valid, conc_path)
 
 # Health file
 health_valid <- data.frame(
@@ -273,8 +273,8 @@ fwrite(health_valid, health_path)
 # Run validation
 cat("Validating prepared input files...\n")
 validation_result <- validate_prepared_inputs(
-  usgs_file = usgs_path,
-  epa_file = epa_path,
+  prob_file = prob_path,
+  conc_file = conc_path,
   health_file = health_path
 )
 
@@ -291,8 +291,8 @@ if (length(validation_result$warnings) > 0) {
 }
 
 cat("\n  Summary:\n")
-cat("    USGS records:", validation_result$summary$usgs$n_rows, "\n")
-cat("    EPA records:", validation_result$summary$epa$n_rows, "\n")
+cat("    Probability records:", validation_result$summary$prob$n_rows, "\n")
+cat("    Concentration records:", validation_result$summary$conc$n_rows, "\n")
 cat("    Health records:", validation_result$summary$health$n_rows, "\n\n")
 
 # ==============================================================================
@@ -301,19 +301,19 @@ cat("    Health records:", validation_result$summary$health$n_rows, "\n\n")
 
 cat("=== Running Analysis with Validated Data ===\n\n")
 
-# Merge USGS and EPA for analysis
-usgs_for_analysis <- fread(usgs_path)
-setnames(usgs_for_analysis, "GEOID10", "id")
-usgs_for_analysis[, id := as.integer(id)]
-setnames(usgs_for_analysis, "RFC3_C1v2", "RFCprobC1")
-setnames(usgs_for_analysis, "RFC3_C2v2", "RFCprobC2")
-setnames(usgs_for_analysis, "RFC3_C3v2", "RFCprobC3")
+# Merge probability and concentration data for analysis
+prob_for_analysis <- fread(prob_path)
+setnames(prob_for_analysis, "GEOID10", "id")
+prob_for_analysis[, id := as.integer(id)]
+setnames(prob_for_analysis, "prob_C1", "RFCprobC1")
+setnames(prob_for_analysis, "prob_C2", "RFCprobC2")
+setnames(prob_for_analysis, "prob_C3", "RFCprobC3")
 
-epa_for_analysis <- fread(epa_path)
-setnames(epa_for_analysis, "GEOID10", "id")
-epa_for_analysis[, id := as.integer(id)]
+conc_for_analysis <- fread(conc_path)
+setnames(conc_for_analysis, "GEOID10", "id")
+conc_for_analysis[, id := as.integer(id)]
 
-merged <- merge(usgs_for_analysis, epa_for_analysis[, .(id, EPA_AS_meanlog, EPA_AS_sdlog)], 
+merged <- merge(prob_for_analysis, conc_for_analysis[, .(id, conc_meanlog, conc_sdlog)],
                 by = "id", all.x = TRUE)
 merged[, Dom_Pop_Percent := PWELL * 100]
 
@@ -333,8 +333,8 @@ cat("Running sensitivity analysis...\n")
 results <- tryCatch({
   perform_sensitivity_analysis(
     ndraws = 5,
-    as_usgs_prob_csv = merged_path,
-    as_epa_prob_csv = merged_path,
+    model_prob_csv = merged_path,
+    conc_data_csv = merged_path,
     birth_data_txt = health_analysis_path,
     regression_formula = "~ as.factor(AsLevel) + (1 | age_decade)",
     output_dir = output_dir,
@@ -342,14 +342,14 @@ results <- tryCatch({
     as_cat_label = c("As<5", "As5-10", "As10+"),
     drop_as_cat_label_reg = c("As<5"),
     id_col = "id",
-    as_conc_cols = c("RFCprobC1", "RFCprobC2", "RFCprobC3"),
+    prob_cols = c("RFCprobC1", "RFCprobC2", "RFCprobC3"),
     pop_well_col = "Wells_2010",
     record_id_col = "id",
     as_level_col = "AsLevel",
-    epa_as_mean_col = "EPA_AS_meanlog",
-    epa_as_sd_col = "EPA_AS_sdlog",
-    epa_pwell_col = "Dom_Pop_Percent",
-    epa_cutoffs = c(5, 10),
+    conc_mean_col = "conc_meanlog",
+    conc_sd_col = "conc_sdlog",
+    pwell_col = "Dom_Pop_Percent",
+    conc_cutoffs = c(5, 10),
     seed = 42,
     mice_m = 1,
     mice_maxit = 5,
@@ -381,6 +381,6 @@ if (!is.null(results)) {
 }
 
 # Cleanup
-unlink(c(usgs_path, epa_path, health_path))
+unlink(c(prob_path, conc_path, health_path))
 
 cat("\n=== Data Ingestion Pipeline Example Complete ===\n")

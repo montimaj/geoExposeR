@@ -3,7 +3,7 @@
 #' =============================================================================
 #' 
 #' This script demonstrates the complete workflow for running geoExposeR
-#' starting from raw GeoTIFF rasters containing USGS arsenic probability data.
+#' starting from raw GeoTIFF rasters containing arsenic probability data.
 #' 
 #' Data Citation:
 #'   Lombard, M.A., 2021, Data used to model and map arsenic concentration
@@ -17,9 +17,9 @@
 #'   https://doi.org/10.1016/S2542-5196(22)00043-2
 #' 
 #' The workflow includes:
-#'   1. Creating mock GeoTIFF rasters (simulating USGS probability surfaces)
-#'   2. Extracting probabilities by geographic unit using prepare_usgs_data()
-#'   3. Preparing EPA data using prepare_epa_data()
+#'   1. Creating mock GeoTIFF rasters (simulating probability surfaces)
+#'   2. Extracting probabilities by geographic unit using prepare_prob_data()
+#'   3. Preparing concentration data using prepare_conc_data()
 #'   4. Formatting health data using format_health_data()
 #'   5. Running the sensitivity analysis
 #' 
@@ -60,8 +60,8 @@ if (!dir.exists(output_dir)) dir.create(output_dir, recursive = TRUE)
 if (!dir.exists(raster_dir)) dir.create(raster_dir, recursive = TRUE)
 
 # Original data paths (from examples/input_data/)
-usgs_csv_path <- file.path(pkg_dir, "examples", "input_data", "USGS_dom.csv")
-epa_csv_path <- file.path(pkg_dir, "examples", "input_data", "EPA_dom.csv")
+prob_csv_path <- file.path(pkg_dir, "examples", "input_data", "prob_dom.csv")
+conc_csv_path <- file.path(pkg_dir, "examples", "input_data", "conc_dom.csv")
 demographics_path <- file.path(pkg_dir, "examples", "input_data", "Demographics_dom.txt")
 
 cat("Output directory:", output_dir, "\n")
@@ -71,24 +71,24 @@ cat("Raster directory:", raster_dir, "\n\n")
 # Step 3: Create Mock GeoTIFF Rasters from CSV Data
 # ==============================================================================
 #
-# In a real workflow, you would have actual USGS GeoTIFF probability surfaces.
+# In a real workflow, you would have actual GeoTIFF probability surfaces.
 # Here we create mock rasters that contain the same probability values as the
 # CSV data, demonstrating the workflow.
 #
-# USGS typically provides rasters with exceedance probabilities:
+# Probability rasters typically contain exceedance probabilities:
 #   - prob_gt5.tif: P(As > 5 µg/L)
 #   - prob_gt10.tif: P(As > 10 µg/L)
 # ==============================================================================
 
 cat("Step 3: Creating mock GeoTIFF rasters...\n")
 
-# Read the original USGS data to get probability values
-usgs_data <- data.table::fread(usgs_csv_path)
-cat("  Loaded USGS data with", nrow(usgs_data), "geographic units\n")
+# Read the original probability data to get probability values
+prob_data <- data.table::fread(prob_csv_path)
+cat("  Loaded probability data with", nrow(prob_data), "geographic units\n")
 
 # Create a simple raster grid covering a hypothetical region
 # Each pixel represents one geographic unit from the CSV data
-n_units <- nrow(usgs_data)
+n_units <- nrow(prob_data)
 ncols <- ceiling(sqrt(n_units))
 nrows <- ceiling(n_units / ncols)
 
@@ -99,11 +99,11 @@ nrows <- ceiling(n_units / ncols)
 
 # Pad data to fill raster grid
 prob_gt5_values <- c(
-  usgs_data$RFCprobC2 + usgs_data$RFCprobC3,
+  prob_data$RFCprobC2 + prob_data$RFCprobC3,
   rep(NA, nrows * ncols - n_units)
 )
 prob_gt10_values <- c(
-  usgs_data$RFCprobC3,
+  prob_data$RFCprobC3,
   rep(NA, nrows * ncols - n_units)
 )
 
@@ -181,20 +181,20 @@ for (i in 1:nrows) {
 
 # Create sf object with GEOID
 boundaries <- sf::st_as_sf(
-  data.frame(GEOID = as.character(usgs_data$id)),
+  data.frame(GEOID = as.character(prob_data$id)),
   geometry = sf::st_sfc(polygons, crs = 4326)
 )
 
 # Add population data
-boundaries$private_well_pop <- usgs_data$pub_water_pop
+boundaries$private_well_pop <- prob_data$pub_water_pop
 
 cat("  Created", nrow(boundaries), "polygon boundaries\n\n")
 
 # ==============================================================================
-# Step 5: Extract USGS Probabilities Using prepare_usgs_data()
+# Step 5: Extract Probabilities Using prepare_prob_data()
 # ==============================================================================
 
-cat("Step 5: Extracting USGS probabilities from GeoTIFFs...\n")
+cat("Step 5: Extracting probabilities from GeoTIFFs...\n")
 
 # Define raster paths
 prob_rasters <- list(
@@ -204,14 +204,14 @@ prob_rasters <- list(
 
 # Prepare population data
 pop_data <- data.frame(
-  GEOID = as.character(usgs_data$id),
-  private_well_pop = usgs_data$pub_water_pop
+  GEOID = as.character(prob_data$id),
+  private_well_pop = prob_data$pub_water_pop
 )
 
 # Extract and convert to multinomial probabilities
-usgs_processed_path <- file.path(output_dir, "usgs_from_geotiff.csv")
+prob_processed_path <- file.path(output_dir, "prob_from_geotiff.csv")
 
-usgs_processed <- prepare_usgs_data(
+prob_processed <- prepare_prob_data(
   prob_rasters = prob_rasters,
   boundaries = boundaries,
   id_col = "GEOID",
@@ -220,25 +220,25 @@ usgs_processed <- prepare_usgs_data(
   pop_well_col = "private_well_pop",
   extraction_method = "centroid",  # Using centroid for mock pixel data
   cutoffs = c(5, 10),
-  output_file = usgs_processed_path
+  output_file = prob_processed_path
 )
 
-cat("  USGS data extracted and saved to:", usgs_processed_path, "\n")
-cat("  Columns:", paste(names(usgs_processed), collapse = ", "), "\n\n")
+cat("  Probability data extracted and saved to:", prob_processed_path, "\n")
+cat("  Columns:", paste(names(prob_processed), collapse = ", "), "\n\n")
 
 # ==============================================================================
-# Step 6: Prepare EPA Data Using prepare_epa_data()
+# Step 6: Prepare Concentration Data Using prepare_conc_data()
 # ==============================================================================
 
-cat("Step 6: Preparing EPA data...\n")
+cat("Step 6: Preparing concentration data...\n")
 
-# Read raw EPA data
-epa_raw <- data.table::fread(epa_csv_path)
+# Read raw concentration data
+conc_raw <- data.table::fread(conc_csv_path)
 
-# Use prepare_epa_data() to convert to lognormal parameters
-# The function outputs columns: GEOID10, EPA_AS_meanlog, EPA_AS_sdlog, PWELL_private_pct
-epa_processed <- prepare_epa_data(
-  epa_data = epa_raw,
+# Use prepare_conc_data() to convert to lognormal parameters
+# The function outputs columns: GEOID10, conc_meanlog, conc_sdlog, PWELL_private_pct
+conc_processed <- prepare_conc_data(
+  conc_data = conc_raw,
   id_col = "id",
   concentration_col = "weighted_as20062008",
   population_col = "county_pop_served20062008",
@@ -247,12 +247,12 @@ epa_processed <- prepare_epa_data(
 )
 
 # Add percentage conversion for compatibility
-epa_processed[, Dom_Pop_Percent := PWELL_private_pct]  # Keep original percentage
+conc_processed[, Dom_Pop_Percent := PWELL_private_pct]  # Keep original percentage
 
-epa_processed_path <- file.path(output_dir, "epa_processed.csv")
-data.table::fwrite(epa_processed, epa_processed_path)
+conc_processed_path <- file.path(output_dir, "conc_processed.csv")
+data.table::fwrite(conc_processed, conc_processed_path)
 
-cat("  EPA data processed and saved to:", epa_processed_path, "\n\n")
+cat("  Concentration data processed and saved to:", conc_processed_path, "\n\n")
 
 # ==============================================================================
 # Step 7: Format Health Data Using format_health_data()
@@ -285,8 +285,8 @@ cat("  Health data formatted and saved to:", health_processed_path, "\n\n")
 cat("Step 8: Validating prepared inputs...\n")
 
 validation <- validate_prepared_inputs(
-  usgs_file = usgs_processed_path,
-  epa_file = epa_processed_path,
+  prob_file = prob_processed_path,
+  conc_file = conc_processed_path,
   health_file = health_processed_path
 )
 
@@ -306,41 +306,40 @@ if (validation$valid) {
 
 cat("Step 9: Running sensitivity analysis...\n")
 
-# Merge USGS and EPA data for the analysis
+# Merge probability and concentration data for the analysis
 # The perform_sensitivity_analysis expects specific column formats
-usgs_for_analysis <- data.table::fread(usgs_processed_path)
-epa_for_analysis <- data.table::fread(epa_processed_path)
+prob_for_analysis <- data.table::fread(prob_processed_path)
+conc_for_analysis <- data.table::fread(conc_processed_path)
 
-# Add EPA columns to USGS data
-# Note: epa_for_analysis may have different column names based on the prepare_epa_data output
-epa_cols <- c("GEOID10", "EPA_AS_meanlog", "EPA_AS_sdlog")
-if ("PWELL_private_pct" %in% names(epa_for_analysis)) {
-  epa_cols <- c(epa_cols, "PWELL_private_pct")
+# Add concentration columns to probability data
+conc_cols <- c("GEOID10", "conc_meanlog", "conc_sdlog")
+if ("PWELL_private_pct" %in% names(conc_for_analysis)) {
+  conc_cols <- c(conc_cols, "PWELL_private_pct")
 }
-if ("Dom_Pop_Percent" %in% names(epa_for_analysis)) {
-  epa_cols <- c(epa_cols, "Dom_Pop_Percent")
+if ("Dom_Pop_Percent" %in% names(conc_for_analysis)) {
+  conc_cols <- c(conc_cols, "Dom_Pop_Percent")
 }
 
 merged_data <- merge(
-  usgs_for_analysis,
-  epa_for_analysis[, ..epa_cols],
+  prob_for_analysis,
+  conc_for_analysis[, ..conc_cols],
   by = "GEOID10",
   all.x = TRUE
 )
 
 # Rename for compatibility with original example
 data.table::setnames(merged_data, "GEOID10", "id")
-data.table::setnames(merged_data, "RFC3_C1v2", "RFCprobC1")
-data.table::setnames(merged_data, "RFC3_C2v2", "RFCprobC2")
-data.table::setnames(merged_data, "RFC3_C3v2", "RFCprobC3")
-# Dom_Pop_Percent should already exist from prepare_epa_data
+data.table::setnames(merged_data, "prob_C1", "RFCprobC1")
+data.table::setnames(merged_data, "prob_C2", "RFCprobC2")
+data.table::setnames(merged_data, "prob_C3", "RFCprobC3")
+# Dom_Pop_Percent should already exist from concentration data
 if (!"Dom_Pop_Percent" %in% names(merged_data) && "PWELL_private_pct" %in% names(merged_data)) {
   merged_data[, Dom_Pop_Percent := PWELL_private_pct]  # Already in percentage (0-100)
 }
 
-# Save merged USGS file
-usgs_merged_path <- file.path(output_dir, "usgs_merged.csv")
-data.table::fwrite(merged_data, usgs_merged_path)
+# Save merged probability file
+prob_merged_path <- file.path(output_dir, "prob_merged.csv")
+data.table::fwrite(merged_data, prob_merged_path)
 
 # Health data needs id column
 health_for_analysis <- data.table::fread(health_processed_path)
@@ -354,8 +353,8 @@ data.table::fwrite(health_for_analysis, health_merged_path, sep = "\t")
 results <- tryCatch({
   perform_sensitivity_analysis(
     ndraws = 5,
-    as_usgs_prob_csv = usgs_merged_path,
-    as_epa_prob_csv = usgs_merged_path,  # EPA columns merged into USGS
+    model_prob_csv = prob_merged_path,
+    conc_data_csv = prob_merged_path,  # Concentration columns merged into prob data
     birth_data_txt = health_merged_path,
     regression_formula = "~ as.factor(AsLevel) + (1 | age_decade)",
     output_dir = output_dir,
@@ -363,14 +362,14 @@ results <- tryCatch({
     as_cat_label = c("As<5", "As5-10", "As10+"),
     drop_as_cat_label_reg = c("As<5"),
     id_col = "id",
-    as_conc_cols = c("RFCprobC1", "RFCprobC2", "RFCprobC3"),
+    prob_cols = c("RFCprobC1", "RFCprobC2", "RFCprobC3"),
     pop_well_col = "Wells_2010",
     record_id_col = "id",
     as_level_col = "AsLevel",
-    epa_as_mean_col = "EPA_AS_meanlog",
-    epa_as_sd_col = "EPA_AS_sdlog",
-    epa_pwell_col = "Dom_Pop_Percent",
-    epa_cutoffs = c(5, 10),
+    conc_mean_col = "conc_meanlog",
+    conc_sd_col = "conc_sdlog",
+    pwell_col = "Dom_Pop_Percent",
+    conc_cutoffs = c(5, 10),
     seed = 12345,
     mice_m = 1,
     mice_maxit = 5,

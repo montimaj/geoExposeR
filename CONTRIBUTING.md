@@ -233,12 +233,12 @@ geoExposeR/
 - Test edge cases and error conditions
 
 ```r
-test_that("load_usgs_data handles missing columns gracefully", {
+test_that("load_prob_data handles missing columns gracefully", {
   # Create test data missing required column
   test_data <- data.frame(wrong_col = 1:10)
-  
+
   expect_error(
-    load_usgs_data(test_data, required_cols = "correct_col"),
+    load_prob_data(test_data, required_cols = "correct_col"),
     "missing columns"
   )
 })

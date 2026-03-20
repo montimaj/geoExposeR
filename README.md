@@ -32,10 +32,6 @@ An R package for modeling health effects of environmental exposures, with a prim
 <!-- USGS Software Release -->
 **USGS IPDS Record Number:** IP-180903
 
-**Principal Investigator**: [Dr. Matthew O. Gribble](https://profiles.ucsf.edu/matthew.gribble) [matt.gribble@ucsf.edu]
-
-**Co-Investigators**: [Dr. Sayantan Majumdar](https://www.dri.edu/directory/sayantan-majumdar/) [sayantan.majumdar@dri.edu], [Dr. Ryan G. Smith](https://www.engr.colostate.edu/ce/people/ryan-smith/) [ryan.g.smith@colostate.edu]
-
 ## Citation
 
 If you use geoExposeR in your research, please cite:
@@ -96,16 +92,16 @@ By lowering technical barriers to rigorous uncertainty quantification, geoExpose
 
 For a detailed description of the methodology, see Majumdar and others (2026).
 
-### Terminology: "USGS" vs "EPA" Data Types
+### Terminology: Two Input Data Types
 
-> **Important:** Throughout the package, the terms "USGS" and "EPA" refer to two distinct **types of input data**, not exclusively to data from those specific agencies:
+> The package combines two distinct **types of input data** using population-based weights (e.g., private well vs. public water usage) to create integrated exposure probability distributions:
 >
-> | Package Term | Data Type | Description | Examples |
+> | Parameter | Data Type | Description | Examples |
 > |---|---|---|---|
-> | **"USGS" data** | **Modeled probabilistic estimates** | Multinomial probability distributions across concentration categories, typically derived from predictive models | USGS machine learning predictions, satellite-derived estimates, hybrid spatial models |
-> | **"EPA" data** | **Measured concentrations** | Point measurements or summary statistics of contaminant concentrations from monitoring stations or laboratory analyses | EPA public water system monitoring, ground-based air quality monitors, field sampling data |
+> | `model_prob_csv` | **Modeled probabilistic estimates** | Multinomial probability distributions across concentration categories, typically derived from predictive models | USGS machine learning predictions, satellite-derived estimates, hybrid spatial models |
+> | `conc_data_csv` | **Measured concentrations** | Point measurements or summary statistics of contaminant concentrations from monitoring stations or laboratory analyses | EPA public water system monitoring, ground-based air quality monitors, field sampling data |
 >
-> The package combines these two data types using population-based weights (e.g., private well vs. public water usage) to create integrated exposure probability distributions. Any dataset that provides **modeled probabilities** can serve as the "USGS" input, and any dataset that provides **measured concentrations** can serve as the "EPA" input, regardless of the originating agency.
+> Any dataset that provides **modeled probabilities** can serve as the probability input (`model_prob_csv`), and any dataset that provides **measured concentrations** can serve as the concentration input (`conc_data_csv`), regardless of the originating agency.
 
 ## Workflow
 
@@ -121,13 +117,13 @@ The figure below illustrates the complete analytical workflow implemented in geo
 
 | Category | Features |
 |----------|----------|
-| **Data Ingestion** | Process GeoTIFF rasters, EPA measurements, health data; geographic subsetting; input validation |
-| **Exposure Modeling** | USGS/EPA probability integration; population-weighted averaging; lognormal parameter estimation |
+| **Data Ingestion** | Process GeoTIFF rasters, concentration measurements, health data; geographic subsetting; input validation |
+| **Exposure Modeling** | Probability/concentration data integration; population-weighted averaging; lognormal parameter estimation |
 | **Statistical Analysis** | Multiple imputation (MICE); mixed-effects regression; Rubin's Rules pooling |
 | **Quality Assurance** | 100% test coverage; comprehensive input validation; reproducible workflows |
 
 Existing methods from studies like _Bulka and others (2022)_ and _Lombard and others (2021)_ provide robust statistical frameworks but require complex implementation involving:
-- Integration of multiple probabilistic models (USGS and EPA)
+- Integration of multiple probabilistic models (modeled probabilities and measured concentrations)
 - Multiple imputation techniques for uncertain exposures
 - Mixed-effects regression with proper pooling of results
 
@@ -135,11 +131,11 @@ Existing methods from studies like _Bulka and others (2022)_ and _Lombard and ot
 
 - 🔬 **Focus on science**, not statistical programming
 - 📊 **Ensure reproducibility** across studies  
-- ⚡ **Accelerate research** on arsenic health effects
+- ⚡ **Accelerate research** on environmental health effects
 - 🎯 **Apply best practices** for uncertainty quantification
 - 🗺️ **Work with multiple data formats** (GeoTIFF, CSV, shapefiles)
 
-By democratizing access to these methods, geoExposeR promotes more rigorous and comparable arsenic exposure research.
+By democratizing access to these methods, geoExposeR promotes more rigorous and comparable environmental exposure research.
 
 ## Installation
 ### System Dependencies: Pandoc
@@ -271,8 +267,8 @@ library(geoExposeR)
 # Run sensitivity analysis with your data
 results <- perform_sensitivity_analysis(
   ndraws = 10,
-  as_usgs_prob_csv = "path/to/usgs_data.csv",
-  as_epa_prob_csv = "path/to/epa_data.csv", 
+  model_prob_csv = "path/to/prob_data.csv",
+  conc_data_csv = "path/to/conc_data.csv",
   birth_data_txt = "path/to/birth_data.txt",
   regression_formula = "~ AsLevel + MAGE_R + rural + (1|FIPS)",
   output_dir = "results/",
@@ -285,15 +281,15 @@ print(results)
 
 **Using Raw Concentration Data**
 
-If your EPA data contains raw arsenic concentrations instead of pre-calculated lognormal parameters, specify the concentration column and the package will automatically convert them:
+If your concentration data contains raw values instead of pre-calculated lognormal parameters, specify the concentration column and the package will automatically convert them:
 
 ```r
 results <- perform_sensitivity_analysis(
   ndraws = 10,
-  as_usgs_prob_csv = "path/to/usgs_data.csv",
-  as_epa_prob_csv = "path/to/epa_raw.csv",     # File with raw concentrations
-  epa_as_conc_col = "arsenic_concentration",   # Column with raw values
-  epa_default_sdlog = 1.0,                      # Default sdlog value
+  model_prob_csv = "path/to/prob_data.csv",
+  conc_data_csv = "path/to/conc_raw.csv",     # File with raw concentrations
+  conc_raw_col = "arsenic_concentration",   # Column with raw values
+  default_sdlog = 1.0,                      # Default sdlog value
   birth_data_txt = "path/to/birth_data.txt",
   regression_formula = "~ AsLevel + MAGE_R + rural + (1|FIPS)",
   output_dir = "results/",
@@ -376,22 +372,22 @@ The examples use data files from the `examples/input_data/` folder:
 
 | File | Description |
 |------|-------------|
-| `USGS_dom.csv` | USGS model-based multinomial probabilities of arsenic levels (50 rows) |
-| `EPA_dom.csv` | EPA arsenic concentration data (50 rows) |
+| `prob_dom.csv` | Modeled multinomial probabilities of arsenic levels (50 rows) |
+| `conc_dom.csv` | Measured arsenic concentration data (50 rows) |
 | `Demographics_dom.txt` | Demographics data with health outcomes - SBP (50 rows) |
 
 #### Broader Application Data
 
 | File | Description |
 |------|-------------|
-| `USGS_nitrate.csv` | Nitrate probability data for infant health example (50 rows) |
-| `EPA_nitrate.csv` | Nitrate concentration measurements (50 rows) |
+| `prob_nitrate.csv` | Modeled nitrate probability data for infant health example (50 rows) |
+| `conc_nitrate.csv` | Measured nitrate concentration data (50 rows) |
 | `Health_nitrate.txt` | Infant methemoglobin and birth weight data (50 rows) |
-| `USGS_uranium.csv` | Uranium probability data for kidney function example (50 rows) |
-| `EPA_uranium.csv` | Uranium concentration measurements (50 rows) |
+| `prob_uranium.csv` | Modeled uranium probability data for kidney function example (50 rows) |
+| `conc_uranium.csv` | Measured uranium concentration data (50 rows) |
 | `Health_uranium.txt` | Kidney function (eGFR) and demographic data (50 rows) |
-| `Model_pm25.csv` | Satellite/model PM2.5 probability estimates (50 rows) |
-| `EPA_pm25.csv` | Ground monitor PM2.5 measurements (50 rows) |
+| `prob_pm25.csv` | Modeled PM2.5 probability estimates (50 rows) |
+| `conc_pm25.csv` | Measured PM2.5 concentration data (50 rows) |
 | `Health_pm25.txt` | Respiratory function (FEV1) and smoking data (50 rows) |
 
 > **⚠️ Note on Example Data:** All example data files are **simulated dummy data** created for demonstration and testing purposes only. These files contain 50 synthetic records with realistic column structures but randomly generated values. The actual research data cannot be shared publicly due to data use agreements and privacy restrictions. The dummy data preserves the structure and format of the real data to allow users to understand the workflow and test the package functionality.
@@ -401,7 +397,7 @@ The examples use data files from the `examples/input_data/` folder:
 Demonstrates the standard analysis workflow using pre-formatted CSV data:
 
 1. **Data Loading**: Using custom column names to work with original data formats
-2. **EPA Data Preprocessing**: Converting raw arsenic concentrations to lognormal parameters
+2. **Concentration Data Preprocessing**: Converting raw concentrations to lognormal parameters
 3. **Custom Column Mapping**: Specifying non-standard column names via function parameters
 4. **Sensitivity Analysis**: Running multiple imputation with mixed-effects regression
 5. **Result Interpretation**: Understanding the pooled estimates and confidence intervals
@@ -412,8 +408,8 @@ Demonstrates processing raw GeoTIFF raster data through the complete analysis pi
 
 1. **Creating GeoTIFF Rasters**: Generating mock probability surfaces (P(As > 5), P(As > 10))
 2. **Creating Boundaries**: Building geographic polygons for extraction
-3. **Extracting Probabilities**: Using `prepare_usgs_data()` to extract values by geographic unit
-4. **Processing EPA Data**: Using `prepare_epa_data()` to compute lognormal parameters
+3. **Extracting Probabilities**: Using `prepare_prob_data()` to extract probabilities by geographic unit
+4. **Processing Concentration Data**: Using `prepare_conc_data()` to compute lognormal parameters
 5. **Formatting Health Data**: Using `format_health_data()` to standardize outcomes
 6. **Validating Inputs**: Using `validate_prepared_inputs()` for quality control
 7. **Running Analysis**: Executing the full sensitivity analysis
@@ -422,7 +418,7 @@ Demonstrates processing raw GeoTIFF raster data through the complete analysis pi
 
 Comprehensively demonstrates all data ingestion functions:
 
-- `prepare_epa_data()`: Raw vs. summary input types, population weighting
+- `prepare_conc_data()`: Raw vs. summary concentration input types, population weighting
 - `format_health_data()`: Identifier formatting, multiple outcome support
 - `add_well_percentages()`: Merging private well population data
 - `subset_by_geography()`: Filtering by state FIPS codes or GEOID lists
@@ -430,10 +426,10 @@ Comprehensively demonstrates all data ingestion functions:
 
 ### Key Features Shown
 
-- Using `id_col`, `as_conc_cols`, `pop_well_col` for USGS data mapping
-- Using `epa_as_mean_col`, `epa_as_sd_col`, `epa_pwell_col` for EPA data mapping
-- Using `record_id_col`, `as_level_col` for demographics data mapping
-- Setting appropriate `epa_cutoffs` for arsenic categorization
+- Using `id_col`, `prob_cols`, `pop_well_col` for probability data mapping
+- Using `conc_mean_col`, `conc_sd_col`, `pwell_col` for concentration data mapping
+- Using `record_id_col`, `as_level_col` for health data mapping
+- Setting appropriate `conc_cutoffs` for concentration categorization
 - Configuring MICE imputation parameters (`mice_m`, `mice_maxit`, `mice_method`)
 - Processing GeoTIFF rasters with `terra` and `sf` packages
 - Geographic subsetting by state or custom GEOID lists
@@ -445,7 +441,7 @@ geoExposeR/
 ├── R/                                  # Source code
 │   ├── geoExposeR.R                    # Main exported function
 │   ├── data-loading.R                  # Data loading and processing
-│   ├── data-ingestion.R                # Raw data preparation (GeoTIFF, EPA, health)
+│   ├── data-ingestion.R                # Raw data preparation (GeoTIFF, concentration, health)
 │   ├── imputation.R                    # Multiple imputation functions
 │   ├── regression.R                    # Regression analysis and pooling
 │   └── utils.R                         # Validation and utility functions
@@ -458,17 +454,17 @@ geoExposeR/
 │   ├── run_geoExposeR_uranium.R        # Uranium exposure example
 │   ├── run_geoExposeR_pm25.R           # PM2.5 air quality example
 │   ├── input_data/                     # Example input data files (all dummy data*)
-│   │   ├── USGS_dom.csv                # Sample USGS arsenic probability data (dummy*)
-│   │   ├── EPA_dom.csv                 # Sample EPA arsenic concentration data (dummy*)
+│   │   ├── prob_dom.csv                # Sample arsenic probability data (dummy*)
+│   │   ├── conc_dom.csv                # Sample arsenic concentration data (dummy*)
 │   │   ├── Demographics_dom.txt        # Sample demographics/health data (dummy*)
-│   │   ├── USGS_nitrate.csv            # Sample nitrate probability data (dummy*)
-│   │   ├── EPA_nitrate.csv             # Sample nitrate concentration data (dummy*)
+│   │   ├── prob_nitrate.csv            # Sample nitrate probability data (dummy*)
+│   │   ├── conc_nitrate.csv            # Sample nitrate concentration data (dummy*)
 │   │   ├── Health_nitrate.txt          # Sample infant health data (dummy*)
-│   │   ├── USGS_uranium.csv            # Sample uranium probability data (dummy*)
-│   │   ├── EPA_uranium.csv             # Sample uranium concentration data (dummy*)
+│   │   ├── prob_uranium.csv            # Sample uranium probability data (dummy*)
+│   │   ├── conc_uranium.csv            # Sample uranium concentration data (dummy*)
 │   │   ├── Health_uranium.txt          # Sample kidney function data (dummy*)
-│   │   ├── Model_pm25.csv              # Sample PM2.5 model probabilities (dummy*)
-│   │   ├── EPA_pm25.csv                # Sample PM2.5 monitor data (dummy*)
+│   │   ├── prob_pm25.csv              # Sample PM2.5 probability data (dummy*)
+│   │   ├── conc_pm25.csv              # Sample PM2.5 concentration data (dummy*)
 │   │   └── Health_pm25.txt             # Sample respiratory health data (dummy*)
 ├── tests/
 │   ├── testthat/
@@ -503,7 +499,7 @@ The package uses a **modular architecture** with functionality organized across 
 
 - **`geoExposeR.R`**: Main exported function `perform_sensitivity_analysis()`
 - **`data-loading.R`**: Data loading and probability matrix processing
-- **`data-ingestion.R`**: Functions to prepare data from raw sources (GeoTIFFs, EPA, health data)
+- **`data-ingestion.R`**: Functions to prepare data from raw sources (GeoTIFFs, concentration measurements, health data)
 - **`imputation.R`**: Multiple imputation using MICE framework
 - **`regression.R`**: Mixed-effects regression and Rubin's Rules pooling
 - **`utils.R`**: Input validation and utility functions
@@ -527,14 +523,14 @@ The package includes comprehensive testing with 100% code coverage:
 While users primarily interact with `perform_sensitivity_analysis()`, the package includes several internal functions organized by functionality:
 
 **Data Loading (`data-loading.R`):**
-- `load_and_process_arsenic_data()`: Orchestrates USGS and EPA data loading
-- `load_usgs_data()`: Loads USGS probability data
-- `convert_epa_to_multinomial()`: Converts EPA lognormal to multinomial probabilities
+- `load_and_process_arsenic_data()`: Orchestrates modeled probability and measured concentration data loading
+- `load_prob_data()`: Loads modeled probability data
+- `convert_conc_to_multinomial()`: Converts concentration lognormal parameters to multinomial probabilities
 - `create_weighted_prob_matrix()`: Creates weighted combined probability matrix
 - `load_and_process_birth_data()`: Loads and processes birth/health outcome data
 
 **Multiple Imputation (`imputation.R`):**
-- `impute_arsenic_exposure()`: Creates multiple imputed datasets with arsenic exposure
+- `impute_arsenic_exposure()`: Creates multiple imputed datasets with exposure levels
 - `impute_additional_variables()`: Imputes missing covariates using MICE
 - `validate_imputed_datasets()`: Validates imputation results
 
@@ -544,8 +540,8 @@ While users primarily interact with `perform_sensitivity_analysis()`, the packag
 - `pool_single_estimate()`: Applies Rubin's Rules to individual parameters
 
 **Data Ingestion (`data-ingestion.R`):**
-- `prepare_usgs_data()`: Convert USGS GeoTIFF rasters to CSV format
-- `prepare_epa_data()`: Process EPA data to lognormal parameters
+- `prepare_prob_data()`: Convert probability GeoTIFF rasters to CSV format
+- `prepare_conc_data()`: Process concentration data to lognormal parameters
 - `format_health_data()`: Format and validate health outcome data
 - `add_well_percentages()`: Merge private well population percentages
 - `subset_by_geography()`: Filter data by state, region, or custom area
@@ -553,7 +549,7 @@ While users primarily interact with `perform_sensitivity_analysis()`, the packag
 
 **Utilities (`utils.R`):**
 - `validate_all_inputs()`: Input validation and error checking
-- `format_ids()`: Smart identifier formatting with automatic type detection (zero-pads numeric FIPS codes, preserves alphanumeric IDs)
+- `format_ids_func()`: Smart identifier formatting with automatic type detection (zero-pads numeric FIPS codes, preserves alphanumeric IDs)
 - Additional helper functions for data validation and formatting
 
 ## Core Functions
@@ -562,9 +558,9 @@ While users primarily interact with `perform_sensitivity_analysis()`, the packag
 
 **`perform_sensitivity_analysis()`**: This is the main exported function of the package. It orchestrates the entire workflow from data loading through final analysis:
 
-1. **Data Loading**: Loads and processes USGS probability data, EPA lognormal parameters, and birth/health outcome data
-2. **Probability Integration**: Combines USGS and EPA models using weighted averages based on private well usage
-3. **Multiple Imputation**: Creates multiple datasets with probabilistically assigned arsenic exposure levels
+1. **Data Loading**: Loads and processes modeled probability data, measured concentration parameters, and birth/health outcome data
+2. **Probability Integration**: Combines probability and concentration models using weighted averages based on private well usage
+3. **Multiple Imputation**: Creates multiple datasets with probabilistically assigned exposure levels
 4. **Covariate Imputation**: Optionally imputes missing values in additional covariates using MICE
 5. **Statistical Analysis**: Fits mixed-effects regression models to assess exposure-outcome relationships
 6. **Results Pooling**: Applies Rubin's Rules to pool results across imputed datasets
@@ -576,13 +572,13 @@ The function is designed to handle the complex statistical methodology while pro
 
 The package provides functions to help prepare input data from raw sources:
 
-**`prepare_usgs_data()`**: Extracts arsenic probabilities from USGS GeoTIFF rasters and aggregates by geographic unit.
+**`prepare_prob_data()`**: Extracts probabilities from GeoTIFF rasters and aggregates by geographic unit.
 
 ```r
 library(terra)
 library(sf)
 
-usgs_data <- prepare_usgs_data(
+prob_data <- prepare_prob_data(
   prob_rasters = list(
     gt5 = "path/to/prob_gt5.tif",
     gt10 = "path/to/prob_gt10.tif"
@@ -591,20 +587,20 @@ usgs_data <- prepare_usgs_data(
   id_col = "GEOID",
   extraction_method = "mean",
   cutoffs = c(5, 10),
-  output_file = "usgs_arsenic.csv"
+  output_file = "prob_data_output.csv"
 )
 ```
 
-**`prepare_epa_data()`**: Processes EPA arsenic measurements and converts to lognormal parameters.
+**`prepare_conc_data()`**: Processes concentration measurements and converts to lognormal parameters.
 
 ```r
-epa_data <- prepare_epa_data(
-  epa_data = raw_epa_measurements,
+conc_data <- prepare_conc_data(
+  conc_data = raw_measurements,
   id_col = "county_fips",
   concentration_col = "arsenic_ug_L",
   population_col = "pop_served",
   input_type = "raw",
-  output_file = "epa_lognormal.csv"
+  output_file = "conc_lognormal.csv"
 )
 ```
 
@@ -625,13 +621,13 @@ health_data <- format_health_data(
 ```r
 # Subset to California
 ca_data <- subset_by_geography(
-  data = usgs_data,
+  data = prob_data,
   state_fips = "06"
 )
 
 # Subset to specific counties
 selected <- subset_by_geography(
-  data = usgs_data,
+  data = prob_data,
   geoid_list = c("06001", "06003", "06005")
 )
 ```
@@ -640,8 +636,8 @@ selected <- subset_by_geography(
 
 ```r
 validation <- validate_prepared_inputs(
-  usgs_file = "usgs_arsenic.csv",
-  epa_file = "epa_lognormal.csv",
+  prob_file = "prob_data_output.csv",
+  conc_file = "conc_lognormal.csv",
   health_file = "health_outcomes.txt"
 )
 
@@ -664,13 +660,13 @@ While geoExposeR was designed for arsenic exposure assessment, **the underlying 
 
 ### Adapting geoExposeR for Other Contaminants
 
-The package uses "EPA" and "USGS" terminology internally, but these represent **any two probability/concentration data sources**:
+The package parameters map naturally to **any two probability/concentration data sources**:
 
-| Package Parameter | Arsenic (Original) | Nitrate Example | PM2.5 Example |
-|-------------------|-------------------|-----------------|---------------|
-| `as_usgs_prob_csv` | USGS private well model | Nitrate model predictions | Satellite/hybrid estimates |
-| `as_epa_prob_csv` | EPA public water data | PWS nitrate measurements | Ground monitor data |
-| `epa_cutoffs` | `c(5, 10)` µg/L | `c(5, 10)` mg/L NO₃-N | `c(9, 35)` µg/m³ |
+| Package Parameter | Arsenic Example | Nitrate Example | PM2.5 Example |
+|-------------------|-----------------|-----------------|---------------|
+| `model_prob_csv` | Machine learning predictions | Nitrate model predictions | Satellite/hybrid estimates |
+| `conc_data_csv` | Public water monitoring data | PWS nitrate measurements | Ground monitor data |
+| `conc_cutoffs` | `c(5, 10)` µg/L | `c(5, 10)` mg/L NO₃-N | `c(9, 35)` µg/m³ |
 | Health outcome | Birth weight, SBP | Methemoglobin levels | FEV1 % predicted |
 
 ### Example: Adapting for Nitrate
@@ -679,17 +675,17 @@ The package uses "EPA" and "USGS" terminology internally, but these represent **
 # Nitrate exposure analysis for infant methemoglobinemia
 results <- perform_sensitivity_analysis(
   ndraws = 10,
-  as_usgs_prob_csv = "nitrate_model_probabilities.csv",
-  as_epa_prob_csv = "nitrate_pws_measurements.csv",
+  model_prob_csv = "nitrate_model_probabilities.csv",
+  conc_data_csv = "nitrate_pws_measurements.csv",
   birth_data_txt = "infant_health_data.txt",
   
   # Nitrate-specific cutoffs (mg/L NO3-N)
   # <5 (safe), 5-10 (elevated), >=10 (exceeds MCL)
-  epa_cutoffs = c(5, 10),
+  conc_cutoffs = c(5, 10),
   
   # Auto-convert raw concentrations to lognormal parameters
-  epa_as_conc_col = "nitrate_concentration",
-  epa_default_sdlog = 0.8,
+  conc_raw_col = "nitrate_concentration",
+  default_sdlog = 0.8,
   
   regression_formula = "~ as.factor(AsLevel) + infant_age + (1|county)",
   targets = c("methemoglobin_pct")
@@ -702,18 +698,18 @@ results <- perform_sensitivity_analysis(
 # PM2.5 exposure analysis for respiratory function
 results <- perform_sensitivity_analysis(
   ndraws = 10,
-  # Satellite/model predictions serve as "USGS" data
-  as_usgs_prob_csv = "pm25_satellite_probabilities.csv",
-  # Ground monitors serve as "EPA" data  
-  as_epa_prob_csv = "pm25_ground_monitors.csv",
+  # Satellite/model predictions as probability data
+  model_prob_csv = "pm25_satellite_probabilities.csv",
+  # Ground monitors as concentration data
+  conc_data_csv = "pm25_ground_monitors.csv",
   birth_data_txt = "respiratory_health_data.txt",
   
   # PM2.5-specific cutoffs (µg/m³)
   # <9 (meets EPA annual standard), 9-35 (moderate), >=35 (exceeds 24-hr standard)
-  epa_cutoffs = c(9, 35),
+  conc_cutoffs = c(9, 35),
   
-  epa_as_conc_col = "pm25_annual_mean",
-  epa_default_sdlog = 0.5,
+  conc_raw_col = "pm25_annual_mean",
+  default_sdlog = 0.5,
   
   regression_formula = "~ as.factor(AsLevel) + age + (1|smoking_status)",
   targets = c("FEV1_pct_predicted")
@@ -722,9 +718,9 @@ results <- perform_sensitivity_analysis(
 
 ### Key Adaptation Steps
 
-1. **Prepare probability data** in the same format as USGS arsenic data (multinomial probabilities across categories)
-2. **Prepare concentration data** with raw measurements or lognormal parameters (EPA format)
-3. **Set appropriate cutoffs** via `epa_cutoffs` parameter based on health-relevant thresholds
+1. **Prepare probability data** as multinomial probabilities across concentration categories (`model_prob_csv`)
+2. **Prepare concentration data** with raw measurements or lognormal parameters (`conc_data_csv`)
+3. **Set appropriate cutoffs** via `conc_cutoffs` parameter based on health-relevant thresholds
 4. **Adjust regression formula** for your health outcome and covariates
 5. **Run the analysis** — the statistical methodology remains identical
 
@@ -734,21 +730,21 @@ See the `examples/` folder for complete working examples demonstrating nitrate, 
 
 ### Core Analysis
 - ✅ **Automated workflow**: Single function handles entire analysis pipeline
-- ✅ **Multiple imputation**: Accounts for uncertainty in arsenic exposure assignment
+- ✅ **Multiple imputation**: Accounts for uncertainty in exposure assignment
 - ✅ **Flexible modeling**: Supports custom regression formulas and multiple outcomes
 - ✅ **Robust statistics**: Implements Rubin's Rules for proper inference pooling
 - ✅ **Missing data handling**: Optional MICE imputation for covariates
 
 ### Data Ingestion & Preparation
-- ✅ **GeoTIFF processing**: Extract arsenic probabilities from USGS raster data (`prepare_usgs_data()`)
-- ✅ **EPA data conversion**: Transform EPA measurements to lognormal parameters (`prepare_epa_data()`)
+- ✅ **GeoTIFF processing**: Extract probabilities from raster data (`prepare_prob_data()`)
+- ✅ **Concentration data conversion**: Transform measurements to lognormal parameters (`prepare_conc_data()`)
 - ✅ **Health data formatting**: Standardize health outcome data formats (`format_health_data()`)
 - ✅ **Geographic subsetting**: Filter data by state, region, or custom area (`subset_by_geography()`)
 - ✅ **Well data integration**: Merge private well population percentages (`add_well_percentages()`)
 - ✅ **Input validation**: Comprehensive validation of prepared files (`validate_prepared_inputs()`)
 
 ### Data Integration
-- ✅ **USGS-EPA integration**: Combines USGS and EPA models with population weighting
+- ✅ **Multi-source integration**: Combines probability and concentration models with population weighting
 - ✅ **Spatial aggregation**: Aggregate raster data by county or custom boundaries
 - ✅ **Population weighting**: Weight exposures by private vs. public well usage
 
@@ -786,8 +782,8 @@ browseVignettes("geoExposeR")
 
 The package requires three input files:
 
-1. **USGS Probability Data** (`as_usgs_prob_csv`): CSV with arsenic concentration probabilities and geographic/participant identifiers
-2. **EPA Parameters** (`as_epa_prob_csv`): CSV with EPA lognormal distribution parameters  
+1. **Modeled Probability Data** (`model_prob_csv`): CSV with concentration category probabilities and geographic/participant identifiers
+2. **Measured Concentration Data** (`conc_data_csv`): CSV with lognormal distribution parameters
 3. **Health Outcome Data** (`birth_data_txt`): Text file with health outcomes and matching identifiers
 
 **Flexible Identifier Support:** The package works with any identifier format—FIPS codes, census tract IDs, ZIP codes, or participant-specific IDs. The only requirement is that identifiers match between your datasets.
@@ -804,47 +800,47 @@ Set `format_ids = FALSE` to skip formatting and use identifiers as-is.
 
 ### Detailed Input Data Specifications
 
-#### USGS Arsenic Probability Data
+#### Modeled Probability Data
 
-The USGS data contains multinomial probabilities for arsenic concentration categories derived from machine learning models (Lombard, 2021).
+The probability data contains multinomial probabilities for concentration categories (e.g., derived from machine learning models such as Lombard, 2021).
 
 | Column Name | Description | Required |
 |-------------|-------------|----------|
 | `GEOID10` (or custom via `id_col`) | Geographic identifier (FIPS, census tract, ZIP, etc.) | Yes |
-| `RFC3_C1v2` | Probability of arsenic < 5 µg/L (Category 1) | Yes* |
-| `RFC3_C2v2` | Probability of 5 ≤ arsenic < 10 µg/L (Category 2) | Yes* |
-| `RFC3_C3v2` | Probability of arsenic ≥ 10 µg/L (Category 3) | Yes* |
+| `prob_C1` (or custom via `prob_cols`) | Probability of concentration < cutoff₁ (Category 1) | Yes* |
+| `prob_C2` (or custom via `prob_cols`) | Probability of cutoff₁ ≤ concentration < cutoff₂ (Category 2) | Yes* |
+| `prob_C3` (or custom via `prob_cols`) | Probability of concentration ≥ cutoff₂ (Category 3) | Yes* |
 | `Wells_2010` (or custom via `pop_well_col`) | Population using private wells in the geographic unit | Yes |
 
-**\*Note on column names:** The `RFC3_C1v2`, `RFC3_C2v2`, `RFC3_C3v2` column names are defaults that match the USGS ScienceBase data release. You can use **custom column names** by specifying them via the `as_conc_cols` parameter:
+**\*Note on column names:** The `prob_C1`, `prob_C2`, `prob_C3` column names are package defaults. You can use **custom column names** by specifying them via the `prob_cols` parameter:
 
 ```r
 # Using custom column names
 results <- perform_sensitivity_analysis(
-  as_conc_cols = c("prob_low", "prob_med", "prob_high"),  # Your column names
+  prob_cols = c("prob_low", "prob_med", "prob_high"),  # Your column names
   # ... other parameters
 )
 ```
 
 **Category interpretation:**
-- `RFC3_C1v2` (or first column): P(As < 5 µg/L) — Below detection/low exposure
-- `RFC3_C2v2` (or second column): P(5 ≤ As < 10 µg/L) — Moderate exposure
-- `RFC3_C3v2` (or third column): P(As ≥ 10 µg/L) — Above EPA MCL
+- `prob_C1` (or first column): P(concentration < cutoff₁) — Low exposure
+- `prob_C2` (or second column): P(cutoff₁ ≤ concentration < cutoff₂) — Moderate exposure
+- `prob_C3` (or third column): P(concentration ≥ cutoff₂) — High exposure
 
 The probabilities must sum to 1.0 for each row.
 
-#### EPA Arsenic Data
+#### Measured Concentration Data
 
-The EPA data provides arsenic concentration parameters for public water supplies.
+The concentration data provides measured contaminant concentration parameters.
 
 | Column Name | Description | Required |
 |-------------|-------------|----------|
-| `GEOID10` (or matching `id_col`) | Geographic identifier matching USGS data | Yes |
-| `EPA_AS_meanlog` (or custom via `epa_as_mean_col`) | Log-scale mean of arsenic concentration | Yes** |
-| `EPA_AS_sdlog` (or custom via `epa_as_sd_col`) | Log-scale standard deviation | No (uses `epa_default_sdlog` if missing) |
-| `PWELL_private_pct` (or custom via `epa_pwell_col`) | Percentage of population using private wells (0-100) | Yes |
+| `GEOID10` (or matching `id_col`) | Geographic identifier matching probability data | Yes |
+| `conc_meanlog` (or custom via `conc_mean_col`) | Log-scale mean of concentration | Yes** |
+| `conc_sdlog` (or custom via `conc_sd_col`) | Log-scale standard deviation | No (uses `default_sdlog` if missing) |
+| `PWELL_private_pct` (or custom via `pwell_col`) | Percentage of population using private wells (0-100) | Yes |
 
-**\*\*Alternative:** If you have raw arsenic concentrations instead of lognormal parameters, specify the concentration column via `epa_as_conc_col` and geoExposeR will automatically convert using: `meanlog = log(concentration + 0.1)`.
+**\*\*Alternative:** If you have raw concentrations instead of lognormal parameters, specify the concentration column via `conc_raw_col` and geoExposeR will automatically convert using: `meanlog = log(concentration + 0.1)`.
 
 #### Health Outcome Data (birth_data)
 
@@ -852,7 +848,7 @@ The health data file can use **any column names** as long as they are correctly 
 
 | Parameter | Default Column Name | Description | Can Be Customized? |
 |-----------|---------------------|-------------|-------------------|
-| `record_id_col` | `"FIPS"` | Geographic/participant identifier matching arsenic data | Yes |
+| `record_id_col` | `"FIPS"` | Geographic/participant identifier matching exposure data | Yes |
 | `targets` | `c("OEGEST", "BWT")` | Health outcome columns for regression | Yes |
 | Covariates | (user-defined) | Any columns referenced in `regression_formula` | Yes |
 
@@ -869,12 +865,12 @@ results <- perform_sensitivity_analysis(
 
 **Key points:**
 - The `regression_formula` must reference actual column names in your health data
-- The identifier column specified by `record_id_col` must have matching values in the arsenic data
+- The identifier column specified by `record_id_col` must have matching values in the exposure data
 - All covariates in the formula must exist in the health data file
 
 ## Data Preparation Workflow
 
-This section describes how to prepare input files for geoExposeR from raw data sources. This workflow is relevant for users who want to analyze arsenic exposure for specific states, counties, aquifers, or custom geographic areas.
+This section describes how to prepare input files for geoExposeR from raw data sources. This workflow is relevant for users who want to analyze environmental exposure for specific states, counties, aquifers, or custom geographic areas.
 
 ### Overview of Data Sources
 
@@ -886,9 +882,9 @@ This section describes how to prepare input files for geoExposeR from raw data s
 | Health Outcomes | CDC, State Health Departments, Research Data | CSV/TXT | Health outcomes linked to any matching identifier |
 | Population Data | [U.S. Census Bureau](https://www.census.gov/) | Various | County-level population and water source statistics |
 
-### Step 1: Preparing Modeled Probability Data (\"USGS\" Data)
+### Step 1: Preparing Modeled Probability Data (`model_prob_csv`)
 
-This step converts modeled probability rasters (e.g., USGS GeoTIFF predictions) into the CSV format required by geoExposeR. The `prepare_usgs_data()` function automates this process.
+This step converts modeled probability rasters (e.g., GeoTIFF predictions) into the CSV format required by geoExposeR. The `prepare_prob_data()` function automates this process.
 
 #### 1.1 Obtain Modeled Probability Data
 
@@ -896,11 +892,11 @@ For arsenic, download probability GeoTIFFs from USGS ScienceBase:
 
 > Lombard, M.A., 2021, Data used to model and map arsenic concentration exceedances in private wells throughout the conterminous United States for human health studies: U.S. Geological Survey data release, https://doi.org/10.5066/P90RBJXS.
 
-For other contaminants, any model-predicted probability rasters can be used (see [Terminology](#terminology-usgs-vs-epa-data-types)).
+For other contaminants, any model-predicted probability rasters can be used (see [Terminology](#terminology-two-input-data-types)).
 
-#### 1.2 Extract and Convert Using `prepare_usgs_data()`
+#### 1.2 Extract and Convert Using `prepare_prob_data()`
 
-The `prepare_usgs_data()` function handles raster extraction, conversion from exceedance probabilities to multinomial probabilities, and output formatting:
+The `prepare_prob_data()` function handles raster extraction, conversion from exceedance probabilities to multinomial probabilities, and output formatting:
 
 ```r
 library(terra)
@@ -913,14 +909,14 @@ prob_rasters <- list(
 )
 counties <- st_read("path/to/county_boundaries.shp")
 
-# Use prepare_usgs_data() to extract and convert probabilities
-usgs_data <- prepare_usgs_data(
+# Extract and convert probabilities
+prob_data <- prepare_prob_data(
   prob_rasters = prob_rasters,
   boundaries = counties,
   id_col = "GEOID",
   extraction_method = "mean",   # "mean" for polygon averages, "centroid" for point extraction
   cutoffs = c(5, 10),
-  output_file = "usgs_probabilities.csv"
+  output_file = "prob_data_output.csv"
 )
 ```
 
@@ -938,18 +934,18 @@ Use `subset_by_geography()` to filter data to specific states, regions, or custo
 
 ```r
 # Filter to specific state (e.g., California)
-ca_data <- subset_by_geography(data = usgs_data, state_fips = "06")
+ca_data <- subset_by_geography(data = prob_data, state_fips = "06")
 
 # Filter to specific counties
 selected <- subset_by_geography(
-  data = usgs_data,
+  data = prob_data,
   geoid_list = c("06001", "06003", "06005")
 )
 ```
 
-### Step 2: Preparing Measured Concentration Data (\"EPA\" Data)
+### Step 2: Preparing Measured Concentration Data (`conc_data_csv`)
 
-This step processes measured concentration data (e.g., EPA monitoring data) into the format required by geoExposeR. The `prepare_epa_data()` function automates this process.
+This step processes measured concentration data (e.g., monitoring data from public water systems) into the format required by geoExposeR. The `prepare_conc_data()` function automates this process.
 
 #### 2.1 Obtain Measured Concentration Data
 
@@ -959,31 +955,31 @@ For arsenic, download monitoring data from:
 - [EPA Envirofacts](https://enviro.epa.gov/)
 - State environmental agency databases
 
-For other contaminants, any measured concentration dataset can be used (see [Terminology](#terminology-usgs-vs-epa-data-types)).
+For other contaminants, any measured concentration dataset can be used (see [Terminology](#terminology-two-input-data-types)).
 
-#### 2.2 Process Using `prepare_epa_data()`
+#### 2.2 Process Using `prepare_conc_data()`
 
-The `prepare_epa_data()` function handles aggregation, lognormal parameter estimation, and output formatting:
+The `prepare_conc_data()` function handles aggregation, lognormal parameter estimation, and output formatting:
 
 ```r
 # Option A: From raw individual measurements
-epa_data <- prepare_epa_data(
-  epa_data = raw_epa_measurements,
+conc_data <- prepare_conc_data(
+  conc_data = raw_measurements,
   id_col = "county_fips",
   concentration_col = "arsenic_ug_L",
   population_col = "pop_served",
   input_type = "raw",                   # Calculates population-weighted lognormal params
-  output_file = "epa_lognormal.csv"
+  output_file = "conc_lognormal.csv"
 )
 
 # Option B: From pre-computed summary statistics
-epa_data <- prepare_epa_data(
-  epa_data = epa_summary_stats,
+conc_data <- prepare_conc_data(
+  conc_data = summary_stats,
   id_col = "county_fips",
   mean_col = "mean_concentration",
   sd_col = "sd_concentration",
   input_type = "summary",
-  output_file = "epa_lognormal.csv"
+  output_file = "conc_lognormal.csv"
 )
 ```
 
@@ -997,15 +993,15 @@ Alternatively, you can skip manual preprocessing entirely. If your measured conc
 # Specify the concentration column - no preprocessing needed
 results <- perform_sensitivity_analysis(
   # ... other parameters ...
-  as_epa_prob_csv = "epa_raw_data.csv",  # Original file with concentrations
-  epa_as_conc_col = "arsenic_ppb",       # Column with raw concentration values
-  epa_default_sdlog = 1.0                # Default sdlog (optional, defaults to 1.0)
+  conc_data_csv = "conc_raw_data.csv",  # Original file with concentrations
+  conc_raw_col = "arsenic_ppb",        # Column with raw concentration values
+  default_sdlog = 1.0                  # Default sdlog (optional, defaults to 1.0)
 )
 ```
 
 The package automatically calculates:
 - `meanlog = log(concentration + 0.1)` (offset avoids log(0))
-- `sdlog = epa_default_sdlog` (or from `epa_as_sd_col` if that column exists)
+- `sdlog` = `default_sdlog` (or from `conc_sd_col` if that column exists)
 
 ### Step 3: Preparing Health Outcome Data
 
@@ -1025,7 +1021,7 @@ Health outcome data should include individual or aggregated health records with 
 
 ```r
 # Health data should have:
-# 1. Geographic or participant identifier (must match arsenic data)
+# 1. Geographic or participant identifier (must match exposure data)
 # 2. Health outcome variable(s)
 # 3. Relevant covariates
 
@@ -1057,7 +1053,7 @@ write.table(health_data, "health_outcomes.txt", sep = "\t", row.names = FALSE)
 
 ### Step 4: Obtaining Population and Water Source Data
 
-Private well usage percentages are critical for weighting USGS vs EPA data.
+Private well usage percentages are critical for weighting probability vs. concentration data.
 
 **Data Citation:**
 > Johnson, T.D., and Belitz, K., 2019, Domestic well locations and populations served in the contiguous U.S.: datasets for decadal years 2000 and 2010: U.S. Geological Survey data release, https://doi.org/10.5066/P9FSLU3B.
@@ -1078,19 +1074,19 @@ acs_data <- get_acs(
   year = 2020
 )
 
-# Alternative: Use EPA estimates of private well usage
-# Available from EPA or state environmental agencies
+# Alternative: Use estimates of private well usage
+# Available from EPA, USGS, or state environmental agencies
 ```
 
 #### 4.2 Integrating Population Weights
 
 ```r
-# Combine population data with USGS and EPA datasets
-final_usgs <- usgs_data %>%
+# Combine population data with probability and concentration datasets
+final_prob <- prob_data %>%
   left_join(population_data, by = "GEOID10") %>%
   mutate(Wells_2010 = total_pop * private_well_pct)
 
-final_epa <- epa_data %>%
+final_conc <- conc_data %>%
   left_join(population_data, by = "county_fips") %>%
   mutate(PWELL_private_pct = private_well_pct * 100)
 ```
@@ -1099,13 +1095,13 @@ final_epa <- epa_data %>%
 
 Before running geoExposeR, verify your prepared data:
 
-- [ ] **USGS Data**:
+- [ ] **Probability Data** (`model_prob_csv`):
   - [ ] Probability columns sum to approximately 1.0 for each row
   - [ ] No negative probabilities
   - [ ] Geographic IDs match between all datasets
   - [ ] Population weights are non-negative
 
-- [ ] **EPA Data**:
+- [ ] **Concentration Data** (`conc_data_csv`):
   - [ ] `meanlog` values are reasonable (typically -2 to 4 for µg/L)
   - [ ] `sdlog` values are positive (typically 0.5 to 2.0)
   - [ ] Private well percentages are between 0 and 100
@@ -1126,50 +1122,50 @@ library(sf)
 library(dplyr)
 library(tidycensus)
 
-# 1. Load and subset USGS probability rasters
+# 1. Load probability rasters
 prob_rasters <- c(
-  rast("usgs_as_prob_gt1.tif"),
-  rast("usgs_as_prob_gt5.tif"),
-  rast("usgs_as_prob_gt10.tif")
+  rast("as_prob_gt1.tif"),
+  rast("as_prob_gt5.tif"),
+  rast("as_prob_gt10.tif")
 )
 
 # 2. Get California county boundaries
 ca_counties <- counties(state = "CA", cb = TRUE, year = 2020)
 
 # 3. Extract probabilities and format for geoExposeR
-usgs_ca <- ca_counties %>%
+prob_ca <- ca_counties %>%
   mutate(
     p_gt1 = exact_extract(prob_rasters[[1]], ., "mean"),
     p_gt5 = exact_extract(prob_rasters[[2]], ., "mean"),
     p_gt10 = exact_extract(prob_rasters[[3]], ., "mean"),
-    RFC3_C1v2 = 1 - p_gt5,
-    RFC3_C2v2 = p_gt5 - p_gt10,
-    RFC3_C3v2 = p_gt10
+    prob_C1 = 1 - p_gt5,
+    prob_C2 = p_gt5 - p_gt10,
+    prob_C3 = p_gt10
   ) %>%
   st_drop_geometry() %>%
-  select(GEOID10 = GEOID, RFC3_C1v2, RFC3_C2v2, RFC3_C3v2)
+  select(GEOID10 = GEOID, prob_C1, prob_C2, prob_C3)
 
 # 4. Add well population (example - replace with actual data)
-usgs_ca$Wells_2010 <- runif(nrow(usgs_ca), 1000, 50000)
+prob_ca$Wells_2010 <- runif(nrow(prob_ca), 1000, 50000)
 
-# 5. Prepare EPA data (example structure)
-epa_ca <- data.frame(
-  GEOID10 = usgs_ca$GEOID10,
-  EPA_AS_meanlog = rnorm(nrow(usgs_ca), 1, 0.5),
-  EPA_AS_sdlog = rep(1.0, nrow(usgs_ca)),
-  PWELL_private_pct = runif(nrow(usgs_ca), 5, 30)
+# 5. Prepare concentration data (example structure)
+conc_ca <- data.frame(
+  GEOID10 = prob_ca$GEOID10,
+  conc_meanlog = rnorm(nrow(prob_ca), 1, 0.5),
+  conc_sdlog = rep(1.0, nrow(prob_ca)),
+  PWELL_private_pct = runif(nrow(prob_ca), 5, 30)
 )
 
 # 6. Save prepared data
-write.csv(usgs_ca, "california_usgs_probs.csv", row.names = FALSE)
-write.csv(epa_ca, "california_epa_params.csv", row.names = FALSE)
+write.csv(prob_ca, "california_prob_data.csv", row.names = FALSE)
+write.csv(conc_ca, "california_conc_data.csv", row.names = FALSE)
 
 # 7. Run geoExposeR
 library(geoExposeR)
 results <- perform_sensitivity_analysis(
   ndraws = 10,
-  as_usgs_prob_csv = "california_usgs_probs.csv",
-  as_epa_prob_csv = "california_epa_params.csv",
+  model_prob_csv = "california_prob_data.csv",
+  conc_data_csv = "california_conc_data.csv",
   birth_data_txt = "california_health_outcomes.txt",
   regression_formula = "~ as.factor(AsLevel) + covariates + (1|FIPS)",
   output_dir = "results/",
