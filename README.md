@@ -270,7 +270,7 @@ results <- perform_sensitivity_analysis(
   model_prob_csv = "path/to/prob_data.csv",
   conc_data_csv = "path/to/conc_data.csv",
   birth_data_txt = "path/to/birth_data.txt",
-  regression_formula = "~ AsLevel + MAGE_R + rural + (1|FIPS)",
+  regression_formula = "~ ExposureLevel + MAGE_R + rural + (1|FIPS)",
   output_dir = "results/",
   targets = c("OEGEST", "BWT")
 )
@@ -288,10 +288,10 @@ results <- perform_sensitivity_analysis(
   ndraws = 10,
   model_prob_csv = "path/to/prob_data.csv",
   conc_data_csv = "path/to/conc_raw.csv",     # File with raw concentrations
-  conc_raw_col = "arsenic_concentration",   # Column with raw values
+  conc_raw_col = "concentration",            # Column with raw values
   default_sdlog = 1.0,                      # Default sdlog value
   birth_data_txt = "path/to/birth_data.txt",
-  regression_formula = "~ AsLevel + MAGE_R + rural + (1|FIPS)",
+  regression_formula = "~ ExposureLevel + MAGE_R + rural + (1|FIPS)",
   output_dir = "results/",
   targets = c("OEGEST", "BWT")
 )
@@ -428,7 +428,7 @@ Comprehensively demonstrates all data ingestion functions:
 
 - Using `id_col`, `prob_cols`, `pop_well_col` for probability data mapping
 - Using `conc_mean_col`, `conc_sd_col`, `pwell_col` for concentration data mapping
-- Using `record_id_col`, `as_level_col` for health data mapping
+- Using `record_id_col`, `exposure_level_col` for health data mapping
 - Setting appropriate `conc_cutoffs` for concentration categorization
 - Configuring MICE imputation parameters (`mice_m`, `mice_maxit`, `mice_method`)
 - Processing GeoTIFF rasters with `terra` and `sf` packages
@@ -523,14 +523,14 @@ The package includes comprehensive testing with 100% code coverage:
 While users primarily interact with `perform_sensitivity_analysis()`, the package includes several internal functions organized by functionality:
 
 **Data Loading (`data-loading.R`):**
-- `load_and_process_arsenic_data()`: Orchestrates modeled probability and measured concentration data loading
+- `load_and_process_exposure_data()`: Orchestrates modeled probability and measured concentration data loading
 - `load_prob_data()`: Loads modeled probability data
 - `convert_conc_to_multinomial()`: Converts concentration lognormal parameters to multinomial probabilities
 - `create_weighted_prob_matrix()`: Creates weighted combined probability matrix
 - `load_and_process_birth_data()`: Loads and processes birth/health outcome data
 
 **Multiple Imputation (`imputation.R`):**
-- `impute_arsenic_exposure()`: Creates multiple imputed datasets with exposure levels
+- `impute_exposure()`: Creates multiple imputed datasets with exposure levels
 - `impute_additional_variables()`: Imputes missing covariates using MICE
 - `validate_imputed_datasets()`: Validates imputation results
 
@@ -687,7 +687,7 @@ results <- perform_sensitivity_analysis(
   conc_raw_col = "nitrate_concentration",
   default_sdlog = 0.8,
   
-  regression_formula = "~ as.factor(AsLevel) + infant_age + (1|county)",
+  regression_formula = "~ as.factor(ExposureLevel) + infant_age + (1|county)",
   targets = c("methemoglobin_pct")
 )
 ```
@@ -711,7 +711,7 @@ results <- perform_sensitivity_analysis(
   conc_raw_col = "pm25_annual_mean",
   default_sdlog = 0.5,
   
-  regression_formula = "~ as.factor(AsLevel) + age + (1|smoking_status)",
+  regression_formula = "~ as.factor(ExposureLevel) + age + (1|smoking_status)",
   targets = c("FEV1_pct_predicted")
 )
 ```
@@ -858,7 +858,7 @@ The health data file can use **any column names** as long as they are correctly 
 results <- perform_sensitivity_analysis(
   record_id_col = "participant_id",           # Your ID column
   targets = c("birthweight_g", "gest_weeks"), # Your outcome columns
-  regression_formula = "~ as.factor(AsLevel) + mom_age + smoking + (1|participant_id)",
+  regression_formula = "~ as.factor(ExposureLevel) + mom_age + smoking + (1|participant_id)",
   # ... other parameters
 )
 ```
@@ -1167,7 +1167,7 @@ results <- perform_sensitivity_analysis(
   model_prob_csv = "california_prob_data.csv",
   conc_data_csv = "california_conc_data.csv",
   birth_data_txt = "california_health_outcomes.txt",
-  regression_formula = "~ as.factor(AsLevel) + covariates + (1|FIPS)",
+  regression_formula = "~ as.factor(ExposureLevel) + covariates + (1|FIPS)",
   output_dir = "results/",
   targets = c("health_outcome")
 )
@@ -1249,13 +1249,13 @@ A successful test run will show:
 --- Pooled Analysis Results ---
 $BWT
     term      q.mi    se.mi statistic  conf.low conf.high   p.value
-1 As5-10 14.641932 39.77041 0.3681614 -72.92239  102.2063 0.7197590
-2  As10+  7.061721 44.69140 0.1580107 -89.74262  103.8661 0.8769384
+1  5-10 14.641932 39.77041 0.3681614 -72.92239  102.2063 0.7197590
+2   10+  7.061721 44.69140 0.1580107 -89.74262  103.8661 0.8769384
 
 $OEGEST
     term        q.mi     se.mi  statistic   conf.low conf.high   p.value
-1 As5-10 -0.02647891 0.1420687 -0.1863810 -0.3189409 0.2659831 0.8536366
-2  As10+ -0.02328979 0.1665429 -0.1398426 -0.3652842 0.3187046 0.8898402
+1  5-10 -0.02647891 0.1420687 -0.1863810 -0.3189409 0.2659831 0.8536366
+2   10+ -0.02328979 0.1665429 -0.1398426 -0.3652842 0.3187046 0.8898402
 
 -----------------------------
 [1] "Checking results for target: BWT"

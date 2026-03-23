@@ -10,7 +10,7 @@ NULL
 
 # Declare global variables for data.table/dplyr NSE
 utils::globalVariables(c(
-  ".", ".N", "FIPS", "mean_as", "sd_as", "conc_sdlog", "conc_meanlog",
+  ".", ".N", "FIPS", "mean_conc", "sd_conc", "conc_sdlog", "conc_meanlog",
   "prob_cat1", "prob_cat2", "prob_cat3", "total", "..cols_to_keep",
   "..prob_data_cols"
 ))
@@ -37,21 +37,21 @@ utils::globalVariables(c(
 #'   population. Default is "private_well_pop".
 #' @param extraction_method Character. Method for extracting raster values:
 #'   "centroid" (faster) or "mean" (more accurate). Default is "mean".
-#' @param cutoffs Numeric vector of length 2 specifying arsenic concentration
+#' @param cutoffs Numeric vector of length 2 specifying concentration
 #'   cutoffs in ug/L for creating categories. Default is `c(5, 10)` for
 #'   categories: <5, 5-10, >=10.
 #' @param output_file Optional file path to save the resulting CSV.
 #'
 #' @return A data.table with columns for geographic ID and multinomial
-#'   probabilities for each arsenic category.
+#'   probabilities for each exposure category.
 #'
 #' @details
-#' The function converts exceedance probabilities (P(As > threshold)) to
+#' The function converts exceedance probabilities (P(conc > threshold)) to
 #' multinomial probabilities that sum to 1:
 #' \itemize{
-#'   \item Category 1: P(As < lower_cutoff) = 1 - P(As > lower_cutoff)
-#'   \item Category 2: P(lower <= As < upper) = P(As > lower) - P(As > upper)
-#'   \item Category 3: P(As >= upper_cutoff) = P(As > upper_cutoff)
+#'   \item Category 1: P(conc < lower_cutoff) = 1 - P(conc > lower_cutoff)
+#'   \item Category 2: P(lower <= conc < upper) = P(conc > lower) - P(conc > upper)
+#'   \item Category 3: P(conc >= upper_cutoff) = P(conc > upper_cutoff)
 #' }
 #'
 #' @section Required Packages:
@@ -201,9 +201,9 @@ prepare_prob_data <- function(
   }
 
   # Calculate multinomial probabilities
-  # Category 1: As < lower_cutoff
-  # Category 2: lower_cutoff <= As < upper_cutoff
-  # Category 3: As >= upper_cutoff
+  # Category 1: conc < lower_cutoff
+  # Category 2: lower_cutoff <= conc < upper_cutoff
+  # Category 3: conc >= upper_cutoff
   result[, prob_cat1 := pmax(0, 1 - get(lower_col))]
   result[, prob_cat2 := pmax(0, get(lower_col) - get(upper_col))]
   result[, prob_cat3 := pmax(0, get(upper_col))]
@@ -275,8 +275,8 @@ prepare_prob_data <- function(
 #'   raw measurements or summary statistics.
 #' @param id_col Character. Column name containing geographic identifiers.
 #'   Default is "county_fips".
-#' @param concentration_col Character. Column name containing arsenic
-#'   concentrations in ug/L. Default is "arsenic_concentration".
+#' @param concentration_col Character. Column name containing
+#'   concentrations. Default is "concentration".
 #' @param population_col Optional character. Column name for population served
 #'   by each water system, used for weighted averaging.
 #' @param private_well_pct_col Optional character. Column name containing
@@ -312,14 +312,14 @@ prepare_prob_data <- function(
 #' # Example with raw concentration data
 #' conc_raw <- data.frame(
 #'   county_fips = c("06001", "06001", "06003", "06003"),
-#'   arsenic_concentration = c(2.5, 3.1, 8.2, 7.5),
+#'   concentration = c(2.5, 3.1, 8.2, 7.5),
 #'   population_served = c(50000, 25000, 10000, 15000)
 #' )
 #'
 #' conc_processed <- prepare_conc_data(
 #'   conc_data = conc_raw,
 #'   id_col = "county_fips",
-#'   concentration_col = "arsenic_concentration",
+#'   concentration_col = "concentration",
 #'   population_col = "population_served",
 #'   input_type = "raw",
 #'   output_file = "conc_lognormal.csv"
@@ -330,7 +330,7 @@ prepare_prob_data <- function(
 prepare_conc_data <- function(
   conc_data,
   id_col = "county_fips",
-  concentration_col = "arsenic_concentration",
+  concentration_col = "concentration",
   population_col = NULL,
   private_well_pct_col = NULL,
   input_type = c("raw", "summary"),
@@ -376,12 +376,12 @@ prepare_conc_data <- function(
       # Population-weighted aggregation
       message("Using population-weighted averaging...")
       result <- dt[, .(
-        mean_as = stats::weighted.mean(
+        mean_conc = stats::weighted.mean(
           get(concentration_col),
           get(population_col),
           na.rm = TRUE
         ),
-        sd_as = sqrt(Hmisc::wtd.var(
+        sd_conc = sqrt(Hmisc::wtd.var(
           get(concentration_col),
           get(population_col),
           na.rm = TRUE
@@ -392,8 +392,8 @@ prepare_conc_data <- function(
     } else {
       # Simple averaging
       result <- dt[, .(
-        mean_as = mean(get(concentration_col), na.rm = TRUE),
-        sd_as = stats::sd(get(concentration_col), na.rm = TRUE),
+        mean_conc = mean(get(concentration_col), na.rm = TRUE),
+        sd_conc = stats::sd(get(concentration_col), na.rm = TRUE),
         n_systems = .N
       ), by = id_col]
     }
@@ -411,13 +411,13 @@ prepare_conc_data <- function(
     }
 
     result <- data.table::copy(dt)
-    result[, mean_as := get(mean_col)]
+    result[, mean_conc := get(mean_col)]
 
     if (sd_col %in% names(dt)) {
-      result[, sd_as := get(sd_col)]
+      result[, sd_conc := get(sd_col)]
     } else {
       message("SD column not found. Using default sdlog = ", default_sdlog)
-      result[, sd_as := NA_real_]
+      result[, sd_conc := NA_real_]
     }
   }
 
@@ -426,17 +426,17 @@ prepare_conc_data <- function(
 
   result[, `:=`(
     # Ensure minimum concentration
-    mean_as = pmax(mean_as, min_concentration),
+    mean_conc = pmax(mean_conc, min_concentration),
     # Handle missing/zero SD
-    sd_as = ifelse(is.na(sd_as) | sd_as <= 0, mean_as * 0.5, sd_as)
+    sd_conc = ifelse(is.na(sd_conc) | sd_conc <= 0, mean_conc * 0.5, sd_conc)
   )]
 
   # Calculate lognormal parameters
   # meanlog = log(mu^2 / sqrt(sigma^2 + mu^2))
   # sdlog = sqrt(log(1 + sigma^2/mu^2))
   result[, `:=`(
-    conc_meanlog = log(mean_as^2 / sqrt(sd_as^2 + mean_as^2)),
-    conc_sdlog = sqrt(log(1 + (sd_as^2 / mean_as^2)))
+    conc_meanlog = log(mean_conc^2 / sqrt(sd_conc^2 + mean_conc^2)),
+    conc_sdlog = sqrt(log(1 + (sd_conc^2 / mean_conc^2)))
   )]
 
   # Handle edge cases

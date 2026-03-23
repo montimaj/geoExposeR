@@ -77,16 +77,16 @@ format_ids_func <- function(data_frame, id_col) {
 #' @param conc_mean_col Column name for concentration lognormal meanlog
 #' @param conc_sd_col Column name for concentration lognormal sdlog
 #' @param seed Random seed for reproducibility
-#' @param as_cat_label Arsenic category label
-#' @param as_level_col Column name for arsenic level
-#' @param drop_as_cat_label_reg Regular expression to drop arsenic categories
+#' @param cat_label Exposure category label
+#' @param exposure_level_col Column name for exposure level
+#' @param drop_cat_label_ref Regular expression to drop exposure categories
 #' @param conc_cutoffs Concentration cutoffs for exposure categories
 #' @param prob_columns Probability columns to include in analysis
 #' @param validate_cutoffs Whether to validate cutoffs
 #' @param columns_to_select Columns to select from the data
 #' @param rucc_col Column name for RUCC classification
 #' @param id_col Column name for geographic identifier
-#' @param prob_cols Arsenic concentration columns
+#' @param prob_cols Exposure probability columns
 #' @param pop_well_col Column name for population well
 #' @param record_id_col Column name for birth county
 #' @param pwell_col Column name for private well percentage
@@ -111,9 +111,9 @@ validate_all_inputs <- function(
   conc_raw_col = NULL,
   default_sdlog = 1.0,
   seed = NULL,
-  as_cat_label = NULL,
-  as_level_col = "AsLevel",
-  drop_as_cat_label_reg = NULL,
+  cat_label = NULL,
+  exposure_level_col = "ExposureLevel",
+  drop_cat_label_ref = NULL,
   conc_cutoffs = NULL,
   prob_columns = NULL,
   validate_cutoffs = TRUE,
@@ -144,7 +144,7 @@ validate_all_inputs <- function(
   validate_character_vectors(
     targets = targets,
     impute_vars = impute_vars,
-    as_cat_label = as_cat_label,
+    cat_label = cat_label,
     mice_covs = mice_covs,
     columns_to_select = columns_to_select,
     prob_cols = prob_cols
@@ -152,7 +152,7 @@ validate_all_inputs <- function(
 
   # Validate character scalars (column names)
   validate_column_names(
-    as_level_col, rucc_col, id_col, pop_well_col,
+    exposure_level_col, rucc_col, id_col, pop_well_col,
     record_id_col, conc_mean_col, conc_sd_col,
     pwell_col
   )
@@ -163,8 +163,8 @@ validate_all_inputs <- function(
   # Validate output directory
   validate_output_directory(output_dir)
 
-  # Validate arsenic category parameters
-  validate_arsenic_categories(as_cat_label, drop_as_cat_label_reg)
+  # Validate exposure category parameters
+  validate_exposure_categories(cat_label, drop_cat_label_ref)
 
   # Validate concentration cutoffs
   validate_conc_cutoff_params(conc_cutoffs, prob_cols)
@@ -186,7 +186,7 @@ validate_all_inputs <- function(
   )
 
   # Validate regression formula
-  validate_regression_formula(regression_formula, as_level_col)
+  validate_regression_formula(regression_formula, exposure_level_col)
 
   invisible(NULL)
 }
@@ -284,7 +284,7 @@ validate_numeric_params <- function(ndraws, mice_m, mice_maxit, seed) {
 
 #' Validate Regression Formula
 #' @keywords internal
-validate_regression_formula <- function(regression_formula, as_level_col) {
+validate_regression_formula <- function(regression_formula, exposure_level_col) {
   if (!is.null(regression_formula)) {
     if (!is.character(regression_formula) &&
           !inherits(regression_formula, "formula")) {
@@ -308,10 +308,10 @@ validate_regression_formula <- function(regression_formula, as_level_col) {
         }
       )
 
-      pattern <- paste0("as\\.factor\\(", as_level_col,
-                        "\\)|factor\\(", as_level_col, "\\)")
+      pattern <- paste0("as\\.factor\\(", exposure_level_col,
+                        "\\)|factor\\(", exposure_level_col, "\\)")
       if (!grepl(pattern, regression_formula)) {
-        stop("regression_formula must include '", as_level_col,
+        stop("regression_formula must include '", exposure_level_col,
              "' as a factor variable")
       }
     }
@@ -321,14 +321,14 @@ validate_regression_formula <- function(regression_formula, as_level_col) {
 #' Validate Character Vector Parameters
 #' @keywords internal
 validate_character_vectors <- function(
-    targets, impute_vars, as_cat_label,
+    targets, impute_vars, cat_label,
     mice_covs, columns_to_select,
     prob_cols) {
 
   char_vector_params <- list(
     targets = targets,
     impute_vars = impute_vars,
-    as_cat_label = as_cat_label,
+    cat_label = cat_label,
     mice_covs = mice_covs,
     columns_to_select = columns_to_select,
     prob_cols = prob_cols
@@ -365,13 +365,13 @@ validate_character_vectors <- function(
 #' Validate Column Name Parameters
 #' @keywords internal
 validate_column_names <- function(
-    as_level_col, rucc_col, id_col,
+    exposure_level_col, rucc_col, id_col,
     pop_well_col, record_id_col,
     conc_mean_col, conc_sd_col,
     pwell_col) {
 
   char_scalar_params <- list(
-    as_level_col = as_level_col,
+    exposure_level_col = exposure_level_col,
     rucc_col = rucc_col,
     id_col = id_col,
     pop_well_col = pop_well_col,
@@ -435,25 +435,25 @@ validate_output_directory <- function(output_dir) {
   }
 }
 
-#' Validate Arsenic Category Parameters
+#' Validate Exposure Category Parameters
 #' @keywords internal
-validate_arsenic_categories <- function(as_cat_label, drop_as_cat_label_reg) {
-  if (!is.null(drop_as_cat_label_reg)) {
-    if (!is.character(drop_as_cat_label_reg)) {
-      stop("drop_as_cat_label_reg must be a character vector")
+validate_exposure_categories <- function(cat_label, drop_cat_label_ref) {
+  if (!is.null(drop_cat_label_ref)) {
+    if (!is.character(drop_cat_label_ref)) {
+      stop("drop_cat_label_ref must be a character vector")
     }
 
-    # Check that drop_as_cat_label_reg values are in as_cat_label
-    if (!is.null(as_cat_label)) {
-      if (!all(drop_as_cat_label_reg %in% as_cat_label)) {
-        stop("All values in drop_as_cat_label_reg must be present in ",
-             "as_cat_label")
+    # Check that drop_cat_label_ref values are in cat_label
+    if (!is.null(cat_label)) {
+      if (!all(drop_cat_label_ref %in% cat_label)) {
+        stop("All values in drop_cat_label_ref must be present in ",
+             "cat_label")
       }
 
       # Check that we don't drop all categories
-      remaining_cats <- setdiff(as_cat_label, drop_as_cat_label_reg)
+      remaining_cats <- setdiff(cat_label, drop_cat_label_ref)
       if (length(remaining_cats) == 0) {
-        stop("Cannot drop all arsenic categories as reference levels")
+        stop("Cannot drop all exposure categories as reference levels")
       }
     }
   }

@@ -108,7 +108,7 @@ test_that("Function handles missing covariates and produces valid output", {
   ndraws <- 5
   targets <- c("BWT", "OEGEST")
   impute_vars <- c("MAGE_R", "smoke")
-  as_level_col <- "AsLevel"
+  exposure_level_col <- "ExposureLevel"
   mice_covs <- c("pm", "DMAR_1", "MEDUC_2", "MEDUC_3", "MEDUC_4")
 
   # check if mice_covs are in the birth_data
@@ -118,7 +118,7 @@ test_that("Function handles missing covariates and produces valid output", {
 
   # Define a simple regression formula for testing purposes
   regression_formula <- paste0(
-    "~ as.factor(", as_level_col, ") + ",
+    "~ as.factor(", exposure_level_col, ") + ",
     "MAGE_R + smoke + (1 | MRSTATE)"
   )
   output_dir <- "test_output"
@@ -140,7 +140,7 @@ test_that("Function handles missing covariates and produces valid output", {
       targets = targets,
       output_dir = output_dir,
       mice_covs = mice_covs,
-      as_level_col = as_level_col,
+      exposure_level_col = exposure_level_col,
       rucc_col = NULL
     )
   )
@@ -220,7 +220,7 @@ test_that("Function handles basic analysis without missing data", {
       model_prob_csv = dummy_files$prob,
       conc_data_csv = dummy_files$conc,
       ndraws = 3,
-      regression_formula = "~ as.factor(AsLevel) + MAGE_R + (1 | MRSTATE)",
+      regression_formula = "~ as.factor(ExposureLevel) + MAGE_R + (1 | MRSTATE)",
       targets = c("BWT"),
       output_dir = tempdir()
     )
@@ -245,7 +245,7 @@ test_that("Function handles single target variable", {
       model_prob_csv = dummy_files$prob,
       conc_data_csv = dummy_files$conc,
       ndraws = 2,
-      regression_formula = "~ as.factor(AsLevel) + (1 | MRSTATE)",
+      regression_formula = "~ as.factor(ExposureLevel) + (1 | MRSTATE)",
       targets = "OEGEST",
       output_dir = tempdir()
     )
@@ -547,7 +547,7 @@ test_that("validate_inputs validates regression_formula parameter", {
       birth_data_txt = birth_file,
       model_prob_csv = prob_file,
       conc_data_csv = conc_file,
-      regression_formula = "~ as.factor(AsLevel) + y"
+      regression_formula = "~ as.factor(ExposureLevel) + y"
     )
   )
 
@@ -925,7 +925,7 @@ test_that("validate_inputs validates numeric parameters", {
       birth_data_txt = dummy_files$births,
       model_prob_csv = dummy_files$prob,
       conc_data_csv = dummy_conc_csv,
-      regression_formula = "~ as.factor(AsLevel) + (1 | MRSTATE)"
+      regression_formula = "~ as.factor(ExposureLevel) + (1 | MRSTATE)"
     ),
     "conc_sd_col contains very large values.*"
   )
@@ -954,60 +954,60 @@ test_that("validate_inputs validates numeric parameters", {
   unlink(temp_dir, recursive = TRUE)
 })
 
-test_that("validate_inputs validates arsenic category labels", {
-  temp_dir <- tempfile(pattern = "test_arsenic_labels_")
+test_that("validate_inputs validates exposure category labels", {
+  temp_dir <- tempfile(pattern = "test_exposure_labels_")
   dir.create(temp_dir)
 
   # Create temporary files
   dummy_files <- create_dummy_data(file_dir = temp_dir)
 
-  # Test non-character as_cat_label
+  # Test non-character cat_label
   expect_error(
     geoExposeR:::perform_sensitivity_analysis(
       birth_data_txt = dummy_files$births,
       model_prob_csv = dummy_files$prob,
       conc_data_csv = dummy_files$conc,
-      as_cat_label = 123,
-      drop_as_cat_label_reg = c("Low"),
-      regression_formula = "~ as.factor(AsLevel) + (1 | MRSTATE)"
+      cat_label = 123,
+      drop_cat_label_ref = c("Low"),
+      regression_formula = "~ as.factor(ExposureLevel) + (1 | MRSTATE)"
     ),
-    "as_cat_label must be a character vector"
+    "cat_label must be a character vector"
   )
 
-  # Test empty as_cat_label
+  # Test empty cat_label
   expect_error(
     geoExposeR:::perform_sensitivity_analysis(
       birth_data_txt = dummy_files$births,
       model_prob_csv = dummy_files$prob,
       conc_data_csv = dummy_files$conc,
-      as_cat_label = character(0),
-      drop_as_cat_label_reg = c("Low")
+      cat_label = character(0),
+      drop_cat_label_ref = c("Low")
     ),
-    "as_cat_label cannot be empty"
+    "cat_label cannot be empty"
   )
 
-  # Test as_cat_label with duplicates
+  # Test cat_label with duplicates
   expect_error(
     geoExposeR:::perform_sensitivity_analysis(
       birth_data_txt = dummy_files$births,
       model_prob_csv = dummy_files$prob,
       conc_data_csv = dummy_files$conc,
-      as_cat_label = c("Low", "Medium", "Low"),
-      drop_as_cat_label_reg = c("Low")
+      cat_label = c("Low", "Medium", "Low"),
+      drop_cat_label_ref = c("Low")
     ),
-    "as_cat_label cannot contain duplicate values"
+    "cat_label cannot contain duplicate values"
   )
 
-  # Test drop_as_cat_label_reg not in as_cat_label
+  # Test drop_cat_label_ref not in cat_label
   expect_error(
     geoExposeR:::perform_sensitivity_analysis(
       birth_data_txt = dummy_files$births,
       model_prob_csv = dummy_files$prob,
       conc_data_csv = dummy_files$conc,
-      as_cat_label = c("Low", "Medium", "High"),
-      drop_as_cat_label_reg = c("VeryLow")
+      cat_label = c("Low", "Medium", "High"),
+      drop_cat_label_ref = c("VeryLow")
     ),
-    "All values in drop_as_cat_label_reg must be present in as_cat_label"
+    "All values in drop_cat_label_ref must be present in cat_label"
   )
 
   # Test dropping all categories
@@ -1016,10 +1016,10 @@ test_that("validate_inputs validates arsenic category labels", {
       birth_data_txt = dummy_files$births,
       model_prob_csv = dummy_files$prob,
       conc_data_csv = dummy_files$conc,
-      as_cat_label = c("Low", "Medium"),
-      drop_as_cat_label_reg = c("Low", "Medium")
+      cat_label = c("Low", "Medium"),
+      drop_cat_label_ref = c("Low", "Medium")
     ),
-    "Cannot drop all arsenic categories as reference levels"
+    "Cannot drop all exposure categories as reference levels"
   )
 
   # Test valid category configuration
@@ -1028,9 +1028,9 @@ test_that("validate_inputs validates arsenic category labels", {
       birth_data_txt = dummy_files$births,
       model_prob_csv = dummy_files$prob,
       conc_data_csv = dummy_files$conc,
-      as_cat_label = c("Low", "Medium", "High"),
-      drop_as_cat_label_reg = c("Low"),
-      regression_formula = "~ as.factor(AsLevel) + (1 | MRSTATE)"
+      cat_label = c("Low", "Medium", "High"),
+      drop_cat_label_ref = c("Low"),
+      regression_formula = "~ as.factor(ExposureLevel) + (1 | MRSTATE)"
     )
   )
 
@@ -1073,7 +1073,7 @@ test_that("Function validates parameter values through main interface", {
       model_prob_csv = dummy_files$prob,
       conc_data_csv = dummy_files$conc,
       ndraws = 0,
-      regression_formula = "~ as.factor(AsLevel) + (1 | MRSTATE)"
+      regression_formula = "~ as.factor(ExposureLevel) + (1 | MRSTATE)"
     ),
     "ndraws must be a positive integer"
   )
@@ -1084,7 +1084,7 @@ test_that("Function validates parameter values through main interface", {
       model_prob_csv = dummy_files$prob,
       conc_data_csv = dummy_files$conc,
       ndraws = -5,
-      regression_formula = "~ as.factor(AsLevel) + (1 | MRSTATE)"
+      regression_formula = "~ as.factor(ExposureLevel) + (1 | MRSTATE)"
     ),
     "ndraws must be a positive integer"
   )
@@ -1133,7 +1133,7 @@ test_that("Function handles different MICE parameters", {
       model_prob_csv = dummy_files$prob,
       conc_data_csv = dummy_files$conc,
       ndraws = 2,
-      regression_formula = "~ as.factor(AsLevel) + MAGE_R + (1 | MRSTATE)",
+      regression_formula = "~ as.factor(ExposureLevel) + MAGE_R + (1 | MRSTATE)",
       targets = "BWT",
       impute_vars = "MAGE_R",
       mice_m = 3,
@@ -1149,14 +1149,14 @@ test_that("Function handles different MICE parameters", {
   unlink(temp_dir, recursive = TRUE)
 })
 
-test_that("Function handles different arsenic level column names", {
+test_that("Function handles different exposure level column names", {
   temp_dir <- tempfile(pattern = "test_as_col_")
   dir.create(temp_dir)
 
   dummy_files <- create_dummy_data(
     file_dir = temp_dir
   )
-  as_level_col <- "ArsenicCategory"
+  exposure_level_col <- "ArsenicCategory"
   results <- expect_no_error(
     geoExposeR::perform_sensitivity_analysis(
       birth_data_txt = dummy_files$births,
@@ -1164,10 +1164,10 @@ test_that("Function handles different arsenic level column names", {
       conc_data_csv = dummy_files$conc,
       ndraws = 2,
       regression_formula = paste0(
-        "~ as.factor(", as_level_col, ") + (1 | MRSTATE)"
+        "~ as.factor(", exposure_level_col, ") + (1 | MRSTATE)"
       ),
       targets = "BWT",
-      as_level_col = as_level_col,
+      exposure_level_col = exposure_level_col,
       output_dir = tempdir()
     )
   )
@@ -1191,7 +1191,7 @@ test_that("Function handles custom output directory", {
       model_prob_csv = dummy_files$prob,
       conc_data_csv = dummy_files$conc,
       ndraws = 2,
-      regression_formula = "~ as.factor(AsLevel) + (1 | MRSTATE)",
+      regression_formula = "~ as.factor(ExposureLevel) + (1 | MRSTATE)",
       targets = "BWT",
       output_dir = custom_output
     )
@@ -1219,7 +1219,7 @@ test_that("Function handles boundary conditions appropriately", {
       model_prob_csv = dummy_files$prob,
       conc_data_csv = dummy_files$conc,
       ndraws = 1,  # Absolute minimum
-      regression_formula = "~ as.factor(AsLevel) + (1 | MRSTATE)",
+      regression_formula = "~ as.factor(ExposureLevel) + (1 | MRSTATE)",
       targets = "BWT",
       output_dir = tempdir()
     )
@@ -1243,7 +1243,7 @@ test_that("Function handles multiple targets with imputation", {
       model_prob_csv = dummy_files$prob,
       conc_data_csv = dummy_files$conc,
       ndraws = 2,
-      regression_formula = "~ as.factor(AsLevel) + MAGE_R + (1 | MRSTATE)",
+      regression_formula = "~ as.factor(ExposureLevel) + MAGE_R + (1 | MRSTATE)",
       targets = c("BWT", "OEGEST"),
       impute_vars = "MAGE_R",
       output_dir = tempdir()
@@ -1278,14 +1278,14 @@ test_that("Function handles formula validation", {
       model_prob_csv = dummy_files$prob,
       conc_data_csv = dummy_files$conc,
       ndraws = 2,
-      regression_formula = "~ as.factor(AsLevel) + (1 | MRSTATE)",
+      regression_formula = "~ as.factor(ExposureLevel) + (1 | MRSTATE)",
       targets = "BWT",
       output_dir = tempdir()
     )
   )
 
   # Test formula as formula object
-  formula_obj <- as.formula("~ as.factor(AsLevel) + (1 | MRSTATE)")
+  formula_obj <- as.formula("~ as.factor(ExposureLevel) + (1 | MRSTATE)")
   results2 <- expect_no_error(
     perform_sensitivity_analysis(
       birth_data_txt = dummy_files$births,
@@ -1317,7 +1317,7 @@ test_that("Function handles seed setting for reproducibility", {
     model_prob_csv = dummy_files$prob,
     conc_data_csv = dummy_files$conc,
     ndraws = 2,
-    regression_formula = "~ as.factor(AsLevel) + (1 | MRSTATE)",
+    regression_formula = "~ as.factor(ExposureLevel) + (1 | MRSTATE)",
     targets = "BWT",
     output_dir = tempdir()
   )
@@ -1328,7 +1328,7 @@ test_that("Function handles seed setting for reproducibility", {
     model_prob_csv = dummy_files$prob,
     conc_data_csv = dummy_files$conc,
     ndraws = 2,
-    regression_formula = "~ as.factor(AsLevel) + (1 | MRSTATE)",
+    regression_formula = "~ as.factor(ExposureLevel) + (1 | MRSTATE)",
     targets = "BWT",
     output_dir = tempdir()
   )
@@ -1386,7 +1386,7 @@ test_that("Function handles memory and performance edge cases", {
       model_prob_csv = dummy_files$prob,
       conc_data_csv = dummy_files$conc,
       ndraws = 2,
-      regression_formula = "~ as.factor(AsLevel) + (1 | MRSTATE)",
+      regression_formula = "~ as.factor(ExposureLevel) + (1 | MRSTATE)",
       targets = "BWT",
       output_dir = tempdir()
     )
@@ -1398,13 +1398,13 @@ test_that("Function handles memory and performance edge cases", {
   unlink(temp_dir, recursive = TRUE)
 })
 
-test_that("Function validates AsLevel requirement through main interface", {
+test_that("Function validates ExposureLevel requirement through main interface", {
   temp_dir <- tempfile(pattern = "test_main_aslevel_")
   dir.create(temp_dir)
 
   dummy_files <- create_dummy_data(file_dir = temp_dir)
 
-  # Test regression formula without AsLevel through main function
+  # Test regression formula without ExposureLevel through main function
   expect_error(
     perform_sensitivity_analysis(
       birth_data_txt = dummy_files$births,
@@ -1415,21 +1415,21 @@ test_that("Function validates AsLevel requirement through main interface", {
       targets = "BWT",
       output_dir = tempdir()
     ),
-    "regression_formula must include 'AsLevel' as a factor variable"
+    "regression_formula must include 'ExposureLevel' as a factor variable"
   )
 
-  # Test regression formula with AsLevel but not as factor through main function
+  # Test regression formula with ExposureLevel but not as factor through main function
   expect_error(
     perform_sensitivity_analysis(
       birth_data_txt = dummy_files$births,
       model_prob_csv = dummy_files$prob,
       conc_data_csv = dummy_files$conc,
       ndraws = 2,
-      regression_formula = "~ AsLevel + MAGE_R + (1 | MRSTATE)",
+      regression_formula = "~ ExposureLevel + MAGE_R + (1 | MRSTATE)",
       targets = "BWT",
       output_dir = tempdir()
     ),
-    "regression_formula must include 'AsLevel' as a factor variable"
+    "regression_formula must include 'ExposureLevel' as a factor variable"
   )
 
   unlink(temp_dir, recursive = TRUE)
@@ -1437,34 +1437,34 @@ test_that("Function validates AsLevel requirement through main interface", {
 
 # Additional validation tests
 
-test_that("Function handles arsenic category reference dropping edge cases", {
-  temp_dir <- tempfile(pattern = "test_arsenic_ref_")
+test_that("Function handles exposure category reference dropping edge cases", {
+  temp_dir <- tempfile(pattern = "test_exposure_ref_")
   dir.create(temp_dir)
 
   dummy_files <- create_dummy_data(file_dir = temp_dir)
 
-  # Test dropping all available arsenic categories as reference
+  # Test dropping all available exposure categories as reference
   # This should trigger:
-  # "Cannot drop all arsenic categories as reference levels."
+  # "Cannot drop all exposure categories as reference levels."
   expect_error(
     perform_sensitivity_analysis(
       birth_data_txt = dummy_files$births,
       model_prob_csv = dummy_files$prob,
       conc_data_csv = dummy_files$conc,
       ndraws = 2,
-      regression_formula = "~ as.factor(AsLevel) + (1 | MRSTATE)",
+      regression_formula = "~ as.factor(ExposureLevel) + (1 | MRSTATE)",
       targets = "BWT",
-      as_cat_label = c("Low", "Medium", "High"),
-      drop_as_cat_label_reg = c("Low", "Medium", "High"),  # Drop all categories
+      cat_label = c("Low", "Medium", "High"),
+      drop_cat_label_ref = c("Low", "Medium", "High"),  # Drop all categories
       output_dir = tempdir()
     ),
-    "Cannot drop all arsenic categories as reference levels"
+    "Cannot drop all exposure categories as reference levels"
   )
 
-  # Test with data that only has one unique arsenic category
-  # First, create a birth dataset with only one arsenic level
+  # Test with data that only has one unique exposure category
+  # First, create a birth dataset with only one exposure level
   birth_data <- data.table::fread(dummy_files$births, header = TRUE)
-  birth_data$AsLevel <- "Low"  # Set all to the same category
+  birth_data$ExposureLevel <- "Low"  # Set all to the same category
 
   # Write the modified data back
   single_category_file <- file.path(temp_dir, "single_category_births.txt")
@@ -1477,19 +1477,19 @@ test_that("Function handles arsenic category reference dropping edge cases", {
       model_prob_csv = dummy_files$prob,
       conc_data_csv = dummy_files$conc,
       ndraws = 2,
-      regression_formula = "~ as.factor(AsLevel) + (1 | MRSTATE)",
+      regression_formula = "~ as.factor(ExposureLevel) + (1 | MRSTATE)",
       targets = "BWT",
-      as_cat_label = c("Low"),
-      drop_as_cat_label_reg = c("Low"),  # Drop the only category
+      cat_label = c("Low"),
+      drop_cat_label_ref = c("Low"),  # Drop the only category
       output_dir = tempdir()
     ),
-    "Cannot drop all arsenic categories as reference levels"
+    "Cannot drop all exposure categories as reference levels"
   )
 
   # Test edge case: data has categories but after filtering, none remain
   # Create data with two categories
   birth_data_two <- data.table::fread(dummy_files$births, header = TRUE)
-  birth_data_two$AsLevel <- sample(
+  birth_data_two$ExposureLevel <- sample(
     c("Low", "Medium"),
     nrow(birth_data_two),
     replace = TRUE
@@ -1505,13 +1505,13 @@ test_that("Function handles arsenic category reference dropping edge cases", {
       model_prob_csv = dummy_files$prob,
       conc_data_csv = dummy_files$conc,
       ndraws = 2,
-      regression_formula = "~ as.factor(AsLevel) + (1 | MRSTATE)",
+      regression_formula = "~ as.factor(ExposureLevel) + (1 | MRSTATE)",
       targets = "BWT",
-      as_cat_label = c("Low", "Medium"),
-      drop_as_cat_label_reg = c("Low", "Medium"),  # Drop both categories
+      cat_label = c("Low", "Medium"),
+      drop_cat_label_ref = c("Low", "Medium"),  # Drop both categories
       output_dir = tempdir()
     ),
-    "Cannot drop all arsenic categories as reference levels"
+    "Cannot drop all exposure categories as reference levels"
   )
 
   # Test valid case: have multiple categories and only drop some
@@ -1521,11 +1521,11 @@ test_that("Function handles arsenic category reference dropping edge cases", {
       model_prob_csv = dummy_files$prob,
       conc_data_csv = dummy_files$conc,
       ndraws = 2,
-      regression_formula = "~ as.factor(AsLevel) + (1 | MRSTATE)",
+      regression_formula = "~ as.factor(ExposureLevel) + (1 | MRSTATE)",
       targets = "BWT",
-      as_cat_label = c("Low", "Medium"),
+      cat_label = c("Low", "Medium"),
       # Only drop one category, leaving "Medium"
-      drop_as_cat_label_reg = c("Low"),
+      drop_cat_label_ref = c("Low"),
       output_dir = tempdir()
     ),
     "incorrect number of probabilities"
@@ -1534,13 +1534,13 @@ test_that("Function handles arsenic category reference dropping edge cases", {
   unlink(temp_dir, recursive = TRUE)
 })
 
-test_that("Function validates arsenic category data consistency", {
-  temp_dir <- tempfile(pattern = "test_arsenic_data_")
+test_that("Function validates exposure category data consistency", {
+  temp_dir <- tempfile(pattern = "test_exposure_data_")
   dir.create(temp_dir)
 
   dummy_files <- create_dummy_data(file_dir = temp_dir)
 
-  # Test when specified as_cat_label doesn't match data categories
+  # Test when specified cat_label doesn't match data categories
   # Load the birth data to see what categories are actually present
   birth_data <- data.table::fread(dummy_files$births, header = TRUE)
 
@@ -1551,60 +1551,60 @@ test_that("Function validates arsenic category data consistency", {
       model_prob_csv = dummy_files$prob,
       conc_data_csv = dummy_files$conc,
       ndraws = 2,
-      regression_formula = "~ as.factor(AsLevel) + (1 | MRSTATE)",
+      regression_formula = "~ as.factor(ExposureLevel) + (1 | MRSTATE)",
       targets = "BWT",
       # Categories not in data
-      as_cat_label = c("NonExistent1", "NonExistent2"),
+      cat_label = c("NonExistent1", "NonExistent2"),
       output_dir = tempdir()
     ),
     # This might trigger a different error depending on your validation logic
     # Adjust the error message to match your actual implementation
-    "All values in drop_as_cat_label_reg must be present in as_cat_label"
+    "All values in drop_cat_label_ref must be present in cat_label"
   )
 
-  # Test dropping categories that don't exist in as_cat_label
+  # Test dropping categories that don't exist in cat_label
   expect_error(
     perform_sensitivity_analysis(
       birth_data_txt = dummy_files$births,
       model_prob_csv = dummy_files$prob,
       conc_data_csv = dummy_files$conc,
       ndraws = 2,
-      regression_formula = "~ as.factor(AsLevel) + (1 | MRSTATE)",
+      regression_formula = "~ as.factor(ExposureLevel) + (1 | MRSTATE)",
       targets = "BWT",
-      drop_as_cat_label_reg = c("NonExistentCategory"),
+      drop_cat_label_ref = c("NonExistentCategory"),
       # Try to drop non-existent category
       output_dir = tempdir()
     ),
-    "All values in drop_as_cat_label_reg must be present in as_cat_label"
+    "All values in drop_cat_label_ref must be present in cat_label"
   )
 
-  # Test if drop_as_cat_label_reg is a character vector
+  # Test if drop_cat_label_ref is a character vector
   expect_error(
     perform_sensitivity_analysis(
       birth_data_txt = dummy_files$births,
       model_prob_csv = dummy_files$prob,
       conc_data_csv = dummy_files$conc,
       ndraws = 2,
-      regression_formula = "~ as.factor(AsLevel) + (1 | MRSTATE)",
+      regression_formula = "~ as.factor(ExposureLevel) + (1 | MRSTATE)",
       targets = "BWT",
-      drop_as_cat_label_reg = 123,  # Invalid type
+      drop_cat_label_ref = 123,  # Invalid type
       output_dir = tempdir()
     ),
-    "drop_as_cat_label_reg must be a character vector"
+    "drop_cat_label_ref must be a character vector"
   )
 
-  # Test if as_cat_label has NA or empty values
+  # Test if cat_label has NA or empty values
   expect_error(
     perform_sensitivity_analysis(
       birth_data_txt = dummy_files$births,
       model_prob_csv = dummy_files$prob,
       conc_data_csv = dummy_files$conc,
       ndraws = 2,
-      regression_formula = "~ as.factor(AsLevel) + (1 | MRSTATE)",
+      regression_formula = "~ as.factor(ExposureLevel) + (1 | MRSTATE)",
       targets = "BWT",
-      as_cat_label = c("Low", NA, "High"),  # Contains NA
+      cat_label = c("Low", NA, "High"),  # Contains NA
       output_dir = tempdir()
-    ),    "as_cat_label cannot contain NA or empty values"
+    ),    "cat_label cannot contain NA or empty values"
   )
 
   unlink(temp_dir, recursive = TRUE)
@@ -1623,7 +1623,7 @@ test_that("Function validates column names in input files", {
       model_prob_csv = dummy_files$prob,
       conc_data_csv = dummy_files$conc,
       ndraws = 2,
-      regression_formula = "~ as.factor(AsLevel) + (1 | MRSTATE)",
+      regression_formula = "~ as.factor(ExposureLevel) + (1 | MRSTATE)",
       targets = "BWT",
       output_dir = tempdir(),
       prob_cols = c(
@@ -1649,7 +1649,7 @@ test_that("Function validates column names in input files", {
       model_prob_csv = dummy_files$prob,
       conc_data_csv = invalid_conc_file,
       ndraws = 2,
-      regression_formula = "~ as.factor(AsLevel) + (1 | MRSTATE)",
+      regression_formula = "~ as.factor(ExposureLevel) + (1 | MRSTATE)",
       targets = "BWT",
       output_dir = tempdir()
     ),
@@ -1663,7 +1663,7 @@ test_that("Function validates column names in input files", {
       model_prob_csv = dummy_files$prob,
       conc_data_csv = dummy_files$conc,
       ndraws = 2,
-      regression_formula = "~ as.factor(AsLevel) + (1 | MRSTATE)",
+      regression_formula = "~ as.factor(ExposureLevel) + (1 | MRSTATE)",
       targets = "BWT",
       output_dir = tempdir(),
       id_col = 123  # Invalid type
@@ -1678,7 +1678,7 @@ test_that("Function validates column names in input files", {
       model_prob_csv = dummy_files$prob,
       conc_data_csv = dummy_files$conc,
       ndraws = 2,
-      regression_formula = "~ as.factor(AsLevel) + (1 | MRSTATE)",
+      regression_formula = "~ as.factor(ExposureLevel) + (1 | MRSTATE)",
       targets = "BWT",
       output_dir = tempdir(),
       id_col = ""  # Empty string
@@ -1693,7 +1693,7 @@ test_that("Function validates column names in input files", {
       model_prob_csv = dummy_files$prob,
       conc_data_csv = dummy_files$conc,
       ndraws = 2,
-      regression_formula = "~ as.factor(AsLevel) + (1 | MRSTATE)",
+      regression_formula = "~ as.factor(ExposureLevel) + (1 | MRSTATE)",
       targets = "BWT",
       output_dir = tempdir(),
       prob_cols = c(1, 2, 3)  # Mixed types
@@ -1708,7 +1708,7 @@ test_that("Function validates column names in input files", {
       model_prob_csv = dummy_files$prob,
       conc_data_csv = dummy_files$conc,
       ndraws = 2,
-      regression_formula = "~ as.factor(AsLevel) + (1 | MRSTATE)",
+      regression_formula = "~ as.factor(ExposureLevel) + (1 | MRSTATE)",
       targets = "BWT",
       output_dir = tempdir(),
       prob_cols = c("Col1", NA)  # NA value
@@ -1723,7 +1723,7 @@ test_that("Function validates column names in input files", {
       model_prob_csv = dummy_files$prob,
       conc_data_csv = dummy_files$conc,
       ndraws = 2,
-      regression_formula = "~ as.factor(AsLevel) + (1 | MRSTATE)",
+      regression_formula = "~ as.factor(ExposureLevel) + (1 | MRSTATE)",
       targets = "BWT",
       output_dir = tempdir(),
       prob_cols = c("Col1", "Col1")  # Duplicate values
@@ -1747,7 +1747,7 @@ test_that("Function validates conc_cutoff parameter", {
       model_prob_csv = dummy_files$prob,
       conc_data_csv = dummy_files$conc,
       ndraws = 2,
-      regression_formula = "~ as.factor(AsLevel) + (1 | MRSTATE)",
+      regression_formula = "~ as.factor(ExposureLevel) + (1 | MRSTATE)",
       targets = "BWT",
       output_dir = tempdir(),
       conc_cutoffs = -1  # Invalid negative value
@@ -1762,7 +1762,7 @@ test_that("Function validates conc_cutoff parameter", {
       model_prob_csv = dummy_files$prob,
       conc_data_csv = dummy_files$conc,
       ndraws = 2,
-      regression_formula = "~ as.factor(AsLevel) + (1 | MRSTATE)",
+      regression_formula = "~ as.factor(ExposureLevel) + (1 | MRSTATE)",
       targets = "BWT",
       output_dir = tempdir(),
       conc_cutoffs = "high"  # Invalid non-numeric value
@@ -1777,7 +1777,7 @@ test_that("Function validates conc_cutoff parameter", {
       model_prob_csv = dummy_files$prob,
       conc_data_csv = dummy_files$conc,
       ndraws = 2,
-      regression_formula = "~ as.factor(AsLevel) + (1 | MRSTATE)",
+      regression_formula = "~ as.factor(ExposureLevel) + (1 | MRSTATE)",
       targets = "BWT",
       output_dir = tempdir(),
       conc_cutoffs = c(5, NA)  # Contains NA
@@ -1792,7 +1792,7 @@ test_that("Function validates conc_cutoff parameter", {
       model_prob_csv = dummy_files$prob,
       conc_data_csv = dummy_files$conc,
       ndraws = 2,
-      regression_formula = "~ as.factor(AsLevel) + (1 | MRSTATE)",
+      regression_formula = "~ as.factor(ExposureLevel) + (1 | MRSTATE)",
       targets = "BWT",
       output_dir = tempdir(),
       conc_cutoffs = c(5, 5)  # Duplicate values
@@ -1801,7 +1801,7 @@ test_that("Function validates conc_cutoff parameter", {
   )
 
   # Test valid conc_cutoffs with 4 categories
-  # Create a dummy probability file with 4 arsenic categories
+  # Create a dummy probability file with 4 exposure categories
   # Ensure the dummy probability data has appropriate columns
   # and realistic probability distributions
 
@@ -1845,12 +1845,12 @@ test_that("Function validates conc_cutoff parameter", {
       model_prob_csv = dummy_prob_csv,
       conc_data_csv = dummy_conc_csv,
       ndraws = 2,
-      regression_formula = "~ as.factor(AsLevel) + (1 | MRSTATE)",
+      regression_formula = "~ as.factor(ExposureLevel) + (1 | MRSTATE)",
       targets = "BWT",
       output_dir = tempdir(),
       prob_cols = c("AS_C1", "AS_C2", "AS_C3", "AS_C4"),
-      drop_as_cat_label_reg = "AS<5",  # Drop one category
-      as_cat_label = c("AS<5", "AS5-10", "AS10-15", "AS>15"),
+      drop_cat_label_ref = "<5",  # Drop one category
+      cat_label = c("<5", "5-10", "10-15", ">15"),
       conc_cutoffs = c(5, 10, 15)  # Valid ascending cutoffs
     )
   })
@@ -1861,12 +1861,12 @@ test_that("Function validates conc_cutoff parameter", {
       model_prob_csv = dummy_prob_csv,
       conc_data_csv = dummy_conc_csv,
       ndraws = 2,
-      regression_formula = "~ as.factor(AsLevel) + (1 | MRSTATE)",
+      regression_formula = "~ as.factor(ExposureLevel) + (1 | MRSTATE)",
       targets = "BWT",
       output_dir = tempdir(),
       prob_cols = c("AS_C1", "AS_C2", "AS_C3", "AS_C4"),
-      drop_as_cat_label_reg = "AS<5",  # Drop one category
-      as_cat_label = c("AS<5", "AS5-10", "AS10-15", "AS>15"),
+      drop_cat_label_ref = "<5",  # Drop one category
+      cat_label = c("<5", "5-10", "10-15", ">15"),
       conc_cutoffs = c(5, 10, 15),  # Valid ascending cutoffs
       apply_imputation_fallback = FALSE # removes NA values
     )
@@ -1879,7 +1879,7 @@ test_that("Function validates conc_cutoff parameter", {
       model_prob_csv = dummy_files$prob,
       conc_data_csv = dummy_files$conc,
       ndraws = 2,
-      regression_formula = "~ as.factor(AsLevel) + (1 | MRSTATE)",
+      regression_formula = "~ as.factor(ExposureLevel) + (1 | MRSTATE)",
       targets = "BWT",
       output_dir = tempdir(),
       conc_cutoffs = c(15, 10, 5)  # Descending order
@@ -1894,7 +1894,7 @@ test_that("Function validates conc_cutoff parameter", {
       model_prob_csv = dummy_files$prob,
       conc_data_csv = dummy_files$conc,
       ndraws = 2,
-      regression_formula = "~ as.factor(AsLevel) + (1 | MRSTATE)",
+      regression_formula = "~ as.factor(ExposureLevel) + (1 | MRSTATE)",
       targets = "BWT",
       output_dir = tempdir(),
       conc_cutoffs = c(5, 10, 20)  # Assuming probability data has only 3 categories
@@ -2125,7 +2125,7 @@ test_that("Fallback imputation works when concentration data is missing", {
       model_prob_csv = dummy_files$prob,
       conc_data_csv = dummy_files$conc,
       ndraws = 2,
-      regression_formula = "~ as.factor(AsLevel) + (1 | MRSTATE)",
+      regression_formula = "~ as.factor(ExposureLevel) + (1 | MRSTATE)",
       targets = "BWT",
       output_dir = tempdir(),
       apply_imputation_fallback = "FOO"  # Enable fallback imputation
@@ -2134,15 +2134,15 @@ test_that("Fallback imputation works when concentration data is missing", {
 
   unlink(temp_dir, recursive = TRUE)
 })
-# ===== Tests for impute_arsenic_exposure function =====
+# ===== Tests for impute_exposure function =====
 
-test_that("impute_arsenic_exposure handles basic case correctly", {
+test_that("impute_exposure handles basic case correctly", {
   # Create test data
   set.seed(12345)
   n_counties <- 10
   n_cells <- 50
   ndraws <- 3
-  as_cat_label <- c("As<5", "As5-10", "As10+")
+  cat_label <- c("<5", "5-10", "10+")
 
   # Create probability data with multiple cells per county
   county_ids <- sprintf("%05d", rep(1:n_counties, each = 5))
@@ -2170,16 +2170,16 @@ test_that("impute_arsenic_exposure handles basic case correctly", {
     stringsAsFactors = FALSE
   )
 
-  result <- geoExposeR:::impute_arsenic_exposure(
+  result <- geoExposeR:::impute_exposure(
     datmatx_prob = datmatx_prob,
     rasterprob_combined = rasterprob_combined,
     cellpop = cellpop,
     births = births,
     ndraws = ndraws,
-    as_cat_label = as_cat_label,
+    cat_label = cat_label,
     id_col = "GEOID10",
     record_id_col = "FIPS",
-    as_level_col = "AsLevel",
+    exposure_level_col = "ExposureLevel",
     apply_imputation_fallback = TRUE
   )
 
@@ -2189,18 +2189,18 @@ test_that("impute_arsenic_exposure handles basic case correctly", {
 
   # Check each imputed dataset
   for (j in seq_along(result)) {
-    expect_true("AsLevel" %in% names(result[[j]]))
-    expect_true(all(result[[j]]$AsLevel %in% as_cat_label))
-    expect_false(any(is.na(result[[j]]$AsLevel)))
+    expect_true("ExposureLevel" %in% names(result[[j]]))
+    expect_true(all(result[[j]]$ExposureLevel %in% cat_label))
+    expect_false(any(is.na(result[[j]]$ExposureLevel)))
   }
 })
 
-test_that("impute_arsenic_exposure handles NA weights correctly", {
+test_that("impute_exposure handles NA weights correctly", {
   set.seed(12345)
   n_counties <- 5
   n_cells <- 25
   ndraws <- 2
-  as_cat_label <- c("As<5", "As5-10", "As10+")
+  cat_label <- c("<5", "5-10", "10+")
 
   county_ids <- sprintf("%05d", rep(1:n_counties, each = 5))
   datmatx_prob <- data.frame(
@@ -2227,32 +2227,32 @@ test_that("impute_arsenic_exposure handles NA weights correctly", {
 
   # Should not error with NA weights
   result <- expect_no_error(
-    geoExposeR:::impute_arsenic_exposure(
+    geoExposeR:::impute_exposure(
       datmatx_prob = datmatx_prob,
       rasterprob_combined = rasterprob_combined,
       cellpop = cellpop,
       births = births,
       ndraws = ndraws,
-      as_cat_label = as_cat_label,
+      cat_label = cat_label,
       id_col = "GEOID10",
       record_id_col = "FIPS",
-      as_level_col = "AsLevel",
+      exposure_level_col = "ExposureLevel",
       apply_imputation_fallback = TRUE
     )
   )
 
   expect_equal(length(result), ndraws)
   for (j in seq_along(result)) {
-    expect_false(any(is.na(result[[j]]$AsLevel)))
+    expect_false(any(is.na(result[[j]]$ExposureLevel)))
   }
 })
 
-test_that("impute_arsenic_exposure handles all-zero weights gracefully", {
+test_that("impute_exposure handles all-zero weights gracefully", {
   set.seed(12345)
   n_counties <- 3
   n_cells <- 15
   ndraws <- 2
-  as_cat_label <- c("As<5", "As5-10", "As10+")
+  cat_label <- c("<5", "5-10", "10+")
 
   county_ids <- sprintf("%05d", rep(1:n_counties, each = 5))
   datmatx_prob <- data.frame(
@@ -2278,16 +2278,16 @@ test_that("impute_arsenic_exposure handles all-zero weights gracefully", {
   )
 
   result <- expect_no_error(
-    geoExposeR:::impute_arsenic_exposure(
+    geoExposeR:::impute_exposure(
       datmatx_prob = datmatx_prob,
       rasterprob_combined = rasterprob_combined,
       cellpop = cellpop,
       births = births,
       ndraws = ndraws,
-      as_cat_label = as_cat_label,
+      cat_label = cat_label,
       id_col = "GEOID10",
       record_id_col = "FIPS",
-      as_level_col = "AsLevel",
+      exposure_level_col = "ExposureLevel",
       apply_imputation_fallback = TRUE
     )
   )
@@ -2295,11 +2295,11 @@ test_that("impute_arsenic_exposure handles all-zero weights gracefully", {
   expect_equal(length(result), ndraws)
 })
 
-test_that("impute_arsenic_exposure handles single cell per county", {
+test_that("impute_exposure handles single cell per county", {
   set.seed(12345)
   n_counties <- 5
   ndraws <- 2
-  as_cat_label <- c("As<5", "As5-10", "As10+")
+  cat_label <- c("<5", "5-10", "10+")
 
   # Single cell per county
   county_ids <- sprintf("%05d", 1:n_counties)
@@ -2323,30 +2323,30 @@ test_that("impute_arsenic_exposure handles single cell per county", {
     stringsAsFactors = FALSE
   )
 
-  result <- geoExposeR:::impute_arsenic_exposure(
+  result <- geoExposeR:::impute_exposure(
     datmatx_prob = datmatx_prob,
     rasterprob_combined = rasterprob_combined,
     cellpop = cellpop,
     births = births,
     ndraws = ndraws,
-    as_cat_label = as_cat_label,
+    cat_label = cat_label,
     id_col = "GEOID10",
     record_id_col = "FIPS",
-    as_level_col = "AsLevel",
+    exposure_level_col = "ExposureLevel",
     apply_imputation_fallback = TRUE
   )
 
   expect_equal(length(result), ndraws)
   for (j in seq_along(result)) {
-    expect_true(all(result[[j]]$AsLevel %in% as_cat_label))
+    expect_true(all(result[[j]]$ExposureLevel %in% cat_label))
   }
 })
 
-test_that("impute_arsenic_exposure removes rows when fallback disabled", {
+test_that("impute_exposure removes rows when fallback disabled", {
   set.seed(12345)
   n_counties <- 5
   ndraws <- 2
-  as_cat_label <- c("As<5", "As5-10", "As10+")
+  cat_label <- c("<5", "5-10", "10+")
 
   county_ids <- sprintf("%05d", 1:n_counties)
   datmatx_prob <- data.frame(
@@ -2370,22 +2370,22 @@ test_that("impute_arsenic_exposure removes rows when fallback disabled", {
     stringsAsFactors = FALSE
   )
 
-  result <- geoExposeR:::impute_arsenic_exposure(
+  result <- geoExposeR:::impute_exposure(
     datmatx_prob = datmatx_prob,
     rasterprob_combined = rasterprob_combined,
     cellpop = cellpop,
     births = births,
     ndraws = ndraws,
-    as_cat_label = as_cat_label,
+    cat_label = cat_label,
     id_col = "GEOID10",
     record_id_col = "FIPS",
-    as_level_col = "AsLevel",
+    exposure_level_col = "ExposureLevel",
     apply_imputation_fallback = FALSE  # Disable fallback
   )
 
-  # Rows with missing arsenic levels should be removed
+  # Rows with missing exposure levels should be removed
   for (j in seq_along(result)) {
-    expect_false(any(is.na(result[[j]]$AsLevel)))
+    expect_false(any(is.na(result[[j]]$ExposureLevel)))
     expect_lte(nrow(result[[j]]), n_counties)  # Should have fewer rows
   }
 })
@@ -2399,14 +2399,14 @@ test_that("impute_additional_variables handles basic case", {
   imputed_datasets <- list(
     data.frame(
       FIPS = sprintf("%05d", 1:20),
-      AsLevel = factor(sample(c("As<5", "As5-10", "As10+"), 20, replace = TRUE)),
+      ExposureLevel = factor(sample(c("<5", "5-10", "10+"), 20, replace = TRUE)),
       MAGE_R = c(rep(NA, 5), sample(18:45, 15, replace = TRUE)),
       pm = rnorm(20, 8, 2),
       stringsAsFactors = FALSE
     ),
     data.frame(
       FIPS = sprintf("%05d", 1:20),
-      AsLevel = factor(sample(c("As<5", "As5-10", "As10+"), 20, replace = TRUE)),
+      ExposureLevel = factor(sample(c("<5", "5-10", "10+"), 20, replace = TRUE)),
       MAGE_R = c(rep(NA, 3), sample(18:45, 17, replace = TRUE)),
       pm = rnorm(20, 8, 2),
       stringsAsFactors = FALSE
@@ -2443,7 +2443,7 @@ test_that("impute_additional_variables warns when no covariates available", {
   imputed_datasets <- list(
     data.frame(
       FIPS = sprintf("%05d", 1:10),
-      AsLevel = factor(sample(c("As<5", "As5-10", "As10+"), 10, replace = TRUE)),
+      ExposureLevel = factor(sample(c("<5", "5-10", "10+"), 10, replace = TRUE)),
       MAGE_R = c(rep(NA, 3), sample(18:45, 7, replace = TRUE)),
       stringsAsFactors = FALSE
     )
@@ -2475,7 +2475,7 @@ test_that("impute_additional_variables errors on missing variables in births", {
   imputed_datasets <- list(
     data.frame(
       FIPS = sprintf("%05d", 1:10),
-      AsLevel = factor(sample(c("As<5", "As5-10", "As10+"), 10, replace = TRUE)),
+      ExposureLevel = factor(sample(c("<5", "5-10", "10+"), 10, replace = TRUE)),
       stringsAsFactors = FALSE
     )
   )
@@ -2506,7 +2506,7 @@ test_that("impute_additional_variables skips variables without NAs", {
   imputed_datasets <- list(
     data.frame(
       FIPS = sprintf("%05d", 1:10),
-      AsLevel = factor(sample(c("As<5", "As5-10", "As10+"), 10, replace = TRUE)),
+      ExposureLevel = factor(sample(c("<5", "5-10", "10+"), 10, replace = TRUE)),
       MAGE_R = sample(18:45, 10, replace = TRUE),  # No NAs
       pm = rnorm(10, 8, 2),
       stringsAsFactors = FALSE
@@ -2538,22 +2538,22 @@ test_that("impute_additional_variables skips variables without NAs", {
 # ===== Tests for validate_imputed_datasets function =====
 
 test_that("validate_imputed_datasets passes valid datasets", {
-  as_cat_label <- c("As<5", "As5-10", "As10+")
+  cat_label <- c("<5", "5-10", "10+")
 
   imputed_datasets <- list(
     data.frame(
       FIPS = sprintf("%05d", 1:10),
-      AsLevel = factor(
-        sample(as_cat_label, 10, replace = TRUE),
-        levels = as_cat_label
+      ExposureLevel = factor(
+        sample(cat_label, 10, replace = TRUE),
+        levels = cat_label
       ),
       BWT = rnorm(10, 3400, 450)
     ),
     data.frame(
       FIPS = sprintf("%05d", 1:10),
-      AsLevel = factor(
-        sample(as_cat_label, 10, replace = TRUE),
-        levels = as_cat_label
+      ExposureLevel = factor(
+        sample(cat_label, 10, replace = TRUE),
+        levels = cat_label
       ),
       BWT = rnorm(10, 3400, 450)
     )
@@ -2562,20 +2562,20 @@ test_that("validate_imputed_datasets passes valid datasets", {
   expect_message(
     geoExposeR:::validate_imputed_datasets(
       imputed_datasets = imputed_datasets,
-      as_level_col = "AsLevel",
-      as_cat_label = as_cat_label
+      exposure_level_col = "ExposureLevel",
+      cat_label = cat_label
     ),
     "All 2 imputed datasets validated successfully"
   )
 })
 
-test_that("validate_imputed_datasets catches missing arsenic levels", {
-  as_cat_label <- c("As<5", "As5-10", "As10+")
+test_that("validate_imputed_datasets catches missing exposure levels", {
+  cat_label <- c("<5", "5-10", "10+")
 
   imputed_datasets <- list(
     data.frame(
       FIPS = sprintf("%05d", 1:10),
-      AsLevel = factor(c(NA, sample(as_cat_label, 9, replace = TRUE))),
+      ExposureLevel = factor(c(NA, sample(cat_label, 9, replace = TRUE))),
       BWT = rnorm(10, 3400, 450)
     )
   )
@@ -2583,20 +2583,20 @@ test_that("validate_imputed_datasets catches missing arsenic levels", {
   expect_error(
     geoExposeR:::validate_imputed_datasets(
       imputed_datasets = imputed_datasets,
-      as_level_col = "AsLevel",
-      as_cat_label = as_cat_label
+      exposure_level_col = "ExposureLevel",
+      cat_label = cat_label
     ),
-    "Missing values found in arsenic level column"
+    "Missing values found in exposure level column"
   )
 })
 
-test_that("validate_imputed_datasets catches invalid arsenic levels", {
-  as_cat_label <- c("As<5", "As5-10", "As10+")
+test_that("validate_imputed_datasets catches invalid exposure levels", {
+  cat_label <- c("<5", "5-10", "10+")
 
   imputed_datasets <- list(
     data.frame(
       FIPS = sprintf("%05d", 1:10),
-      AsLevel = factor(c("InvalidLevel", sample(as_cat_label, 9, replace = TRUE))),
+      ExposureLevel = factor(c("InvalidLevel", sample(cat_label, 9, replace = TRUE))),
       BWT = rnorm(10, 3400, 450)
     )
   )
@@ -2604,20 +2604,20 @@ test_that("validate_imputed_datasets catches invalid arsenic levels", {
   expect_error(
     geoExposeR:::validate_imputed_datasets(
       imputed_datasets = imputed_datasets,
-      as_level_col = "AsLevel",
-      as_cat_label = as_cat_label
+      exposure_level_col = "ExposureLevel",
+      cat_label = cat_label
     ),
-    "Invalid arsenic levels found"
+    "Invalid exposure levels found"
   )
 })
 
 # ===== Additional tests for edge cases in imputation functions =====
 
-test_that("impute_arsenic_exposure applies fallback with message for unmatched counties", {
+test_that("impute_exposure applies fallback with message for unmatched counties", {
   set.seed(12345)
   n_counties <- 5
   ndraws <- 2
-  as_cat_label <- c("As<5", "As5-10", "As10+")
+  cat_label <- c("<5", "5-10", "10+")
 
   # Create probability data with only 3 counties
   county_ids <- sprintf("%05d", 1:3)
@@ -2644,16 +2644,16 @@ test_that("impute_arsenic_exposure applies fallback with message for unmatched c
 
   # Should print message about filling NAs with most common category
   expect_message(
-    geoExposeR:::impute_arsenic_exposure(
+    geoExposeR:::impute_exposure(
       datmatx_prob = datmatx_prob,
       rasterprob_combined = rasterprob_combined,
       cellpop = cellpop,
       births = births,
       ndraws = ndraws,
-      as_cat_label = as_cat_label,
+      cat_label = cat_label,
       id_col = "GEOID10",
       record_id_col = "FIPS",
-      as_level_col = "AsLevel",
+      exposure_level_col = "ExposureLevel",
       apply_imputation_fallback = TRUE
     ),
     "filling with most common category"
@@ -2667,7 +2667,7 @@ test_that("impute_additional_variables handles insufficient columns for MICE", {
   imputed_datasets <- list(
     data.frame(
       FIPS = sprintf("%05d", 1:10),
-      AsLevel = factor(sample(c("As<5", "As5-10", "As10+"), 10, replace = TRUE)),
+      ExposureLevel = factor(sample(c("<5", "5-10", "10+"), 10, replace = TRUE)),
       MAGE_R = c(rep(NA, 3), sample(18:45, 7, replace = TRUE)),
       stringsAsFactors = FALSE
     )
@@ -2702,7 +2702,7 @@ test_that("impute_additional_variables handles MICE failure gracefully", {
   imputed_datasets <- list(
     data.frame(
       FIPS = sprintf("%05d", 1:5),
-      AsLevel = factor(sample(c("As<5", "As5-10", "As10+"), 5, replace = TRUE)),
+      ExposureLevel = factor(sample(c("<5", "5-10", "10+"), 5, replace = TRUE)),
       MAGE_R = c(NA, NA, NA, NA, 25),  # Almost all NA
       pm = c(NA, NA, NA, NA, 8),  # Covariate also mostly NA
       stringsAsFactors = FALSE
@@ -2741,7 +2741,7 @@ test_that("impute_additional_variables skips birth column check when disabled", 
   imputed_datasets <- list(
     data.frame(
       FIPS = sprintf("%05d", 1:10),
-      AsLevel = factor(sample(c("As<5", "As5-10", "As10+"), 10, replace = TRUE)),
+      ExposureLevel = factor(sample(c("<5", "5-10", "10+"), 10, replace = TRUE)),
       MAGE_R = c(rep(NA, 3), sample(18:45, 7, replace = TRUE)),
       pm = rnorm(10, 8, 2),
       stringsAsFactors = FALSE
@@ -2926,7 +2926,7 @@ test_that("validate_conc_cutoffs validates properly with validate_cutoffs=TRUE",
   expect_equal(result$n_categories, 3)
 })
 
-test_that("load_and_process_arsenic_data uses auto-generated cutoffs", {
+test_that("load_and_process_exposure_data uses auto-generated cutoffs", {
   temp_dir <- tempfile(pattern = "test_auto_cutoffs_")
   dir.create(temp_dir)
 
@@ -2958,7 +2958,7 @@ test_that("load_and_process_arsenic_data uses auto-generated cutoffs", {
 
   # Should auto-generate cutoffs when conc_cutoffs = NULL
   expect_message(
-    geoExposeR:::load_and_process_arsenic_data(
+    geoExposeR:::load_and_process_exposure_data(
       model_prob_csv = prob_file,
       conc_data_csv = conc_file,
       prob_cols = c("prob_C1", "prob_C2", "prob_C3"),
@@ -2981,7 +2981,7 @@ test_that("regression_analysis errors on missing .id column", {
   births <- data.frame(
     FIPS = sprintf("%05d", 1:10),
     BWT = rnorm(10, 3400, 450),
-    AsLevel = factor(sample(c("As<5", "As5-10", "As10+"), 10, replace = TRUE))
+    ExposureLevel = factor(sample(c("<5", "5-10", "10+"), 10, replace = TRUE))
   )
   # No .id column
 
@@ -2989,9 +2989,9 @@ test_that("regression_analysis errors on missing .id column", {
     geoExposeR:::regression_analysis(
       births = births,
       targets = "BWT",
-      as_cat_label = c("As5-10", "As10+"),
-      as_level_col = "AsLevel",
-      regression_formula = "~ as.factor(AsLevel) + (1|FIPS)",
+      cat_label = c("5-10", "10+"),
+      exposure_level_col = "ExposureLevel",
+      regression_formula = "~ as.factor(ExposureLevel) + (1|FIPS)",
       output_dir = tempdir()
     ),
     "must contain '.id' column"
@@ -3003,16 +3003,16 @@ test_that("regression_analysis errors on missing target variables", {
     .id = rep(1:2, each = 5),
     FIPS = sprintf("%05d", 1:10),
     BWT = rnorm(10, 3400, 450),
-    AsLevel = factor(sample(c("As<5", "As5-10", "As10+"), 10, replace = TRUE))
+    ExposureLevel = factor(sample(c("<5", "5-10", "10+"), 10, replace = TRUE))
   )
 
   expect_error(
     geoExposeR:::regression_analysis(
       births = births,
       targets = c("BWT", "NONEXISTENT"),
-      as_cat_label = c("As5-10", "As10+"),
-      as_level_col = "AsLevel",
-      regression_formula = "~ as.factor(AsLevel) + (1|FIPS)",
+      cat_label = c("5-10", "10+"),
+      exposure_level_col = "ExposureLevel",
+      regression_formula = "~ as.factor(ExposureLevel) + (1|FIPS)",
       output_dir = tempdir()
     ),
     "Target variables not found"
@@ -3020,7 +3020,7 @@ test_that("regression_analysis errors on missing target variables", {
 })
 
 test_that("pool_estimates_by_term handles empty term data", {
-  # Create combined_results with terms that won't match arsenic_terms
+  # Create combined_results with terms that won't match exposure_terms
   combined_results <- data.frame(
     term = c("other_term1", "other_term2"),
     estimate = c(1.0, 2.0),
@@ -3038,7 +3038,7 @@ test_that("pool_estimates_by_term handles empty term data", {
 
   result <- geoExposeR:::pool_estimates_by_term(
     combined_results = combined_results,
-    arsenic_terms = c("as.factor(AsLevel)As5-10"),  # Won't match any rows
+    exposure_terms = c("as.factor(ExposureLevel)5-10"),  # Won't match any rows
     reference_model = mock_model
   )
 
@@ -3094,17 +3094,17 @@ test_that("regression_analysis handles model fitting errors", {
     .id = rep(1:2, each = 20),
     FIPS = sprintf("%05d", rep(1:4, 10)),
     BWT = rnorm(40, 3400, 450),
-    AsLevel = factor(rep("As<5", 40), levels = c("As<5", "As5-10", "As10+"))
+    ExposureLevel = factor(rep("<5", 40), levels = c("<5", "5-10", "10+"))
   )
 
-  # Model will fail because arsenic level has only one level
+  # Model will fail because exposure level has only one level
   expect_error(
     geoExposeR:::regression_analysis(
       births = births,
       targets = "BWT",
-      as_cat_label = c("As5-10", "As10+"),
-      as_level_col = "AsLevel",
-      regression_formula = "~ as.factor(AsLevel) + (1|FIPS)",
+      cat_label = c("5-10", "10+"),
+      exposure_level_col = "ExposureLevel",
+      regression_formula = "~ as.factor(ExposureLevel) + (1|FIPS)",
       output_dir = tempdir()
     ),
     "Model fitting failed"
@@ -3123,14 +3123,14 @@ test_that("prepare_conc_data processes raw concentration measurements correctly"
   # Create sample raw concentration data
   conc_raw_data <- data.frame(
     county_fips = c("06001", "06001", "06003", "06003", "06005"),
-    arsenic_concentration = c(2.5, 3.1, 8.2, 7.5, 4.0),
+    concentration = c(2.5, 3.1, 8.2, 7.5, 4.0),
     population_served = c(50000, 25000, 10000, 15000, 30000)
   )
 
   result <- prepare_conc_data(
     conc_data = conc_raw_data,
     id_col = "county_fips",
-    concentration_col = "arsenic_concentration",
+    concentration_col = "concentration",
     input_type = "raw"
   )
 
@@ -3184,14 +3184,14 @@ test_that("prepare_conc_data handles missing SD with default", {
     default_sdlog = 1.5
   )
 
-  # sdlog should be calculated based on derived sd_as
+  # sdlog should be calculated based on derived sd_conc
   expect_true(all(result$conc_sdlog > 0))
 })
 
 test_that("prepare_conc_data validates missing geoid column", {
   conc_data <- data.frame(
     wrong_col = c("06001"),
-    arsenic_concentration = c(3.0)
+    concentration = c(3.0)
   )
 
   expect_error(
@@ -3208,14 +3208,14 @@ test_that("prepare_conc_data validates missing concentration column", {
 
   expect_error(
     prepare_conc_data(conc_data, id_col = "county_fips", input_type = "raw"),
-    "Concentration column 'arsenic_concentration' not found"
+    "Concentration column 'concentration' not found"
   )
 })
 
 test_that("prepare_conc_data handles zero/negative concentrations", {
   conc_data <- data.frame(
     county_fips = c("06001", "06001", "06003"),
-    arsenic_concentration = c(0, -1, 5.0)
+    concentration = c(0, -1, 5.0)
   )
 
   result <- prepare_conc_data(
@@ -3232,7 +3232,7 @@ test_that("prepare_conc_data handles zero/negative concentrations", {
 test_that("prepare_conc_data errors when all concentrations are non-positive", {
   conc_data <- data.frame(
     county_fips = c("06001", "06003"),
-    arsenic_concentration = c(0, -1)
+    concentration = c(0, -1)
   )
 
   expect_error(
@@ -3244,7 +3244,7 @@ test_that("prepare_conc_data errors when all concentrations are non-positive", {
 test_that("prepare_conc_data includes private well percentage when provided", {
   conc_data <- data.frame(
     county_fips = c("06001", "06001", "06003"),
-    arsenic_concentration = c(3.0, 4.0, 5.0),
+    concentration = c(3.0, 4.0, 5.0),
     pwell_pct = c(15.0, 15.0, 25.0)
   )
 
@@ -3262,7 +3262,7 @@ test_that("prepare_conc_data includes private well percentage when provided", {
 test_that("prepare_conc_data saves output file when requested", {
   conc_data <- data.frame(
     county_fips = c("06001", "06003"),
-    arsenic_concentration = c(3.0, 5.0)
+    concentration = c(3.0, 5.0)
   )
 
   output_file <- tempfile(fileext = ".csv")
@@ -4332,7 +4332,7 @@ test_that("prepare_conc_data handles population-weighted averaging without Hmisc
   # This tests the fallback when Hmisc is not available
   conc_raw_data <- data.frame(
     county_fips = c("06001", "06001", "06003", "06003"),
-    arsenic_concentration = c(2.5, 3.1, 8.2, 7.5),
+    concentration = c(2.5, 3.1, 8.2, 7.5),
     population_served = c(50000, 25000, 10000, 15000)
   )
 
@@ -4340,7 +4340,7 @@ test_that("prepare_conc_data handles population-weighted averaging without Hmisc
   result <- prepare_conc_data(
     conc_data = conc_raw_data,
     id_col = "county_fips",
-    concentration_col = "arsenic_concentration",
+    concentration_col = "concentration",
     population_col = "population_served",
     input_type = "raw"
   )
@@ -4763,13 +4763,13 @@ test_that("validate_prepared_inputs detects ID alignment issues", {
 test_that("prepare_conc_data handles simple averaging without population weights", {
   conc_raw_data <- data.frame(
     county_fips = c("06001", "06001", "06003"),
-    arsenic_concentration = c(2.5, 3.5, 5.0)
+    concentration = c(2.5, 3.5, 5.0)
   )
 
   result <- prepare_conc_data(
     conc_data = conc_raw_data,
     id_col = "county_fips",
-    concentration_col = "arsenic_concentration",
+    concentration_col = "concentration",
     population_col = NULL,  # No population weighting
     input_type = "raw"
   )
@@ -4804,7 +4804,7 @@ test_that("calculate_conc_lognormal_params auto-calculates from concentration", 
   # Create concentration data with raw concentration but no lognormal params
   conc_data <- data.table::data.table(
     GEOID10 = c("06001", "06002", "06003"),
-    arsenic_conc = c(2.5, 7.0, 15.0),
+    exposure_conc = c(2.5, 7.0, 15.0),
     PWELL_private_pct = c(20, 35, 45)
   )
 
@@ -4813,7 +4813,7 @@ test_that("calculate_conc_lognormal_params auto-calculates from concentration", 
     datmatx_conc = conc_data,
     conc_mean_col = "conc_meanlog",
     conc_sd_col = "conc_sdlog",
-    conc_raw_col = "arsenic_conc",
+    conc_raw_col = "exposure_conc",
     default_sdlog = 1.5
   )
 
@@ -4844,7 +4844,7 @@ test_that("calculate_conc_lognormal_params returns data unchanged when cols exis
     datmatx_conc = conc_data,
     conc_mean_col = "conc_meanlog",
     conc_sd_col = "conc_sdlog",
-    conc_raw_col = "arsenic_conc",  # Not used
+    conc_raw_col = "exposure_conc",  # Not used
     default_sdlog = 1.0
   )
 
@@ -4856,7 +4856,7 @@ test_that("calculate_conc_lognormal_params returns data unchanged when cols exis
 test_that("calculate_conc_lognormal_params handles NA in concentration", {
   conc_data <- data.table::data.table(
     GEOID10 = c("06001", "06002", "06003"),
-    arsenic_conc = c(2.5, NA, 15.0),
+    exposure_conc = c(2.5, NA, 15.0),
     PWELL_private_pct = c(20, 35, 45)
   )
 
@@ -4864,7 +4864,7 @@ test_that("calculate_conc_lognormal_params handles NA in concentration", {
     datmatx_conc = conc_data,
     conc_mean_col = "conc_meanlog",
     conc_sd_col = "conc_sdlog",
-    conc_raw_col = "arsenic_conc",
+    conc_raw_col = "exposure_conc",
     default_sdlog = 1.0
   )
 
@@ -4877,7 +4877,7 @@ test_that("calculate_conc_lognormal_params handles NA in concentration", {
 test_that("calculate_conc_lognormal_params errors when conc col not provided and meanlog missing", {
   conc_data <- data.table::data.table(
     GEOID10 = c("06001", "06002"),
-    arsenic_conc = c(2.5, 7.0),
+    exposure_conc = c(2.5, 7.0),
     PWELL_private_pct = c(20, 35)
   )
 
@@ -5056,7 +5056,7 @@ test_that("perform_sensitivity_analysis works with format_ids = TRUE (default)",
       model_prob_csv = dummy_files$prob,
       conc_data_csv = dummy_files$conc,
       ndraws = 2,
-      regression_formula = "~ as.factor(AsLevel) + MAGE_R + (1 | MRSTATE)",
+      regression_formula = "~ as.factor(ExposureLevel) + MAGE_R + (1 | MRSTATE)",
       targets = c("BWT"),
       output_dir = output_dir,
       rucc_col = NULL,
@@ -5088,7 +5088,7 @@ test_that("perform_sensitivity_analysis works with format_ids = FALSE", {
       model_prob_csv = dummy_files$prob,
       conc_data_csv = dummy_files$conc,
       ndraws = 2,
-      regression_formula = "~ as.factor(AsLevel) + MAGE_R + (1 | MRSTATE)",
+      regression_formula = "~ as.factor(ExposureLevel) + MAGE_R + (1 | MRSTATE)",
       targets = c("BWT"),
       output_dir = output_dir,
       rucc_col = NULL,
@@ -5103,15 +5103,15 @@ test_that("perform_sensitivity_analysis works with format_ids = FALSE", {
   unlink(temp_dir, recursive = TRUE)
 })
 
-test_that("load_and_process_arsenic_data respects format_ids parameter", {
-  temp_dir <- tempfile(pattern = "test_arsenic_format_")
+test_that("load_and_process_exposure_data respects format_ids parameter", {
+  temp_dir <- tempfile(pattern = "test_exposure_format_")
   dir.create(temp_dir)
   
   # Create dummy data
   dummy_files <- create_dummy_data(file_dir = temp_dir)
   
   # Test with format_ids = TRUE
-  result_formatted <- geoExposeR:::load_and_process_arsenic_data(
+  result_formatted <- geoExposeR:::load_and_process_exposure_data(
     model_prob_csv = dummy_files$prob,
     conc_data_csv = dummy_files$conc,
     prob_cols = c("prob_C1", "prob_C2", "prob_C3"),
@@ -5127,7 +5127,7 @@ test_that("load_and_process_arsenic_data respects format_ids parameter", {
   )
   
   # Test with format_ids = FALSE
-  result_unformatted <- geoExposeR:::load_and_process_arsenic_data(
+  result_unformatted <- geoExposeR:::load_and_process_exposure_data(
     model_prob_csv = dummy_files$prob,
     conc_data_csv = dummy_files$conc,
     prob_cols = c("prob_C1", "prob_C2", "prob_C3"),
@@ -5334,7 +5334,7 @@ test_that("validate_conc_lognormal_input handles missing columns", {
   # Test with non-existent concentration column
   expect_error(
     geoExposeR:::validate_conc_lognormal_input(
-      conc_file, "conc_meanlog", "conc_sdlog", "arsenic_conc"
+      conc_file, "conc_meanlog", "conc_sdlog", "exposure_conc"
     ),
     "not found in the data"
   )
@@ -5405,7 +5405,7 @@ test_that("calculate_conc_lognormal_params handles missing conc_raw_col", {
   # Concentration data without meanlog but with concentration
   conc_data <- data.frame(
     GEOID10 = c("01001", "01003", "01005"),
-    arsenic_conc = c(5.0, 10.0, 15.0),
+    exposure_conc = c(5.0, 10.0, 15.0),
     PWELL_private_pct = c(30, 40, 35)
   )
   conc_file <- file.path(temp_dir, "conc_raw_values.csv")
@@ -5418,7 +5418,7 @@ test_that("calculate_conc_lognormal_params handles missing conc_raw_col", {
     datmatx_conc = data.table::copy(datmatx_conc),  # Use copy to avoid modifying original
     conc_mean_col = "conc_meanlog",
     conc_sd_col = "conc_sdlog",
-    conc_raw_col = "arsenic_conc",
+    conc_raw_col = "exposure_conc",
     default_sdlog = 1.0
   )
   
@@ -5459,19 +5459,19 @@ test_that("calculate_conc_lognormal_params handles missing conc_raw_col", {
   unlink(temp_dir, recursive = TRUE)
 })
 
-test_that("impute_arsenic_exposure handles edge cases", {
+test_that("impute_exposure handles edge cases", {
   # This function requires many dependencies, so we test through the main function
 
   # The edge cases (single cell per county, NA weights) are covered by integration tests
   # Here we just verify the function exists and has correct signature
-  expect_true(is.function(geoExposeR:::impute_arsenic_exposure))
+  expect_true(is.function(geoExposeR:::impute_exposure))
 })
 
 test_that("impute_additional_variables handles no MICE covariates", {
   # Create data with only one variable (insufficient for MICE)
   imputed_datasets <- list(
     data.frame(
-      AsLevel = c("As<5", "As5-10", "As10+"),
+      ExposureLevel = c("<5", "5-10", "10+"),
       var_to_impute = c(NA, 2, 3)
     )
   )
@@ -5501,24 +5501,24 @@ test_that("regression_analysis handles case with insufficient factor levels", {
   temp_dir <- tempfile(pattern = "test_reg_no_terms_")
   dir.create(temp_dir)
   
-  # Create data where AsLevel has only one unique value (only reference category)
+  # Create data where ExposureLevel has only one unique value (only reference category)
   # This should trigger an error about contrasts
   births_data <- data.frame(
     .id = rep(1:3, each = 100),  # 3 imputed datasets
-    AsLevel = rep("As<5", 300),  # Only reference category
+    ExposureLevel = rep("<5", 300),  # Only reference category
     BWT = rnorm(300, 3200, 500),
     MRSTATE = sample(c("CA", "NV"), 300, replace = TRUE)
   )
-  births_data$AsLevel <- factor(births_data$AsLevel, levels = c("As<5", "As5-10", "As10+"))
+  births_data$ExposureLevel <- factor(births_data$ExposureLevel, levels = c("<5", "5-10", "10+"))
   
   # Should produce error about contrasts (only one factor level present)
   expect_error(
     geoExposeR:::regression_analysis(
       births = births_data,
       targets = "BWT",
-      as_cat_label = c("As5-10", "As10+"),  # Non-reference categories
-      as_level_col = "AsLevel",
-      regression_formula = "~ as.factor(AsLevel) + (1|MRSTATE)",
+      cat_label = c("5-10", "10+"),  # Non-reference categories
+      exposure_level_col = "ExposureLevel",
+      regression_formula = "~ as.factor(ExposureLevel) + (1|MRSTATE)",
       output_dir = temp_dir
     ),
     "contrasts|Model fitting failed"
@@ -5531,7 +5531,7 @@ test_that("regression_analysis handles case with insufficient factor levels", {
 test_that("pool_estimates_by_term handles missing terms", {
   # Create combined results with only some terms
   combined_results <- data.frame(
-    term = c("As5-10", "As5-10", "As5-10"),  # Only As5-10, no As10+
+    term = c("5-10", "5-10", "5-10"),  # Only 5-10, no 10+
     estimate = c(0.1, 0.15, 0.12),
     std.error = c(0.05, 0.06, 0.055)
   )
@@ -5544,16 +5544,16 @@ test_that("pool_estimates_by_term handles missing terms", {
   )
   mock_model <- lme4::lmer(y ~ x + (1|group), data = mock_data)
   
-  # Pool with both As5-10 and As10+ (one missing)
+  # Pool with both 5-10 and 10+ (one missing)
   result <- geoExposeR:::pool_estimates_by_term(
     combined_results = combined_results,
-    arsenic_terms = c("As5-10", "As10+"),  # As10+ not in combined_results
+    exposure_terms = c("5-10", "10+"),  # 10+ not in combined_results
     reference_model = mock_model
   )
   
-  # Should only have As5-10 in result (As10+ is NULL and filtered)
+  # Should only have 5-10 in result (10+ is NULL and filtered)
   expect_equal(nrow(result), 1)
-  expect_equal(result$term[1], "As5-10")
+  expect_equal(result$term[1], "5-10")
 })
 
 test_that("pool_single_estimate handles edge case with zero between-imputation variance", {
@@ -5656,29 +5656,29 @@ test_that("prepare_prob_data handles less than 2 probability rasters", {
   unlink(temp_dir, recursive = TRUE)
 })
 
-# Test regression_analysis with no arsenic terms (warning path)
-test_that("regression_analysis handles no arsenic terms in results", {
+# Test regression_analysis with no exposure terms (warning path)
+test_that("regression_analysis handles no exposure terms in results", {
   temp_dir <- tempfile(pattern = "test_reg_warn_")
   dir.create(temp_dir)
   
-  # Create data with multiple factor levels but model results won't have arsenic terms
+  # Create data with multiple factor levels but model results won't have exposure terms
   set.seed(123)
   births_data <- data.frame(
     .id = rep(1:3, each = 100),
-    AsLevel = factor(sample(c("As<5", "As5-10", "As10+"), 300, replace = TRUE),
-                     levels = c("As<5", "As5-10", "As10+")),
+    ExposureLevel = factor(sample(c("<5", "5-10", "10+"), 300, replace = TRUE),
+                     levels = c("<5", "5-10", "10+")),
     BWT = rnorm(300, 3200, 500),
     MRSTATE = sample(c("CA", "NV"), 300, replace = TRUE)
   )
   
-  # This should run successfully (and cover lines 78-82 when arsenic terms exist)
+  # This should run successfully (and cover lines 78-82 when exposure terms exist)
   result <- suppressWarnings(
     geoExposeR:::regression_analysis(
       births = births_data,
       targets = "BWT",
-      as_cat_label = c("As5-10", "As10+"),
-      as_level_col = "AsLevel",
-      regression_formula = "~ as.factor(AsLevel) + (1|MRSTATE)",
+      cat_label = c("5-10", "10+"),
+      exposure_level_col = "ExposureLevel",
+      regression_formula = "~ as.factor(ExposureLevel) + (1|MRSTATE)",
       output_dir = temp_dir
     )
   )
@@ -5694,7 +5694,7 @@ test_that("regression_analysis handles no arsenic terms in results", {
 test_that("pool_estimates_by_term handles df extraction error", {
   # Create combined results
   combined_results <- data.frame(
-    term = c("As5-10", "As5-10", "As5-10"),
+    term = c("5-10", "5-10", "5-10"),
     estimate = c(0.1, 0.15, 0.12),
     std.error = c(0.05, 0.06, 0.055)
   )
@@ -5707,7 +5707,7 @@ test_that("pool_estimates_by_term handles df extraction error", {
   expect_warning(
     geoExposeR:::pool_estimates_by_term(
       combined_results = combined_results,
-      arsenic_terms = c("As5-10"),
+      exposure_terms = c("5-10"),
       reference_model = mock_model
     ),
     "Could not extract degrees of freedom"
@@ -5832,15 +5832,15 @@ test_that("validate_conc_lognormal_input handles NULL and invalid files", {
   )
 })
 
-# Test impute_arsenic_exposure with cells_i null condition (line 52)
-test_that("impute_arsenic_exposure handles county not in lookup", {
+# Test impute_exposure with cells_i null condition (line 52)
+test_that("impute_exposure handles county not in lookup", {
   # This edge case is covered implicitly through integration tests
   # The function handles counties with no matching cells by skipping them
-  expect_true(is.function(geoExposeR:::impute_arsenic_exposure))
+  expect_true(is.function(geoExposeR:::impute_exposure))
 })
 
-# Test impute_arsenic_exposure with mismatched county IDs
-test_that("impute_arsenic_exposure skips counties not in lookup", {
+# Test impute_exposure with mismatched county IDs
+test_that("impute_exposure skips counties not in lookup", {
   # Create probability data with one county
   datmatx_prob <- data.frame(
     GEOID10 = c("01001", "01001"),
@@ -5861,16 +5861,16 @@ test_that("impute_arsenic_exposure skips counties not in lookup", {
   
   # Run imputation - the 01003 county should be skipped
   # but since county_id_list comes from datmatx_prob, this won't trigger the next
-  result <- geoExposeR:::impute_arsenic_exposure(
+  result <- geoExposeR:::impute_exposure(
     datmatx_prob = datmatx_prob,
     rasterprob_combined = rasterprob_combined,
     cellpop = cellpop,
     births = births,
     ndraws = 2,
-    as_cat_label = c("Low", "High"),
+    cat_label = c("Low", "High"),
     id_col = "GEOID10",
     record_id_col = "FIPS",
-    as_level_col = "AsLevel",
+    exposure_level_col = "ExposureLevel",
     apply_imputation_fallback = TRUE
   )
   
@@ -6050,31 +6050,31 @@ test_that("validate_prepared_inputs handles health file read error", {
   unlink(temp_dir, recursive = TRUE)
 })
 
-# Test regression_analysis with no arsenic terms found (lines 78-82)
-test_that("regression_analysis warns when no arsenic terms in results", {
+# Test regression_analysis with no exposure terms found (lines 78-82)
+test_that("regression_analysis warns when no exposure terms in results", {
   temp_dir <- tempfile(pattern = "test_reg_no_as_")
   dir.create(temp_dir)
   
-  # Create data with multiple factor levels but where the arsenic terms
+  # Create data with multiple factor levels but where the exposure terms
   # we're looking for won't exist in the model output
   set.seed(456)
   births_data <- data.frame(
     .id = rep(1:3, each = 100),
-    AsLevel = factor(sample(c("As<5", "As5-10"), 300, replace = TRUE),
-                     levels = c("As<5", "As5-10")),  # Two levels - model will fit
+    ExposureLevel = factor(sample(c("<5", "5-10"), 300, replace = TRUE),
+                     levels = c("<5", "5-10")),  # Two levels - model will fit
     BWT = rnorm(300, 3200, 500),
     MRSTATE = sample(c("CA", "NV"), 300, replace = TRUE)
   )
   
-  # This should warn about no arsenic terms because we're asking for "As10+" and "As20+"
-  # but the data only has "As<5" and "As5-10"
+  # This should warn about no exposure terms because we're asking for "10+" and "20+"
+  # but the data only has "<5" and "5-10"
   result <- suppressWarnings(
     geoExposeR:::regression_analysis(
       births = births_data,
       targets = "BWT",
-      as_cat_label = c("As10+", "As20+"),  # Terms that won't exist
-      as_level_col = "AsLevel",
-      regression_formula = "~ as.factor(AsLevel) + (1|MRSTATE)",
+      cat_label = c("10+", "20+"),  # Terms that won't exist
+      exposure_level_col = "ExposureLevel",
+      regression_formula = "~ as.factor(ExposureLevel) + (1|MRSTATE)",
       output_dir = temp_dir
     )
   )

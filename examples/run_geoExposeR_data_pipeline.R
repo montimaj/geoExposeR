@@ -66,7 +66,7 @@ cat("3a. Processing raw concentration data with population weighting...\n")
 
 conc_raw <- data.frame(
   county_fips = conc_orig$id,
-  arsenic_conc = ifelse(is.na(conc_orig$weighted_as20062008),
+  concentration = ifelse(is.na(conc_orig$weighted_as20062008),
                         runif(nrow(conc_orig), 0.5, 15),  # Fill NAs with random
                         conc_orig$weighted_as20062008),
   pop_served = ifelse(is.na(conc_orig$county_pop_served20062008),
@@ -78,7 +78,7 @@ conc_raw <- data.frame(
 conc_processed_raw <- prepare_conc_data(
   conc_data = conc_raw,
   id_col = "county_fips",
-  concentration_col = "arsenic_conc",
+  concentration_col = "concentration",
   population_col = "pop_served",
   private_well_pct_col = "pwell_pct",
   input_type = "raw"
@@ -92,16 +92,16 @@ cat("3b. Processing pre-aggregated concentration data...\n")
 
 conc_aggregated <- data.frame(
   geoid = conc_orig$id,
-  mean_as = runif(nrow(conc_orig), 1, 10),
-  sd_as = runif(nrow(conc_orig), 0.5, 3),
+  mean_conc = runif(nrow(conc_orig), 1, 10),
+  sd_conc = runif(nrow(conc_orig), 0.5, 3),
   pwell = conc_orig$Dom_Pop_Percent
 )
 
 conc_processed_agg <- prepare_conc_data(
   conc_data = conc_aggregated,
   id_col = "geoid",
-  mean_col = "mean_as",
-  sd_col = "sd_as",
+  mean_col = "mean_conc",
+  sd_col = "sd_conc",
   private_well_pct_col = "pwell",
   input_type = "summary"
 )
@@ -336,16 +336,16 @@ results <- tryCatch({
     model_prob_csv = merged_path,
     conc_data_csv = merged_path,
     birth_data_txt = health_analysis_path,
-    regression_formula = "~ as.factor(AsLevel) + (1 | age_decade)",
+    regression_formula = "~ as.factor(ExposureLevel) + (1 | age_decade)",
     output_dir = output_dir,
     targets = c("SBP"),
-    as_cat_label = c("As<5", "As5-10", "As10+"),
-    drop_as_cat_label_reg = c("As<5"),
+    cat_label = c("<5", "5-10", "10+"),
+    drop_cat_label_ref = c("<5"),
     id_col = "id",
     prob_cols = c("RFCprobC1", "RFCprobC2", "RFCprobC3"),
     pop_well_col = "Wells_2010",
     record_id_col = "id",
-    as_level_col = "AsLevel",
+    exposure_level_col = "ExposureLevel",
     conc_mean_col = "conc_meanlog",
     conc_sd_col = "conc_sdlog",
     pwell_col = "Dom_Pop_Percent",

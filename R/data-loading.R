@@ -23,7 +23,7 @@
 #' @return List containing processed exposure data
 #'
 #' @keywords internal
-load_and_process_arsenic_data <- function(
+load_and_process_exposure_data <- function(
   model_prob_csv,
   conc_data_csv,
   prob_cols,

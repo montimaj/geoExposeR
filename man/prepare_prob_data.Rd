@@ -40,7 +40,7 @@ population. Default is "private_well_pop".}
 \item{extraction_method}{Character. Method for extracting raster values:
 "centroid" (faster) or "mean" (more accurate). Default is "mean".}
 
-\item{cutoffs}{Numeric vector of length 2 specifying arsenic concentration
+\item{cutoffs}{Numeric vector of length 2 specifying concentration
 cutoffs in ug/L for creating categories. Default is \code{c(5, 10)} for
 categories: <5, 5-10, >=10.}
 
@@ -48,7 +48,7 @@ categories: <5, 5-10, >=10.}
 }
 \value{
 A data.table with columns for geographic ID and multinomial
-probabilities for each arsenic category.
+probabilities for each exposure category.
 }
 \description{
 Extracts exposure probability estimates from GeoTIFF rasters
@@ -56,12 +56,12 @@ and aggregates them by geographic unit (e.g., county) to create the
 CSV format required by geoExposeR.
 }
 \details{
-The function converts exceedance probabilities (P(As > threshold)) to
+The function converts exceedance probabilities (P(conc > threshold)) to
 multinomial probabilities that sum to 1:
 \itemize{
-\item Category 1: P(As < lower_cutoff) = 1 - P(As > lower_cutoff)
-\item Category 2: P(lower <= As < upper) = P(As > lower) - P(As > upper)
-\item Category 3: P(As >= upper_cutoff) = P(As > upper_cutoff)
+\item Category 1: P(conc < lower_cutoff) = 1 - P(conc > lower_cutoff)
+\item Category 2: P(lower <= conc < upper) = P(conc > lower) - P(conc > upper)
+\item Category 3: P(conc >= upper_cutoff) = P(conc > upper_cutoff)
 }
 }
 \section{Required Packages}{

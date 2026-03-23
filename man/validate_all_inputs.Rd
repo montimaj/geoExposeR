@@ -21,9 +21,9 @@ validate_all_inputs(
   conc_raw_col = NULL,
   default_sdlog = 1,
   seed = NULL,
-  as_cat_label = NULL,
-  as_level_col = "AsLevel",
-  drop_as_cat_label_reg = NULL,
+  cat_label = NULL,
+  exposure_level_col = "ExposureLevel",
+  drop_cat_label_ref = NULL,
   conc_cutoffs = NULL,
   prob_columns = NULL,
   validate_cutoffs = TRUE,
@@ -65,11 +65,11 @@ validate_all_inputs(
 
 \item{seed}{Random seed for reproducibility}
 
-\item{as_cat_label}{Arsenic category label}
+\item{cat_label}{Exposure category label}
 
-\item{as_level_col}{Column name for arsenic level}
+\item{exposure_level_col}{Column name for exposure level}
 
-\item{drop_as_cat_label_reg}{Regular expression to drop arsenic categories}
+\item{drop_cat_label_ref}{Regular expression to drop exposure categories}
 
 \item{conc_cutoffs}{Concentration cutoffs for exposure categories}
 
@@ -83,7 +83,7 @@ validate_all_inputs(
 
 \item{id_col}{Column name for geographic identifier}
 
-\item{prob_cols}{Arsenic concentration columns}
+\item{prob_cols}{Exposure probability columns}
 
 \item{pop_well_col}{Column name for population well}
 

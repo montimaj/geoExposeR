@@ -5,7 +5,7 @@
 \title{Validate Column Name Parameters}
 \usage{
 validate_column_names(
-  as_level_col,
+  exposure_level_col,
   rucc_col,
   id_col,
   pop_well_col,

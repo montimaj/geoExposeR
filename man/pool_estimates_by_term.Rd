@@ -4,12 +4,12 @@
 \alias{pool_estimates_by_term}
 \title{Pool regression estimates using Rubin's Rules}
 \usage{
-pool_estimates_by_term(combined_results, arsenic_terms, reference_model)
+pool_estimates_by_term(combined_results, exposure_terms, reference_model)
 }
 \arguments{
 \item{combined_results}{Data frame with term, estimate, and std.error columns}
 
-\item{arsenic_terms}{Character vector of arsenic terms to pool}
+\item{exposure_terms}{Character vector of exposure terms to pool}
 
 \item{reference_model}{A fitted model to extract degrees of freedom}
 }

@@ -2,34 +2,40 @@
 
 ## First Stable Release
 
-This is the first stable release of geoExposeR, a feature-complete R package for modeling health effects of environmental exposures, with a primary focus on groundwater contaminants. Based on epidemiological studies and existing concentration models.
+This is the first stable release of geoExposeR, a feature-complete R package for modeling health effects of environmental exposures. Originally designed for drinking water contaminants but broadly applicable to other environmental exposures.
 
 ### Highlights
 * **100% test coverage** with 476 comprehensive tests
 * **12 required dependencies** for robust functionality
-* **6 data ingestion functions** for preparing input data from various sources
+* **7 exported functions** for data ingestion, analysis, and validation
 * **Complete documentation** including vignettes and pkgdown site
 * **CC0 1.0 Universal license** for unrestricted use
 
 ### New Features
 
 #### Core Functionality
-* **Main Function**: `perform_sensitivity_analysis()` - Complete workflow for arsenic exposure analysis
-* **Data Integration**: Combines USGS probability models with EPA lognormal parameters
-* **Multiple Imputation**: Implements probabilistic arsenic exposure assignment across multiple datasets
+* **Main Function**: `perform_sensitivity_analysis()` - Complete workflow for exposure analysis (e.g., arsenic in drinking water)
+* **Data Integration**: Combines modeled probability data with measured concentration data
+* **Multiple Imputation**: Implements probabilistic exposure assignment across multiple datasets
 * **Statistical Analysis**: Mixed-effects regression with proper pooling using Rubin's Rules
 * **MICE Integration**: Optional multiple imputation for missing covariates
 
 #### Data Loading and Processing
-* **USGS Data Support**: Load and process USGS arsenic probability data
-* **EPA Data Integration**: Convert EPA lognormal parameters to multinomial probabilities  
-* **Weighted Combination**: Population-weighted integration of USGS and EPA models
+* **Probability Data Support**: Load and process modeled probability data from GeoTIFF rasters or tabular sources
+* **Concentration Data Integration**: Convert measured concentration data to lognormal-derived multinomial probabilities
+* **Weighted Combination**: Population-weighted integration of probability and concentration models
 * **Flexible Identifier Support**: Works with any geographic or participant-level identifier (FIPS codes, census tracts, ZIP codes, or custom IDs)
 * **Smart ID Formatting**: Automatic detection of identifier type—applies zero-padding for numeric FIPS codes (1-5 digits) while preserving alphanumeric identifiers unchanged. Controlled via `format_ids` parameter (enabled by default)
 * **Birth Data Processing**: Specialized handling of health outcome datasets
+* **Input Validation**: `validate_prepared_inputs()` for comprehensive pre-analysis data checks
+
+#### Spatial Data Support
+* **Raster Extraction**: Extract well water usage percentages from raster data using `add_well_percentages()`
+* **Geographic Subsetting**: `subset_by_geography()` for filtering data by spatial boundaries
+* **Coordinate Handling**: CRS transformation and centroid computation via sf and terra
 
 #### Multiple Imputation Framework
-* **Arsenic Exposure Imputation**: County-level probabilistic assignment based on combined models
+* **Exposure Imputation**: Geographic-level probabilistic assignment based on combined models
 * **Covariate Imputation**: MICE-based imputation for missing demographic and health variables
 * **Validation Tools**: Comprehensive checks for imputation quality and convergence
 * **Flexible Configuration**: Customizable imputation parameters and methods
@@ -56,7 +62,7 @@ This is the first stable release of geoExposeR, a feature-complete R package for
 * **README**: Comprehensive installation and usage instructions
 
 #### Development Tools
-* **Modular Code Organization**: Separate files for data loading, imputation, regression, and utilities
+* **Modular Code Organization**: Separate files for data ingestion, data loading, imputation, regression, and utilities
 * **Internal Function Architecture**: Well-organized internal functions with clear responsibilities
 * **Contribution Guidelines**: Detailed CONTRIBUTING.md with development setup instructions
 * **Code Style**: Follows tidyverse style guidelines with consistent formatting
@@ -64,11 +70,18 @@ This is the first stable release of geoExposeR, a feature-complete R package for
 ### Dependencies
 
 #### Required Packages
-* **data.table** (>= 1.14.0): High-performance data manipulation
-* **dplyr** (>= 1.0.0): Data transformation and summarization
-* **lme4** (>= 1.1-27): Mixed-effects modeling
-* **mice** (>= 3.14.0): Multiple imputation by chained equations
-* **broom.mixed** (>= 0.2.9): Tidy statistical output formatting
+* **Amelia**: Multiple imputation using bootstrapped EM algorithm
+* **broom.mixed**: Tidy statistical output formatting
+* **data.table**: High-performance data manipulation
+* **dplyr**: Data transformation and summarization
+* **exactextractr**: Fast raster value extraction for spatial analysis
+* **Hmisc**: Weighted statistical functions
+* **lme4**: Mixed-effects modeling
+* **mice**: Multiple imputation by chained equations
+* **rlang**: Tidy evaluation framework
+* **rms**: Regression modeling strategies
+* **sf**: Simple features for spatial vector data
+* **terra**: Raster and spatial data processing
 
 #### System Requirements
 * **R** (>= 4.4.0): Minimum R version for compatibility
@@ -83,7 +96,7 @@ This is the first stable release of geoExposeR, a feature-complete R package for
 * **Caching**: Efficient dependency caching in CI/CD workflows
 
 #### Practical Considerations
-* **County-Level Analysis**: Designed for US county-level exposure assessment
+* **Geographic-Level Analysis**: Designed for exposure assessment at any geographic scale (counties, census tracts, ZIP codes, or custom regions)
 * **Flexible Sample Sizes**: Supports datasets from small studies to large epidemiological cohorts
 * **Configurable Parameters**: Adjustable imputation counts and convergence criteria
 * **Output Management**: Comprehensive result saving and structured output formats
@@ -112,7 +125,7 @@ This is the first stable release of geoExposeR, a feature-complete R package for
 ### Future Directions
 
 * **International Support**: Expansion to non-US geographic coding systems
-* **Additional Contaminants**: Framework extension for other groundwater contaminants
+* **Additional Applications**: Expanding worked examples for other contaminants and exposure pathways
 * **Advanced Modeling**: Integration of spatial autocorrelation and temporal trends
 * **Visualization Tools**: Enhanced plotting and diagnostic visualization capabilities
 
@@ -120,8 +133,7 @@ This is the first stable release of geoExposeR, a feature-complete R package for
 
 ## Development Team
 
-**Principal Investigator**: Dr. Matthew O. Gribble (UCSF)  
-**Co-Investigators**: Dr. Sayantan Majumdar (DRI), Dr. Ryan G. Smith (Colorado State University)
+Dr. Sayantan Majumdar (DRI), Dr. Scott M. Bartell (UC Irvine), Dr. Melissa A. Lombard (USGS), Dr. Ryan G. Smith (Colorado State University), Dr. Matthew O. Gribble (UCSF)
 
 ## Funding
 

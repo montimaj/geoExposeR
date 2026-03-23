@@ -144,7 +144,7 @@ An R `data.frame` containing individual-level health outcome and covariate data.
 results <- perform_sensitivity_analysis(
   record_id_col = "participant_id",           # Your ID column name
   targets = c("birthweight_g", "gest_weeks"), # Your outcome column names
-  regression_formula = "~ as.factor(AsLevel) + mom_age + smoking + (1|participant_id)",
+  regression_formula = "~ as.factor(ExposureLevel) + mom_age + smoking + (1|participant_id)",
   # ... other parameters
 )
 ```
@@ -358,18 +358,18 @@ Next, define all the parameters for the analysis, including the regression formu
 ndraws <- 5
 targets <- c("SBP") # Systolic Blood Pressure (from Demographics_dom.txt)
 output_dir <- "analysis_results"
-as_level_col <- "AsLevel"
+exposure_level_col <- "ExposureLevel"
 
 # Arsenic category labels (matching USGS 3-category model)
-as_cat_labels <- c("As<5", "As5-10", "As10+")
+cat_labels <- c("<5", "5-10", "10+")
 
 # Reference category for regression (lowest exposure)
-drop_as_cat_label_reg <- c("As<5")
+drop_cat_label_ref <- c("<5")
 
 # Define the regression formula
 # This models SBP as a function of arsenic level with age_decade as a random effect
 regression_formula <- paste0(
-  "~ as.factor(", as_level_col, ") + ",
+  "~ as.factor(", exposure_level_col, ") + ",
   "(1 | age_decade)"
 )
 ```
@@ -388,14 +388,14 @@ results <- perform_sensitivity_analysis(
   regression_formula = regression_formula,
   output_dir = output_dir,
   targets = targets,
-  as_cat_label = as_cat_labels,
-  drop_as_cat_label_reg = drop_as_cat_label_reg,
+  cat_label = cat_labels,
+  drop_cat_label_ref = drop_cat_label_ref,
   # Custom column names matching the example data files
   id_col = "id",                                           # ID column in prob/conc data
   prob_cols = c("RFCprobC1", "RFCprobC2", "RFCprobC3"), # Probability columns
   pop_well_col = "pub_water_pop",                          # Population column in prob data
   record_id_col = "id",                                    # ID column in health data
-  as_level_col = as_level_col,
+  exposure_level_col = exposure_level_col,
   # Use raw concentration column for automatic lognormal conversion
   conc_raw_col = "weighted_as20062008",                 # Raw arsenic concentration
   default_sdlog = 1.0,                                 # Default sdlog value
@@ -533,7 +533,7 @@ source("examples/run_geoExposeR_nitrate.R")
 ```{r, eval=FALSE}
 # Example parameter configuration for nitrate
 nitrate_cutoffs <- c(5, 10)  # mg/L NO3-N
-as_cat_labels <- c("NO3<5", "NO3_5-10", "NO3_10+")
+cat_labels <- c("NO3<5", "NO3_5-10", "NO3_10+")
 targets <- c("methemoglobin_pct")
 
 results <- perform_sensitivity_analysis(
@@ -541,7 +541,7 @@ results <- perform_sensitivity_analysis(
   model_prob_csv = "path/to/prob_nitrate.csv",
   conc_data_csv = "path/to/conc_nitrate.csv",
   conc_cutoffs = nitrate_cutoffs,
-  as_cat_label = as_cat_labels,
+  cat_label = cat_labels,
   targets = targets,
   conc_raw_col = "weighted_nitrate",
   default_sdlog = 0.8,
@@ -567,7 +567,7 @@ source("examples/run_geoExposeR_uranium.R")
 ```{r, eval=FALSE}
 # Example parameter configuration for uranium
 uranium_cutoffs <- c(15, 30)  # µg/L
-as_cat_labels <- c("U<15", "U_15-30", "U_30+")
+cat_labels <- c("U<15", "U_15-30", "U_30+")
 targets <- c("eGFR")
 
 results <- perform_sensitivity_analysis(
@@ -575,7 +575,7 @@ results <- perform_sensitivity_analysis(
   model_prob_csv = "path/to/prob_uranium.csv",
   conc_data_csv = "path/to/conc_uranium.csv",
   conc_cutoffs = uranium_cutoffs,
-  as_cat_label = as_cat_labels,
+  cat_label = cat_labels,
   targets = targets,
   conc_raw_col = "weighted_uranium",
   default_sdlog = 0.9,
@@ -603,7 +603,7 @@ source("examples/run_geoExposeR_pm25.R")
 ```{r, eval=FALSE}
 # Example parameter configuration for PM2.5
 pm25_cutoffs <- c(9, 35)  # µg/m³
-as_cat_labels <- c("PM25<9", "PM25_9-35", "PM25_35+")
+cat_labels <- c("PM25<9", "PM25_9-35", "PM25_35+")
 targets <- c("FEV1_pct_predicted")
 
 results <- perform_sensitivity_analysis(
@@ -611,7 +611,7 @@ results <- perform_sensitivity_analysis(
   model_prob_csv = "path/to/prob_pm25.csv",
   conc_data_csv = "path/to/conc_pm25.csv",
   conc_cutoffs = pm25_cutoffs,
-  as_cat_label = as_cat_labels,
+  cat_label = cat_labels,
   targets = targets,
   conc_raw_col = "weighted_pm25",
   default_sdlog = 0.5,  # Lower variance for air quality
@@ -628,7 +628,7 @@ The framework can be adapted to any exposure with the following data structure:
 | `model_prob_csv` | Modeled arsenic probabilities | Any probabilistic exposure model |
 | `conc_data_csv` | Measured drinking water concentrations | Any measured concentration data |
 | `conc_cutoffs` | Arsenic thresholds (5, 10 µg/L) | Any health-relevant thresholds |
-| `as_cat_label` | Arsenic category names | Custom exposure category labels |
+| `cat_label` | Arsenic category names | Custom exposure category labels |
 | `targets` | Birth outcomes | Any health outcome variables |
 
 **Potential applications include:**

@@ -82,17 +82,17 @@ conc_col <- "weighted_nitrate"
 # Regression formula
 # Model methemoglobin as function of nitrate level
 # Using infant_age_group as random effect (categorical variable)
-as_level_col <- "AsLevel"  # This column name is used internally by geoExposeR
+exposure_level_col <- "ExposureLevel"  # This column name is used internally by geoExposeR
 regression_formula <- paste0(
-  "~ as.factor(", as_level_col, ") + ",
+  "~ as.factor(", exposure_level_col, ") + ",
   "(1 | infant_age_group)"
 )
 
 # Category labels for nitrate levels (matching 3 categories from cutoffs)
-as_cat_labels <- c("NO3<5", "NO3_5-10", "NO3_10+")
+cat_labels <- c("NO3<5", "NO3_5-10", "NO3_10+")
 
 # Reference category for regression (lowest exposure)
-drop_as_cat_label_reg <- c("NO3<5")
+drop_cat_label_ref <- c("NO3<5")
 
 cat("Analysis parameters:\n")
 cat("  Nitrate cutoffs:", paste(nitrate_cutoffs, collapse = ", "), "mg/L NO3-N\n")
@@ -123,8 +123,8 @@ results <- perform_sensitivity_analysis(
   conc_cutoffs = nitrate_cutoffs,
   
   # Category labels for results display
-  as_cat_label = as_cat_labels,
-  drop_as_cat_label_reg = drop_as_cat_label_reg,
+  cat_label = cat_labels,
+  drop_cat_label_ref = drop_cat_label_ref,
   
   # Column name mappings for nitrate data
   id_col = "id",                                    # ID column in prob/conc data
@@ -135,7 +135,7 @@ results <- perform_sensitivity_analysis(
   
   # Regression configuration
   regression_formula = regression_formula,
-  as_level_col = as_level_col,
+  exposure_level_col = exposure_level_col,
   targets = targets,
   
   # Output configuration

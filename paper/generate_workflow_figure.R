@@ -125,7 +125,7 @@ digraph geoExposeR_joss {
     fillcolor = '#F3E5F5'
     margin = 4
     
-    impute [label = 'impute_arsenic_exposure()\nimpute_additional_variables()', fillcolor = 'white', color = '#7B1FA2', width = 2.0, height = 0.4]
+    impute [label = 'impute_exposure()\nimpute_additional_variables()', fillcolor = 'white', color = '#7B1FA2', width = 2.0, height = 0.4]
   }
   
   # ==== STATISTICAL MODELING ====

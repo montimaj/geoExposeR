@@ -4,7 +4,7 @@
 \alias{validate_regression_formula}
 \title{Validate Regression Formula}
 \usage{
-validate_regression_formula(regression_formula, as_level_col)
+validate_regression_formula(regression_formula, exposure_level_col)
 }
 \description{
 Validate Regression Formula

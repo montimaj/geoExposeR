@@ -243,8 +243,8 @@ test_that("load_prob_data handles missing columns gracefully", {
   )
 })
 
-test_that("arsenic imputation produces valid probabilities", {
-  results <- impute_arsenic_exposure(test_data, ndraws = 2)
+test_that("exposure imputation produces valid probabilities", {
+  results <- impute_exposure(test_data, ndraws = 2)
   
   expect_true(all(results$probabilities >= 0))
   expect_true(all(results$probabilities <= 1))

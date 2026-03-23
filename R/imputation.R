@@ -1,6 +1,6 @@
-#' Impute Arsenic Exposure Levels
+#' Impute Exposure Levels
 #'
-#' Internal function to create multiple imputed datasets with arsenic
+#' Internal function to create multiple imputed datasets with 
 #' exposure levels based on county-level probability distributions.
 #'
 #' @param datmatx_prob Data frame containing probability data with geographic
@@ -9,37 +9,37 @@
 #' @param cellpop Vector of cell population weights
 #' @param births Data frame containing birth records
 #' @param ndraws Number of imputed datasets to create
-#' @param as_cat_label Character vector of arsenic category labels
+#' @param cat_label Character vector of exposure category labels
 #' @param id_col Column name for geographic/participant identifier in probability data
 #' @param record_id_col Column name for matching identifier in health data
-#' @param as_level_col Column name for arsenic level variable
+#' @param exposure_level_col Column name for exposure level variable
 #' @param apply_imputation_fallback Logical indicating whether to apply fallback
-#' imputation for missing arsenic levels. The fallback fills missing
+#' imputation for missing exposure levels. The fallback fills missing
 #' values with the most common category in the respective dataset. If
-#' enabled, this fallback will be applied to any missing arsenic levels
+#' enabled, this fallback will be applied to any missing exposure levels
 #' after the initial imputation step. Otherwise, it will remove any rows
-#' with missing arsenic levels.
+#' with missing exposure levels.
 #' @return List of imputed datasets
 #'
 #' @keywords internal
-impute_arsenic_exposure <- function(
+impute_exposure <- function(
   datmatx_prob,
   rasterprob_combined,
   cellpop,
   births,
   ndraws,
-  as_cat_label,
+  cat_label,
   id_col,
   record_id_col,
-  as_level_col,
+  exposure_level_col,
   apply_imputation_fallback
 ) {
   # Get unique counties and setup
   county_id_list <- na.omit(unique(datmatx_prob[[id_col]]))
   n_counties <- length(county_id_list)
-  ncats <- length(as_cat_label)
+  ncats <- length(cat_label)
   # Pre-allocate matrix with appropriate type
-  as_temp <- matrix(NA_integer_, nrow = n_counties, ncol = ndraws)
+  exposure_temp <- matrix(NA_integer_, nrow = n_counties, ncol = ndraws)
   # Create efficient county lookup using split()
   county_lookup <- split(
     seq_len(nrow(datmatx_prob)),
@@ -74,7 +74,7 @@ impute_arsenic_exposure <- function(
     if (!is.na(prob_sum) && prob_sum > 0) {
       prob_values <- prob_values / prob_sum
       # Sample all draws at once for this county
-      as_temp[i, ] <- sample.int(
+      exposure_temp[i, ] <- sample.int(
         n = ncats,
         size = ndraws,
         replace = TRUE,
@@ -87,22 +87,22 @@ impute_arsenic_exposure <- function(
   imputed_datasets <- vector("list", ndraws)
   # Create imputed datasets efficiently
   for (j in seq_len(ndraws)) {
-    # Create arsenic assignments for this draw
-    as_draw_df <- data.frame(
+    # Create exposure assignments for this draw
+    exposure_draw_df <- data.frame(
       countyID = county_id_list,
       temp_as_level = factor(
-        as_temp[, j],
+        exposure_temp[, j],
         levels = seq_len(ncats),
-        labels = as_cat_label
+        labels = cat_label
       ),
       stringsAsFactors = FALSE
     )
     # Set proper column name
-    names(as_draw_df)[2] <- as_level_col
+    names(exposure_draw_df)[2] <- exposure_level_col
     # Merge with births data
     imputed_datasets[[j]] <- merge(
       births,
-      as_draw_df,
+      exposure_draw_df,
       by.x = record_id_col,
       by.y = "countyID",
       all.x = TRUE,
@@ -115,34 +115,34 @@ impute_arsenic_exposure <- function(
       any(
         sapply(
           imputed_datasets,
-          function(x) any(is.na(x[[as_level_col]]))
+          function(x) any(is.na(x[[exposure_level_col]]))
         )
       )
     ) {
       message(
-        "Some arsenic levels are NA after initial imputation, ",
+        "Some exposure levels are NA after initial imputation, ",
         "filling with most common category"
       )
-      # fill missing arsenic levels with most common category
+      # fill missing exposure levels with most common category
       for (j in seq_along(imputed_datasets)) {
         # Find the most common category in the current dataset
         most_common_cat <- names(
           sort(
-            table(imputed_datasets[[j]][[as_level_col]]),
+            table(imputed_datasets[[j]][[exposure_level_col]]),
             decreasing = TRUE
           )
         )[1]
         # Fill NAs with the most common category
-        na_idx <- is.na(imputed_datasets[[j]][[as_level_col]])
-        imputed_datasets[[j]][[as_level_col]][na_idx] <- most_common_cat
+        na_idx <- is.na(imputed_datasets[[j]][[exposure_level_col]])
+        imputed_datasets[[j]][[exposure_level_col]][na_idx] <- most_common_cat
       }
-      # Validate that arsenic levels are now filled
+      # Validate that exposure levels are now filled
     }
   } else {
-    # Remove rows with missing arsenic levels
+    # Remove rows with missing exposure levels
     for (j in seq_along(imputed_datasets)) {
       imputed_datasets[[j]] <- imputed_datasets[[j]][
-        !is.na(imputed_datasets[[j]][[as_level_col]]),
+        !is.na(imputed_datasets[[j]][[exposure_level_col]]),
         ,
         drop = FALSE
       ]
@@ -156,7 +156,7 @@ impute_arsenic_exposure <- function(
 #' Internal function to impute missing values in additional variables using
 #' MICE.
 #'
-#' @param imputed_datasets List of datasets with arsenic exposure already
+#' @param imputed_datasets List of datasets with exposure already
 #'   imputed
 #' @param impute_vars Character vector of variables to impute
 #' @param births Original birth data frame
@@ -240,30 +240,30 @@ impute_additional_variables <- function(
 
 #' Validate Imputed Datasets
 #'
-#' Internal function to validate that arsenic exposure imputation was
+#' Internal function to validate that exposure imputation was
 #' successful.
 #'
 #' @param imputed_datasets List of imputed datasets
-#' @param as_level_col Column name for arsenic level variable
-#' @param as_cat_label Character vector of valid arsenic category labels
+#' @param exposure_level_col Column name for exposure level variable
+#' @param cat_label Character vector of valid exposure category labels
 #'
 #' @keywords internal
 validate_imputed_datasets <- function(
   imputed_datasets,
-  as_level_col,
-  as_cat_label
+  exposure_level_col,
+  cat_label
 ) {
   for (j in seq_along(imputed_datasets)) {
-    # Check for missing arsenic levels
-    if (any(is.na(imputed_datasets[[j]][[as_level_col]]))) {
-      stop("Missing values found in arsenic level column in draw ", j)
+    # Check for missing exposure levels
+    if (any(is.na(imputed_datasets[[j]][[exposure_level_col]]))) {
+      stop("Missing values found in exposure level column in draw ", j)
     }
-    # Check for invalid arsenic levels
-    dataset_levels <- as.character(imputed_datasets[[j]][[as_level_col]])
-    if (!all(dataset_levels %in% as_cat_label)) {
-      invalid_levels <- setdiff(dataset_levels, as_cat_label)
+    # Check for invalid exposure levels
+    dataset_levels <- as.character(imputed_datasets[[j]][[exposure_level_col]])
+    if (!all(dataset_levels %in% cat_label)) {
+      invalid_levels <- setdiff(dataset_levels, cat_label)
       stop(
-        "Invalid arsenic levels found in draw ", j, ": ",
+        "Invalid exposure levels found in draw ", j, ": ",
         paste(invalid_levels, collapse = ", ")
       )
     }

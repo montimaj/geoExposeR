@@ -7,8 +7,8 @@
 regression_analysis(
   births,
   targets,
-  as_cat_label,
-  as_level_col,
+  cat_label,
+  exposure_level_col,
   regression_formula,
   output_dir
 )
@@ -19,10 +19,11 @@ identifiers.}
 
 \item{targets}{A character vector of target variables (health outcomes).}
 
-\item{as_cat_label}{A character vector of arsenic categories (excluding
+\item{cat_label}{A character vector of exposure categories (excluding
 reference).}
 
-\item{as_level_col}{A character string for the arsenic level column name.}
+\item{exposure_level_col}{A character string for the exposure level column
+name.}
 
 \item{regression_formula}{A formula object or character string for the
 regression model.}

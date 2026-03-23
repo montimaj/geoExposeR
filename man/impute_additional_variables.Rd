@@ -17,7 +17,7 @@ impute_additional_variables(
 )
 }
 \arguments{
-\item{imputed_datasets}{List of datasets with arsenic exposure already
+\item{imputed_datasets}{List of datasets with exposure already
 imputed}
 
 \item{impute_vars}{Character vector of variables to impute}

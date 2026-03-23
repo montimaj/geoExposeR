@@ -6,9 +6,10 @@
 #' @param births A data frame containing the birth data with imputation
 #'   identifiers.
 #' @param targets A character vector of target variables (health outcomes).
-#' @param as_cat_label A character vector of arsenic categories (excluding
+#' @param cat_label A character vector of exposure categories (excluding
 #'   reference).
-#' @param as_level_col A character string for the arsenic level column name.
+#' @param exposure_level_col A character string for the exposure level column
+#'   name.
 #' @param regression_formula A formula object or character string for the
 #'   regression model.
 #' @param output_dir A character string for the output directory path.
@@ -19,8 +20,8 @@
 regression_analysis <- function(
   births,
   targets,
-  as_cat_label,
-  as_level_col,
+  cat_label,
+  exposure_level_col,
   regression_formula,
   output_dir
 ) {
@@ -35,8 +36,8 @@ regression_analysis <- function(
       paste(missing_targets, collapse = ", ")
     )
   }
-  # Pre-compute arsenic factor terms to avoid repeated string operations
-  arsenic_terms <- paste0("as.factor(", as_level_col, ")", as_cat_label)
+  # Pre-compute exposure factor terms to avoid repeated string operations
+  exposure_terms <- paste0("as.factor(", exposure_level_col, ")", cat_label)
   # Initialize results list
   results <- vector("list", length(targets))
   names(results) <- targets  
@@ -66,9 +67,9 @@ regression_analysis <- function(
     # Extract coefficients and standard errors more efficiently
     model_results <- lapply(model_fits$fitmodel, function(model) {
       model_summary <- broom.mixed::tidy(model, effects = "fixed")
-      # Filter for arsenic terms only
+      # Filter for exposure terms only
       model_summary[
-        model_summary$term %in% arsenic_terms,
+        model_summary$term %in% exposure_terms,
         c("term", "estimate", "std.error")
       ]
     })
@@ -76,26 +77,26 @@ regression_analysis <- function(
     combined_results <- do.call(rbind, model_results)
     if (nrow(combined_results) == 0) {
       warning(
-        "No arsenic terms found in model for ", var,
+        "No exposure terms found in model for ", var,
         ". Check factor levels."
       )
       next
     }
-    # Pool results using Rubin's Rules for each arsenic term
+    # Pool results using Rubin's Rules for each exposure term
     pooled_results <- pool_estimates_by_term(
       combined_results,
-      arsenic_terms,
+      exposure_terms,
       model_fits$fitmodel[[1]]
     )
     # Save results
     output_file <- file.path(output_dir, paste0(var, "_pooled_results.csv"))
     data.table::fwrite(pooled_results, output_file)
 
-    # Rename pooled results terms to match arsenic categories
+    # Rename pooled results terms to match exposure categories
     pooled_results$term <- factor(
       pooled_results$term,
-      levels = arsenic_terms,
-      labels = as_cat_label
+      levels = exposure_terms,
+      labels = cat_label
     )
     # Store in results list
     results[[var]] <- pooled_results
@@ -106,14 +107,14 @@ regression_analysis <- function(
 #' Pool regression estimates using Rubin's Rules
 #'
 #' @param combined_results Data frame with term, estimate, and std.error columns
-#' @param arsenic_terms Character vector of arsenic terms to pool
+#' @param exposure_terms Character vector of exposure terms to pool
 #' @param reference_model A fitted model to extract degrees of freedom
 #' @return Data frame with pooled estimates and confidence intervals
 #'
 #' @keywords internal
 pool_estimates_by_term <- function(
   combined_results,
-  arsenic_terms,
+  exposure_terms,
   reference_model
 ) {
   # Get degrees of freedom from reference model
@@ -125,8 +126,8 @@ pool_estimates_by_term <- function(
     )
     Inf
   })
-  # Pool estimates for each arsenic term
-  pooled_list <- lapply(arsenic_terms, function(term) {
+  # Pool estimates for each exposure term
+  pooled_list <- lapply(exposure_terms, function(term) {
     term_data <- combined_results[combined_results$term == term, ]
     if (nrow(term_data) == 0) {
       return(NULL)

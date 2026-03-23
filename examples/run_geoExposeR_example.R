@@ -68,9 +68,9 @@ cat("  Demographics data:", demographics_data_path, "\n\n")
 # Step 3: Concentration Data - Automatic Lognormal Conversion
 # ==============================================================================
 #
-# The geoExposeR package now supports automatic conversion of raw arsenic
+# The geoExposeR package now supports automatic conversion of raw
 # concentration values to lognormal parameters. Simply specify:
-#   - conc_raw_col: The column containing raw arsenic concentrations
+#   - conc_raw_col: The column containing raw concentrations
 #   - default_sdlog: Default sdlog value (optional, defaults to 1.0)
 #
 # The package will automatically calculate:
@@ -102,17 +102,17 @@ targets <- c("SBP")
 # geoExposeR uses mixed-effects models (lme4::lmer), so we need a random effect
 # Here we use age_decade as a random effect for demonstration purposes
 # In real studies, you would typically use geographic grouping (e.g., county, state)
-as_level_col <- "AsLevel"
+exposure_level_col <- "ExposureLevel"
 regression_formula <- paste0(
-  "~ as.factor(", as_level_col, ") + ",
+  "~ as.factor(", exposure_level_col, ") + ",
   "(1 | age_decade)"
 )
 
-# Arsenic category labels (matching 3-category probability model)
-as_cat_labels <- c("As<5", "As5-10", "As10+")
+# Exposure category labels (matching 3-category probability model)
+cat_labels <- c("<5", "5-10", "10+")
 
 # Reference category for regression (typically lowest exposure)
-drop_as_cat_label_reg <- c("As<5")
+drop_cat_label_ref <- c("<5")
 
 # Random seed for reproducibility
 seed <- 12345
@@ -121,8 +121,8 @@ cat("Analysis parameters:\n")
 cat("  Number of draws:", ndraws, "\n")
 cat("  Target outcome(s):", paste(targets, collapse = ", "), "\n")
 cat("  Regression formula:", regression_formula, "\n")
-cat("  Arsenic categories:", paste(as_cat_labels, collapse = ", "), "\n")
-cat("  Reference category:", drop_as_cat_label_reg, "\n")
+cat("  Exposure categories:", paste(cat_labels, collapse = ", "), "\n")
+cat("  Reference category:", drop_cat_label_ref, "\n")
 cat("  Random seed:", seed, "\n\n")
 
 # ==============================================================================
@@ -143,14 +143,14 @@ results <- tryCatch({
     regression_formula = regression_formula,
     output_dir = output_dir,
     targets = targets,
-    as_cat_label = as_cat_labels,
-    drop_as_cat_label_reg = drop_as_cat_label_reg,
+    cat_label = cat_labels,
+    drop_cat_label_ref = drop_cat_label_ref,
     # Custom column names matching the original data files
     id_col = "id",                            # ID column in prob/conc data
     prob_cols = c("RFCprobC1", "RFCprobC2", "RFCprobC3"),  # Probability columns
     pop_well_col = "pub_water_pop",              # Population column in prob data
     record_id_col = "id",                     # ID column in demographics
-    as_level_col = as_level_col,
+    exposure_level_col = exposure_level_col,
     # Use raw concentration column for automatic lognormal conversion
     conc_raw_col = "weighted_as20062008",     # Raw concentration column
     default_sdlog = 1.0,                     # Default sdlog value
@@ -177,7 +177,7 @@ results <- tryCatch({
 # Step 6: Examine and Interpret Results
 # ==============================================================================
 # The results table contains the following columns (pooled via Rubin's Rules):
-#   term      - Regression term (e.g., "As5-10", "As10+")
+#   term      - Regression term (e.g., "5-10", "10+")
 #   q.mi      - Pooled effect estimate (mean across imputations)
 #   se.mi     - Pooled standard error (accounts for within- and between-imputation variance)
 #   statistic - Test statistic (q.mi / se.mi)
@@ -206,8 +206,8 @@ if (!is.null(results)) {
       cat("- The 'q.mi' column shows the pooled effect estimate (Rubin's Rules)\n")
       cat("- The 'se.mi' shows the pooled standard error\n")
       cat("- The 'p.value' indicates statistical significance\n")
-      cat("- Positive q.mi values for As5-10 or As10+ indicate higher SBP\n")
-      cat("  compared to the reference category (As<5)\n\n")
+      cat("- Positive q.mi values for 5-10 or 10+ indicate higher SBP\n")
+      cat("  compared to the reference category (<5)\n\n")
     } else {
       cat("No results found for this target.\n\n")
     }

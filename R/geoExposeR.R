@@ -23,16 +23,16 @@
 #'   outcomes) for the regression analysis. Defaults to c("OEGEST", "BWT").
 #' @param impute_vars A character vector of column names to be imputed using
 #'   MICE. If NULL, no additional imputation is performed. Defaults to NULL.
-#' @param as_cat_label A character vector of labels for the arsenic
-#'   concentration categories. Defaults to c("As<5", "As5-10", "As10+").
-#' @param drop_as_cat_label_reg A character vector of arsenic categories to be
-#'   used as the reference level in the regression. Defaults to c("As<5").
+#' @param cat_label A character vector of labels for the exposure
+#'   concentration categories. Defaults to c("<5", "5-10", "10+").
+#' @param drop_cat_label_ref A character vector of exposure categories to be
+#'   used as the reference level in the regression. Defaults to c("<5").
 #' @param columns_to_select A character vector of column names to be selected
 #'   from the birth data. If NULL, all columns are used.
 #' @param rucc_col A character string specifying the column name for the
 #'   Rural-Urban Continuum Code. Defaults to NULL.
 #' @param id_col A character string specifying the column name for the
-#'   Geographic Identifier in the arsenic data. Supports any identifier format
+#'   Geographic Identifier in the exposure data. Supports any identifier format
 #'   including county FIPS codes, census tract IDs, ZIP codes, or participant-
 #'   specific IDs. The only requirement is that identifiers match between
 #'   datasets. Defaults to "GEOID10".
@@ -48,10 +48,10 @@
 #' @param record_id_col A character string specifying the column name for
 #'   the geographic/participant identifier in the health data. Supports any
 #'   identifier format (FIPS codes, census tracts, ZIP codes, participant IDs).
-#'   Must have matching values with `id_col` in the arsenic data.
+#'   Must have matching values with `id_col` in the exposure data.
 #'   Defaults to "FIPS".
-#' @param as_level_col A character string for the name of the imputed arsenic
-#'   level column. Defaults to "AsLevel".
+#' @param exposure_level_col A character string for the name of the imputed exposure
+#'   level column. Defaults to "ExposureLevel".
 #' @param conc_mean_col A character string for the column name of the
 #'   concentration lognormal meanlog parameter. Defaults to "conc_meanlog".
 #'   If this column doesn't exist and `conc_raw_col` is provided, it will
@@ -81,11 +81,11 @@
 #'   covariates in the mice imputation process. Defaults to c("pm").
 #'   Make sure these columns exist in the birth data.
 #' @param apply_imputation_fallback Logical indicating whether to apply fallback
-#'  imputation for missing arsenic levels. The fallback fills missing
+#'  imputation for missing exposure levels. The fallback fills missing
 #'  values with the most common category in the respective dataset. If
-#'  enabled, this fallback will be applied to any missing arsenic levels
+#'  enabled, this fallback will be applied to any missing exposure levels
 #'  after the initial imputation step. Otherwise, it will remove any rows
-#'  with missing arsenic levels.
+#'  with missing exposure levels.
 #' @param format_ids Logical indicating whether to apply smart identifier
 #'   formatting. If TRUE (default), numeric FIPS-like codes (1-5 digits) are
 #'   zero-padded to 5 digits for consistency, while alphanumeric identifiers
@@ -103,7 +103,7 @@
 #'   model_prob_csv = "prob_model_data.csv",
 #'   conc_data_csv = "conc_measured_data.csv",
 #'   birth_data_txt = "birth_outcomes.txt",
-#'   regression_formula = "~ as.factor(AsLevel) + maternal_age + (1|county)",
+#'   regression_formula = "~ as.factor(ExposureLevel) + maternal_age + (1|county)",
 #'   output_dir = "results/",
 #'   targets = c("birth_weight", "gestational_age")
 #' )
@@ -114,7 +114,7 @@
 #'   model_prob_csv = "data/prob_data.csv",
 #'   conc_data_csv = "data/conc_data.csv",
 #'   birth_data_txt = "data/births.txt",
-#'   regression_formula = "~ as.factor(AsLevel) + MAGE_R + rural + (1|FIPS)",
+#'   regression_formula = "~ as.factor(ExposureLevel) + MAGE_R + rural + (1|FIPS)",
 #'   output_dir = "sensitivity_results/",
 #'   targets = c("OEGEST", "BWT"),
 #'   impute_vars = c("MAGE_R", "education"),
@@ -134,8 +134,8 @@ perform_sensitivity_analysis <- function(
   output_dir = "sensitivity_results/",
   targets = c("OEGEST", "BWT"),
   impute_vars = NULL,
-  as_cat_label = c("As<5", "As5-10", "As10+"),
-  drop_as_cat_label_reg = c("As<5"),
+  cat_label = c("<5", "5-10", "10+"),
+  drop_cat_label_ref = c("<5"),
   columns_to_select = NULL,
   rucc_col = NULL,
   id_col = "GEOID10",
@@ -143,7 +143,7 @@ perform_sensitivity_analysis <- function(
   conc_cutoffs = c(5, 10),
   pop_well_col = "Wells_2010",
   record_id_col = "FIPS",
-  as_level_col = "AsLevel",
+  exposure_level_col = "ExposureLevel",
   conc_mean_col = "conc_meanlog",
   conc_sd_col = "conc_sdlog",
   conc_raw_col = NULL,
@@ -176,9 +176,9 @@ perform_sensitivity_analysis <- function(
     conc_raw_col = conc_raw_col,
     default_sdlog = default_sdlog,
     seed = seed,
-    as_cat_label = as_cat_label,
-    as_level_col = as_level_col,
-    drop_as_cat_label_reg = drop_as_cat_label_reg,
+    cat_label = cat_label,
+    exposure_level_col = exposure_level_col,
+    drop_cat_label_ref = drop_cat_label_ref,
     conc_cutoffs = conc_cutoffs,
     columns_to_select = columns_to_select,
     rucc_col = rucc_col,
@@ -196,8 +196,8 @@ perform_sensitivity_analysis <- function(
     dir.create(output_dir, recursive = TRUE)
   }
 
-  # --- 1. Load and Process Arsenic Data ---
-  arsenic_data <- load_and_process_arsenic_data(
+  # --- 1. Load and Process Exposure Data ---
+  exposure_data <- load_and_process_exposure_data(
     model_prob_csv = model_prob_csv,
     conc_data_csv = conc_data_csv,
     prob_cols = prob_cols,
@@ -222,16 +222,16 @@ perform_sensitivity_analysis <- function(
   )
 
   # --- 3. Multiple Imputation ---
-  imputed_datasets <- impute_arsenic_exposure(
-    datmatx_prob = arsenic_data$datmatx_prob,
-    rasterprob_combined = arsenic_data$rasterprob_combined,
-    cellpop = arsenic_data$cellpop,
+  imputed_datasets <- impute_exposure(
+    datmatx_prob = exposure_data$datmatx_prob,
+    rasterprob_combined = exposure_data$rasterprob_combined,
+    cellpop = exposure_data$cellpop,
     births = births,
     ndraws = ndraws,
-    as_cat_label = as_cat_label,
+    cat_label = cat_label,
     id_col = id_col,
     record_id_col = record_id_col,
-    as_level_col = as_level_col,
+    exposure_level_col = exposure_level_col,
     apply_imputation_fallback = apply_imputation_fallback
   )
   # Impute additional variables if specified
@@ -248,22 +248,22 @@ perform_sensitivity_analysis <- function(
     )
   }
   # Validate imputed datasets
-  validate_imputed_datasets(imputed_datasets, as_level_col, as_cat_label)
+  validate_imputed_datasets(imputed_datasets, exposure_level_col, cat_label)
 
   # --- 4. Regression and Pooling ---
 
   combined_births <- data.table::rbindlist(imputed_datasets, idcol = ".id")
   # Ensure the reference level is set correctly
-  filtered_as_cat_label <- base::setdiff(as_cat_label, drop_as_cat_label_reg)
-  combined_births[[as_level_col]] <- stats::relevel(
-    combined_births[[as_level_col]],
-    ref = drop_as_cat_label_reg
+  filtered_cat_label <- base::setdiff(cat_label, drop_cat_label_ref)
+  combined_births[[exposure_level_col]] <- stats::relevel(
+    combined_births[[exposure_level_col]],
+    ref = drop_cat_label_ref
   )
   res <- regression_analysis(
     births = combined_births,
     targets = targets,
-    as_cat_label = filtered_as_cat_label,
-    as_level_col = as_level_col,
+    cat_label = filtered_cat_label,
+    exposure_level_col = exposure_level_col,
     regression_formula = regression_formula,
     output_dir = output_dir
   )

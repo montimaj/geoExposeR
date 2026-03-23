@@ -7,7 +7,7 @@
 prepare_conc_data(
   conc_data,
   id_col = "county_fips",
-  concentration_col = "arsenic_concentration",
+  concentration_col = "concentration",
   population_col = NULL,
   private_well_pct_col = NULL,
   input_type = c("raw", "summary"),
@@ -25,8 +25,8 @@ raw measurements or summary statistics.}
 \item{id_col}{Character. Column name containing geographic identifiers.
 Default is "county_fips".}
 
-\item{concentration_col}{Character. Column name containing arsenic
-concentrations in ug/L. Default is "arsenic_concentration".}
+\item{concentration_col}{Character. Column name containing
+concentrations. Default is "concentration".}
 
 \item{population_col}{Optional character. Column name for population served
 by each water system, used for weighted averaging.}
@@ -75,14 +75,14 @@ deviation of the concentrations.
 # Example with raw concentration data
 conc_raw <- data.frame(
   county_fips = c("06001", "06001", "06003", "06003"),
-  arsenic_concentration = c(2.5, 3.1, 8.2, 7.5),
+  concentration = c(2.5, 3.1, 8.2, 7.5),
   population_served = c(50000, 25000, 10000, 15000)
 )
 
 conc_processed <- prepare_conc_data(
   conc_data = conc_raw,
   id_col = "county_fips",
-  concentration_col = "arsenic_concentration",
+  concentration_col = "concentration",
   population_col = "population_served",
   input_type = "raw",
   output_file = "conc_lognormal.csv"

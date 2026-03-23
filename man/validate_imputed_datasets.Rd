@@ -4,17 +4,17 @@
 \alias{validate_imputed_datasets}
 \title{Validate Imputed Datasets}
 \usage{
-validate_imputed_datasets(imputed_datasets, as_level_col, as_cat_label)
+validate_imputed_datasets(imputed_datasets, exposure_level_col, cat_label)
 }
 \arguments{
 \item{imputed_datasets}{List of imputed datasets}
 
-\item{as_level_col}{Column name for arsenic level variable}
+\item{exposure_level_col}{Column name for exposure level variable}
 
-\item{as_cat_label}{Character vector of valid arsenic category labels}
+\item{cat_label}{Character vector of valid exposure category labels}
 }
 \description{
-Internal function to validate that arsenic exposure imputation was
+Internal function to validate that exposure imputation was
 successful.
 }
 \keyword{internal}

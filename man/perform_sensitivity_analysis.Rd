@@ -13,8 +13,8 @@ perform_sensitivity_analysis(
   output_dir = "sensitivity_results/",
   targets = c("OEGEST", "BWT"),
   impute_vars = NULL,
-  as_cat_label = c("As<5", "As5-10", "As10+"),
-  drop_as_cat_label_reg = c("As<5"),
+  cat_label = c("<5", "5-10", "10+"),
+  drop_cat_label_ref = c("<5"),
   columns_to_select = NULL,
   rucc_col = NULL,
   id_col = "GEOID10",
@@ -22,7 +22,7 @@ perform_sensitivity_analysis(
   conc_cutoffs = c(5, 10),
   pop_well_col = "Wells_2010",
   record_id_col = "FIPS",
-  as_level_col = "AsLevel",
+  exposure_level_col = "ExposureLevel",
   conc_mean_col = "conc_meanlog",
   conc_sd_col = "conc_sdlog",
   conc_raw_col = NULL,
@@ -61,11 +61,11 @@ outcomes) for the regression analysis. Defaults to c("OEGEST", "BWT").}
 \item{impute_vars}{A character vector of column names to be imputed using
 MICE. If NULL, no additional imputation is performed. Defaults to NULL.}
 
-\item{as_cat_label}{A character vector of labels for the arsenic
-concentration categories. Defaults to c("As<5", "As5-10", "As10+").}
+\item{cat_label}{A character vector of labels for the exposure
+concentration categories. Defaults to c("<5", "5-10", "10+").}
 
-\item{drop_as_cat_label_reg}{A character vector of arsenic categories to be
-used as the reference level in the regression. Defaults to c("As<5").}
+\item{drop_cat_label_ref}{A character vector of exposure categories to be
+used as the reference level in the regression. Defaults to c("<5").}
 
 \item{columns_to_select}{A character vector of column names to be selected
 from the birth data. If NULL, all columns are used.}
@@ -74,7 +74,7 @@ from the birth data. If NULL, all columns are used.}
 Rural-Urban Continuum Code. Defaults to NULL.}
 
 \item{id_col}{A character string specifying the column name for the
-Geographic Identifier in the arsenic data. Supports any identifier format
+Geographic Identifier in the exposure data. Supports any identifier format
 including county FIPS codes, census tract IDs, ZIP codes, or participant-
 specific IDs. The only requirement is that identifiers match between
 datasets. Defaults to "GEOID10".}
@@ -94,11 +94,11 @@ This has to be at the same scale as the \code{id_col} and \code{record_id_col}.}
 \item{record_id_col}{A character string specifying the column name for
 the geographic/participant identifier in the health data. Supports any
 identifier format (FIPS codes, census tracts, ZIP codes, participant IDs).
-Must have matching values with \code{id_col} in the arsenic data.
+Must have matching values with \code{id_col} in the exposure data.
 Defaults to "FIPS".}
 
-\item{as_level_col}{A character string for the name of the imputed arsenic
-level column. Defaults to "AsLevel".}
+\item{exposure_level_col}{A character string for the name of the imputed exposure
+level column. Defaults to "ExposureLevel".}
 
 \item{conc_mean_col}{A character string for the column name of the
 concentration lognormal meanlog parameter. Defaults to "conc_meanlog".
@@ -139,11 +139,11 @@ covariates in the mice imputation process. Defaults to c("pm").
 Make sure these columns exist in the birth data.}
 
 \item{apply_imputation_fallback}{Logical indicating whether to apply fallback
-imputation for missing arsenic levels. The fallback fills missing
+imputation for missing exposure levels. The fallback fills missing
 values with the most common category in the respective dataset. If
-enabled, this fallback will be applied to any missing arsenic levels
+enabled, this fallback will be applied to any missing exposure levels
 after the initial imputation step. Otherwise, it will remove any rows
-with missing arsenic levels.}
+with missing exposure levels.}
 
 \item{format_ids}{Logical indicating whether to apply smart identifier
 formatting. If TRUE (default), numeric FIPS-like codes (1-5 digits) are
@@ -171,7 +171,7 @@ results <- perform_sensitivity_analysis(
   model_prob_csv = "prob_model_data.csv",
   conc_data_csv = "conc_measured_data.csv",
   birth_data_txt = "birth_outcomes.txt",
-  regression_formula = "~ as.factor(AsLevel) + maternal_age + (1|county)",
+  regression_formula = "~ as.factor(ExposureLevel) + maternal_age + (1|county)",
   output_dir = "results/",
   targets = c("birth_weight", "gestational_age")
 )
@@ -182,7 +182,7 @@ results <- perform_sensitivity_analysis(
   model_prob_csv = "data/prob_data.csv",
   conc_data_csv = "data/conc_data.csv",
   birth_data_txt = "data/births.txt",
-  regression_formula = "~ as.factor(AsLevel) + MAGE_R + rural + (1|FIPS)",
+  regression_formula = "~ as.factor(ExposureLevel) + MAGE_R + rural + (1|FIPS)",
   output_dir = "sensitivity_results/",
   targets = c("OEGEST", "BWT"),
   impute_vars = c("MAGE_R", "education"),

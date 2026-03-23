@@ -7,7 +7,7 @@
 validate_character_vectors(
   targets,
   impute_vars,
-  as_cat_label,
+  cat_label,
   mice_covs,
   columns_to_select,
   prob_cols
