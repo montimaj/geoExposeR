@@ -1,5 +1,5 @@
 # geoExposeR
-An R package for modeling health effects of environmental exposures, with a primary focus on groundwater contaminants. Based on epidemiological studies and existing concentration models.
+An R package for modeling health effects of environmental exposures, with a primary focus on groundwater contaminants, based on epidemiological studies and existing concentration models.
 
 <!-- Package Info -->
 [![Version](https://img.shields.io/badge/version-1.0.0-blue.svg)](https://code.usgs.gov/envirohealth/geoExposeR)
