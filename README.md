@@ -52,7 +52,9 @@ If you use geoExposeR in your research, please cite:
 }
 ```
 
-**DOI:** *Coming soon upon publication in JOSS*
+**DOI:**  For software release https://doi.org/10.5066/P1JGUKMD
+
+*Coming soon for publication in JOSS*
 
 ## Table of Contents
 - [Statement of Need](#statement-of-need)
