@@ -26,23 +26,42 @@ An R package for modeling health effects of environmental exposures, with a prim
 [![Dependencies](https://img.shields.io/badge/dependencies-12-blue.svg)](https://code.usgs.gov/envirohealth/geoExposeR/blob/main/DESCRIPTION)
 
 <!-- Academic -->
-[![DOI](https://img.shields.io/badge/DOI-pending-orange.svg)](https://code.usgs.gov/envirohealth/geoExposeR)
-<!-- [![JOSS](https://joss.theoj.org/papers/10.21105/joss.XXXXX/status.svg)](https://joss.theoj.org/papers/10.21105/joss.XXXXX) -->
+[![DOI](https://img.shields.io/badge/DOI-10.5066%2FP1JGUKMD-blue.svg)](https://doi.org/10.5066/P1JGUKMD)
+[![JOSS](https://img.shields.io/badge/JOSS-pending-orange.svg)](https://joss.theoj.org/)
 
 <!-- USGS Software Release -->
 **USGS IPDS Record Number:** IP-180903
 
 ## Citation
 
-If you use geoExposeR in your research, please cite:
+If you use geoExposeR in your research, please cite the software release:
 
-> Majumdar, S., Bartell, S. M., Lombard, M. A., Smith, R. G., & Gribble, M. O. (2026). 
+> Majumdar, S., Bartell, S. M., Lombard, M. A., Smith, R. G., and Gribble, M. O. (2026). 
+> geoExposeR: An R package for modeling health effects of environmental exposures. 
+> *U.S. Geological Survey Software Release.* https://doi.org/10.5066/P1JGUKMD
+
+**BibTeX:**
+```bibtex
+@software{majumdar2026geoExposeR,
+  title={geoExposeR: An R package for modeling health effects of environmental exposures},
+  author={Majumdar, Sayantan and Bartell, Scott M and Lombard, Melissa A and Smith, Ryan G and Gribble, Matthew O},
+  year={2026},
+  publisher={U.S. Geological Survey},
+  note={U.S. Geological Survey Software Release},
+  doi={10.5066/P1JGUKMD},
+  url={https://doi.org/10.5066/P1JGUKMD}
+}
+```
+
+And the accompanying paper (under review at JOSS):
+
+> Majumdar, S., Bartell, S. M., Lombard, M. A., Smith, R. G., and Gribble, M. O. (2026). 
 > geoExposeR: An R package for modeling health effects of environmental exposures. 
 > *Journal of Open Source Software* (under review).
 
 **BibTeX:**
 ```bibtex
-@article{majumdar2026geoExposeR,
+@article{majumdar2026geoExposeRpaper,
   title={geoExposeR: An R package for modeling health effects of environmental exposures},
   author={Majumdar, Sayantan and Bartell, Scott M and Lombard, Melissa A and Smith, Ryan G and Gribble, Matthew O},
   journal={Journal of Open Source Software},
@@ -51,10 +70,6 @@ If you use geoExposeR in your research, please cite:
   url={https://code.usgs.gov/envirohealth/geoExposeR}
 }
 ```
-
-**DOI:**  For software release https://doi.org/10.5066/P1JGUKMD
-
-*Coming soon for publication in JOSS*
 
 ## Table of Contents
 - [Statement of Need](#statement-of-need)
