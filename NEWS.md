@@ -141,4 +141,10 @@ This work was supported by the National Heart, Lung, and Blood Institute (R21HL1
 
 ## Citation
 
+Software release:
+
+Majumdar, S., Bartell, S. M., Lombard, M. A., Smith, R. G., & Gribble, M. O. (2026). geoExposeR: An R package for modeling health effects of environmental exposures. *U.S. Geological Survey Software Release.* https://doi.org/10.5066/P1JGUKMD
+
+Accompanying paper (under review at JOSS):
+
 Majumdar, S., Bartell, S. M., Lombard, M. A., Smith, R. G., & Gribble, M. O. (2026). geoExposeR: An R package for modeling health effects of environmental exposures. *Journal of Open Source Software* (under review).
