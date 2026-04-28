@@ -36,9 +36,9 @@ An R package for modeling health effects of environmental exposures, with a prim
 
 If you use geoExposeR in your research, please cite the software release:
 
-> Majumdar, S., Bartell, S. M., Lombard, M. A., Smith, R. G., and Gribble, M. O. (2026). 
-> geoExposeR: An R package for modeling health effects of environmental exposures. 
-> *U.S. Geological Survey Software Release.* https://doi.org/10.5066/P1JGUKMD
+> Majumdar, S., Bartell, S. M., Lombard, M. A., Smith, R. G., and Gribble, M. O., 2026, 
+> geoExposeR: An R package for modeling health effects of environmental exposures, 
+> *U.S. Geological Survey Software Release*, https://doi.org/10.5066/P1JGUKMD
 
 **BibTeX:**
 ```bibtex
@@ -55,8 +55,8 @@ If you use geoExposeR in your research, please cite the software release:
 
 And the accompanying paper (under review at JOSS):
 
-> Majumdar, S., Bartell, S. M., Lombard, M. A., Smith, R. G., and Gribble, M. O. (2026). 
-> geoExposeR: An R package for modeling health effects of environmental exposures. 
+> Majumdar, S., Bartell, S. M., Lombard, M. A., Smith, R. G., and Gribble, M. O., 2026,
+> geoExposeR: An R package for modeling health effects of environmental exposures, 
 > *Journal of Open Source Software* (under review).
 
 **BibTeX:**
@@ -1507,7 +1507,7 @@ Johnson, T.D., and Belitz, K., 2019, Domestic well locations and populations ser
 
 DeSimone, L.A., McMahon, P.B., and Rosen, M.R., 2014, The quality of our Nation's waters—Water quality in principal aquifers of the United States, 1991–2010: U.S. Geological Survey Circular 1360, 151 p., https://pubs.usgs.gov/circ/1360/.
 
-Ravalli, F., Yu, Y., Bostick, B. C., Chillrud, S. N., Schilling, K., Basu, A., Navas-Acien, A., Nigra, A. E., 2022, Sociodemographic inequalities in uranium and other metals in community water systems across the USA, 2006-11: a cross-sectional study: a cross-sectional study. The Lancet Planetary Health, 6(4), e320–e330, https://doi.org/10.1016/S2542-5196(22)00043-2
+Ravalli, F., Yu, Y., Bostick, B. C., Chillrud, S. N., Schilling, K., Basu, A., Navas-Acien, A., and Nigra, A. E., 2022, Sociodemographic inequalities in uranium and other metals in community water systems across the USA, 2006-11: a cross-sectional study: a cross-sectional study. The Lancet Planetary Health, 6(4), e320–e330, https://doi.org/10.1016/S2542-5196(22)00043-2
 
 ### R Packages and Resources
 
