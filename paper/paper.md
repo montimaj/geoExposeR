@@ -288,7 +288,7 @@ results <- perform_sensitivity_analysis(
 results$BWT
 ```
 
-geoExposeR also provides data preparation functions for users starting with raw GeoTIFF rasters or unprocessed concentration data. Complete examples demonstrating the full data pipeline, including additional examples for nitrate, uranium, and PM2.5 exposure assessments, are available in the package vignette and the examples/ directory on GitLab [@Majumdar-2026].
+geoExposeR also provides data preparation functions for users starting with raw GeoTIFF rasters or unprocessed concentration data. Complete examples demonstrating the full data pipeline, including additional examples for nitrate, uranium, and PM2.5 exposure assessments, are available in the package vignette and the `examples/` directory on GitLab [@Majumdar-2026].
 
 # LIMITATIONS
 
