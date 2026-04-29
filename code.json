@@ -4,8 +4,7 @@
     "organization": "U.S. Geological Survey",
     "description": "geoExposeR is an R package for environmental exposure assessment and health outcome analysis. It provides tools for integrating geospatial contaminant data (arsenic, nitrate, uranium, PM2.5) with health records using multiple imputation and sensitivity analysis to quantify exposure-outcome relationships under measurement uncertainty.",
     "version": "1.0.0",
-    "status": "production",
-    "ipdsNumber": "IP-180903",
+    "status": "Production",
     "permissions": {
       "usageType": "openSource",
       "licenses": [
