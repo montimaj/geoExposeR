@@ -14,7 +14,8 @@
 #'   - conc_dom.csv: Measured concentration data from public water systems
 #'       Columns: id (FIPS code), weighted_as20062008 (pop-weighted mean As in µg/L),
 #'       county_pop_served20062008, well, Dom_Pop_Percent (% on private wells)
-#'   - Demographics_dom.txt: Demographics data with health outcomes
+#'   - Demographics_dom.txt: Individual-level health outcomes
+#'       (multiple participants per county)
 #'       Columns: id (FIPS code), SBP (systolic blood pressure in mmHg),
 #'       age_decade (age group: 30-39, 40-49, etc.)
 #'
@@ -98,15 +99,40 @@ ndraws <- 5
 targets <- c("SBP")
 
 # Define the regression formula
-# This models SBP as a function of arsenic level and age decade
-# geoExposeR uses mixed-effects models (lme4::lmer), so we need a random effect
-# Here we use age_decade as a random effect for demonstration purposes
-# In real studies, you would typically use geographic grouping (e.g., county, state)
+# geoExposeR uses mixed-effects models (lme4::lmer), so the formula needs at
+# least one random-effects term.
+#
+# PRIMARY EXAMPLE: a geographic random INTERCEPT by county, (1 | id).
+# ---------------------------------------------------------------------------
+# This is the structure most exposure studies want. Arsenic exposure is
+# assigned at the county level, while SBP is measured on individuals nested
+# within counties (the Demographics file has multiple participants per county).
+# The (1 | id) term lets each county have its own baseline SBP (a random
+# intercept), separating between-county variation from individual (residual)
+# variation. The arsenic exposure coefficients are then interpreted as the
+# average SBP difference between exposure categories, net of county baselines.
+# There is NO random slope here, so the exposure effect is assumed constant
+# across counties.
 exposure_level_col <- "ExposureLevel"
 regression_formula <- paste0(
   "~ as.factor(", exposure_level_col, ") + ",
-  "(1 | age_decade)"
+  "(1 | id)"
 )
+
+# ALTERNATIVE (for demonstration only): a random intercept by age group,
+# (1 | age_decade).
+# ---------------------------------------------------------------------------
+# This does NOT model individual age. It treats age_decade as a *contextual
+# grouping variable*: each age band (30-39, 40-49, ...) gets its own random
+# intercept (baseline SBP shift), with NO random slope, so the arsenic effect
+# is still assumed constant across age groups. Because age_decade has only a
+# handful of levels (5 here), the between-group variance is estimated from very
+# few groups and should be interpreted with caution -- prefer a fixed effect,
+# e.g. "+ as.factor(age_decade)", if you simply want to adjust for age. To use
+# this contextual demonstration instead, swap the formula above for:
+#   regression_formula <- paste0(
+#     "~ as.factor(", exposure_level_col, ") + (1 | age_decade)"
+#   )
 
 # Exposure category labels (matching 3-category probability model)
 cat_labels <- c("<5", "5-10", "10+")

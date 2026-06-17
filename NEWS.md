@@ -22,6 +22,7 @@ This release adds flexible regression model options to `perform_sensitivity_anal
 * New example script `examples/run_geoExposeR_model_variants.R` demonstrating all six fixed/random/mixed × linear/non-linear combinations.
 * New example script `examples/run_geoExposeR_fixed_multi_target.R` demonstrating fixed-effects models over multiple targets at once, including categorical (character and 0/1) outcomes.
 * New "Regression Model Options" section in the README.
+* **Corrected random-effects interpretation in the examples.** The example health data (`examples/input_data/Demographics_dom.txt`) is now individual-level with multiple participants nested within each county (~400 records across 50 counties), generated reproducibly by the new `examples/input_data/generate_demographics.R`. The main example and vignette now use a geographic random intercept `(1 | id)` instead of `(1 | age_decade)`; documentation clarifies that grouping on `age_decade` is a *contextual* random intercept (no random slope) over only a handful of levels, and that a fixed effect (`+ as.factor(age_decade)`) is preferred for simply adjusting for age.
 
 ### Quality
 * Maintains **100% test coverage**, with new tests covering every model-fitting and validation branch.

@@ -383,13 +383,20 @@ cat_labels <- c("<5", "5-10", "10+")
 # Reference category for regression (lowest exposure)
 drop_cat_label_ref <- c("<5")
 
-# Define the regression formula
-# This models SBP as a function of arsenic level with age_decade as a random effect
+# Define the regression formula.
+# We use a geographic random INTERCEPT by county, (1 | id): arsenic exposure is
+# assigned at the county level while SBP is measured on individuals nested
+# within counties (the demographics file holds multiple participants per
+# county). Each county gets its own baseline SBP, separating between-county from
+# within-county variation. There is no random slope, so the arsenic effect is
+# assumed constant across counties.
 regression_formula <- paste0(
   "~ as.factor(", exposure_level_col, ") + ",
-  "(1 | age_decade)"
+  "(1 | id)"
 )
 ```
+
+A random intercept by `age_decade`, `(1 | age_decade)`, is also possible, but it has a different meaning: it treats age as a *contextual grouping variable* (a separate baseline per age band, no random slope) rather than modelling individual age, and it estimates the between-group variance from only a handful of levels. If you simply want to adjust for age, prefer a fixed effect such as `+ as.factor(age_decade)`. See `examples/run_geoExposeR_model_variants.R` for these alternatives.
 
 ### Step 4: Run the Analysis
 

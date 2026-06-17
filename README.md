@@ -418,7 +418,7 @@ The examples use data files from the `examples/input_data/` folder:
 | `conc_pm25.csv` | Measured PM2.5 concentration data (50 rows) |
 | `Health_pm25.txt` | Respiratory function (FEV1) and smoking data (50 rows) |
 
-> **⚠️ Note on Example Data:** All example data files are **simulated dummy data** created for demonstration and testing purposes only. These files contain 50 synthetic records with realistic column structures but randomly generated values. The actual research data cannot be shared publicly due to data use agreements and privacy restrictions. The dummy data preserves the structure and format of the real data to allow users to understand the workflow and test the package functionality.
+> **⚠️ Note on Example Data:** All example data files are **simulated dummy data** created for demonstration and testing purposes only. The county-level exposure files contain 50 synthetic counties, and the health file contains ~400 synthetic individual-level records nested within those counties (multiple participants per county, which makes a geographic random intercept `(1 | id)` identifiable). They have realistic column structures but randomly generated values. The actual research data cannot be shared publicly due to data use agreements and privacy restrictions. The dummy data preserves the structure and format of the real data to allow users to understand the workflow and test the package functionality.
 
 ### Example 1: Basic CSV Workflow (`run_geoExposeR_example.R`)
 

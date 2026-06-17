@@ -336,7 +336,8 @@ results <- tryCatch({
     model_prob_csv = merged_path,
     conc_data_csv = merged_path,
     birth_data_txt = health_analysis_path,
-    regression_formula = "~ as.factor(ExposureLevel) + (1 | age_decade)",
+    # Geographic random intercept by county (individuals nested within counties)
+    regression_formula = "~ as.factor(ExposureLevel) + (1 | id)",
     output_dir = output_dir,
     targets = c("SBP"),
     cat_label = c("<5", "5-10", "10+"),

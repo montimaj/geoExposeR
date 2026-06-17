@@ -1,6 +1,8 @@
 # Example Input Data Documentation
 
-> **⚠️ All data files in this directory are simulated dummy data** created for demonstration and testing purposes only. They contain 50 synthetic records with realistic column structures but randomly generated values. Actual research data cannot be shared due to data use agreements and privacy restrictions.
+> **⚠️ All data files in this directory are simulated dummy data** created for demonstration and testing purposes only. The county-level exposure files (`prob_dom.csv`, `conc_dom.csv`) contain 50 synthetic counties; the health file (`Demographics_dom.txt`) contains ~400 synthetic individual-level records nested within those 50 counties. They have realistic column structures but randomly generated values. Actual research data cannot be shared due to data use agreements and privacy restrictions.
+>
+> `Demographics_dom.txt` is produced by `generate_demographics.R` (run `Rscript examples/input_data/generate_demographics.R` from the package root).
 
 ## Core Arsenic Data
 
@@ -41,13 +43,15 @@ Arsenic concentrations measured in public water supply systems, aggregated at th
 
 ### Demographics_dom.txt — Health Outcome Data
 
-Tab-delimited file containing health outcome measurements and demographic covariates for the study population.
+Tab-delimited file containing **individual-level** health outcome measurements and demographic covariates for the study population. Each row is one participant, and **multiple participants are nested within each county `id`**. This individual-within-county structure is what makes a geographic random intercept `(1 | id)` identifiable (it gives `lme4` repeated observations per county, so between-county variance can be estimated separately from within-county residual variance).
 
 | Column | Description | Units / Format |
 |--------|-------------|----------------|
-| `id` | Geographic identifier (county FIPS code), matching probability and concentration data | Integer (e.g., 1001 = FIPS 01001) |
+| `id` | Geographic identifier (county FIPS code), matching probability and concentration data; repeats across the participants in a county | Integer (e.g., 1001 = FIPS 01001) |
 | `SBP` | Systolic Blood Pressure — the primary health outcome | mmHg (millimeters of mercury) |
-| `age_decade` | Age group of the participant, used as a random effect in regression | Character (e.g., "30-39", "40-49", "50-59", "60-69", "70-79") |
+| `age_decade` | Age group of the participant | Character (e.g., "30-39", "40-49", "50-59", "60-69", "70-79") |
+
+**Notes on using these columns in a model:** The recommended random effect is a geographic random intercept by county, `(1 | id)` — exposure is assigned at the county level while `SBP` is measured on individuals nested within counties. `age_decade` can instead be used as a *contextual grouping variable* via `(1 | age_decade)` (a separate baseline per age band, with **no random slope**), but it has only 5 levels, so the between-group variance is estimated from very few groups and should be interpreted with caution. To simply adjust for age, use a fixed effect, `+ as.factor(age_decade)`. The `examples/run_geoExposeR_model_variants.R` script demonstrates these options.
 
 ---
 

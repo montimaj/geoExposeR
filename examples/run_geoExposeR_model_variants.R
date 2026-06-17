@@ -29,6 +29,19 @@
 #' (sbp_events), and a 3-level categorical outcome (bp_stage) so the same
 #' workflow can showcase generalized and multinomial models.
 #'
+#' NOTE ON THE RANDOM-EFFECTS GROUPING FACTOR
+#' ------------------------------------------------------------------------------
+#' The random-/mixed-effects variants below group by `age_decade` purely to
+#' exercise the random-effects machinery in a compact way. Every `(1 | ...)`
+#' term here is a random INTERCEPT (a group-specific baseline) with NO random
+#' slope, so the arsenic effect is assumed constant across groups. Grouping on
+#' `age_decade` treats age as a *contextual* variable (one baseline per age
+#' band); with only 5 levels the between-group variance is estimated from very
+#' few groups and is shown for illustration, not as a recommended analysis. A
+#' real geographic study would group by county, `(1 | id)`, which has many
+#' levels with multiple participants each (see run_geoExposeR_example.R). To
+#' simply adjust for age, use the fixed effect `+ as.factor(age_decade)`.
+#'
 #' Author: Dr. Sayantan Majumdar (sayantan.majumdar@dri.edu)
 #' =============================================================================
 
@@ -281,4 +294,7 @@ cat("- Poisson models: q.mi is a log-rate ratio; exp(q.mi) gives the rate\n")
 cat("  ratio relative to the reference category.\n")
 cat("- Multinomial models: one estimate per outcome category (y.level); q.mi\n")
 cat("  is a log-odds ratio for that category vs the reference category.\n")
+cat("- Random effects here are random INTERCEPTS grouped by age_decade (a\n")
+cat("  contextual variable, no random slope); a geographic analysis would\n")
+cat("  group by county, (1 | id). See run_geoExposeR_example.R.\n")
 cat("=====================================================\n")
