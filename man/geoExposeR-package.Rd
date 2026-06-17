@@ -6,7 +6,7 @@
 \alias{geoExposeR-package}
 \title{geoExposeR: An R Package for Modeling Health Effects of Environmental Exposures}
 \description{
-An analytical workflow that automates integration of probabilistic exposure estimates from multiple data sources, population-weighted combination of exposure probabilities, multiple imputation to propagate exposure uncertainty, mixed-effects regression modeling with proper clustering adjustment, and result pooling via Rubin's Rules with appropriate variance estimation. Originally designed for drinking water arsenic exposure estimates but broadly applicable to other environmental contaminants.
+An analytical workflow that automates integration of probabilistic exposure estimates from multiple data sources, population-weighted combination of exposure probabilities, multiple imputation to propagate exposure uncertainty, configurable regression modeling with selectable fixed-, random-, or mixed-effects structures in linear, generalized, or multinomial form and proper clustering adjustment, and result pooling via Rubin's Rules with appropriate variance estimation. Originally designed for drinking water arsenic exposure estimates but broadly applicable to other environmental contaminants.
 }
 \seealso{
 Useful links:

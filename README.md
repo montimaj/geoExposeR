@@ -167,34 +167,37 @@ If you do not have Pandoc, you can download and install it from the official web
 
 **Install from USGS GitLab:**
 
-> **Note:** Installation using `devtools::install_gitlab()` does not currently work while the repository is private. It will work after the repository is approved and publicly available, with the `ref` argument pointing to a tagged release version.
+> **Note:** These commands will work once the repository is approved and publicly available, with the tag/branch suffix pointing to a tagged release version. The `devtools::install_*()` helpers were deprecated in devtools 2.5.0 in favor of [pak](https://pak.r-lib.org/), so the examples below use `pak`.
 
 ```r
-# Install devtools if not already installed
-if (!require("devtools")) install.packages("devtools")
+# Install pak if not already installed
+if (!require("pak")) install.packages("pak")
 
 # Install geoExposeR from USGS GitLab (specific tag or branch)
-devtools::install_gitlab(
-  repo = "envirohealth/geoExposeR@v1.0.0",  # Replace with desired tag or branch
-  host = "code.usgs.gov",
-  build_vignettes = TRUE
-)
+pak::pak("git::https://code.usgs.gov/envirohealth/geoExposeR.git@v1.0.0")  # Replace with desired tag or branch (e.g. @main)
 
 # Load the package
 library(geoExposeR)
 ```
 
+`pak` does not build vignettes by default. To build the vignettes locally during installation, use the non-deprecated `remotes::install_git()`, which also supports the self-hosted `code.usgs.gov` host:
+
+```r
+# install.packages("remotes")
+remotes::install_git(
+  "https://code.usgs.gov/envirohealth/geoExposeR.git",
+  ref = "v1.0.0",  # Replace with desired tag or branch (e.g. "main")
+  build_vignettes = TRUE
+)
+```
+
 **For development and testing (includes coverage tools):**
 ```r
 # Install additional development dependencies
-install.packages(c("devtools", "testthat", "covr", "DT", "htmltools"))
+install.packages(c("pak", "testthat", "covr", "DT", "htmltools"))
 
 # Install geoExposeR from USGS GitLab (specific tag or branch)
-devtools::install_gitlab(
-  repo = "envirohealth/geoExposeR@main",  # Or use a specific tag like @v1.0.0
-  host = "code.usgs.gov",
-  build_vignettes = TRUE
-)
+pak::pak("git::https://code.usgs.gov/envirohealth/geoExposeR.git@main")  # Or use a specific tag like @v1.0.0
 ```
 
 **Verify installation:**
@@ -1530,10 +1533,7 @@ Install these core dependencies manually before installing geoExposeR:
 install.packages(c("R6", "digest", "purrr", "vctrs", "glue"))
 
 # Then install geoExposeR from USGS GitLab
-devtools::install_gitlab(
-  repo = "envirohealth/geoExposeR@v1.0.0",
-  host = "code.usgs.gov"
-)
+pak::pak("git::https://code.usgs.gov/envirohealth/geoExposeR.git@v1.0.0")
 ```
 
 **Why this happens:**
@@ -1565,11 +1565,8 @@ This issue typically occurs when:
    .libPaths()  # Check library paths
    
    # Reinstall dependencies and package
-   install.packages(c("devtools", "R6", "digest", "purrr", "vctrs", "glue"))
-   devtools::install_gitlab(
-     repo = "envirohealth/geoExposeR@v1.0.0",
-     host = "code.usgs.gov"
-   )
+   install.packages(c("pak", "R6", "digest", "purrr", "vctrs", "glue"))
+   pak::pak("git::https://code.usgs.gov/envirohealth/geoExposeR.git@v1.0.0")
    ```
 
 4. **Check R version compatibility:**
@@ -1588,7 +1585,7 @@ This work was supported by the National Heart, Lung, and Blood Institute (R21HL1
 
 This project is in the public domain under the CC0 1.0 Universal license - see the [LICENSE](https://code.usgs.gov/envirohealth/geoExposeR/-/blob/main/LICENSE) file for details.
 
-**Version:** 1.0.0 | **Status:** Under active development
+**Version:** 1.1.0 | **Status:** Under active development
 
 ## References
 
