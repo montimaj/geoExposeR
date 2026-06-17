@@ -478,13 +478,16 @@ geoExposeR/
 │   ├── run_geoExposeR_example.R        # Basic CSV workflow example
 │   ├── run_geoExposeR_from_geotiff.R   # GeoTIFF raster workflow
 │   ├── run_geoExposeR_data_pipeline.R  # Data ingestion functions demo
+│   ├── run_geoExposeR_model_variants.R # Fixed/random/mixed model variants
+│   ├── run_geoExposeR_fixed_multi_target.R # Fixed-effects, multiple targets
 │   ├── run_geoExposeR_nitrate.R        # Nitrate exposure example
 │   ├── run_geoExposeR_uranium.R        # Uranium exposure example
 │   ├── run_geoExposeR_pm25.R           # PM2.5 air quality example
 │   ├── input_data/                     # Example input data files (all dummy data*)
+│   │   ├── generate_demographics.R     # Reproducible generator for Demographics_dom.txt
 │   │   ├── prob_dom.csv                # Sample arsenic probability data (dummy*)
 │   │   ├── conc_dom.csv                # Sample arsenic concentration data (dummy*)
-│   │   ├── Demographics_dom.txt        # Sample demographics/health data (dummy*)
+│   │   ├── Demographics_dom.txt        # Sample individual-level health data (dummy*)
 │   │   ├── prob_nitrate.csv            # Sample nitrate probability data (dummy*)
 │   │   ├── conc_nitrate.csv            # Sample nitrate concentration data (dummy*)
 │   │   ├── Health_nitrate.txt          # Sample infant health data (dummy*)
