@@ -2,7 +2,7 @@
 An R package for modeling health effects of environmental exposures, with a primary focus on groundwater contaminants, based on epidemiological studies and existing concentration models.
 
 <!-- Package Info -->
-[![Version](https://img.shields.io/badge/version-1.0.0-blue.svg)](https://code.usgs.gov/envirohealth/geoExposeR)
+[![Version](https://img.shields.io/badge/version-1.1.0-blue.svg)](https://code.usgs.gov/envirohealth/geoExposeR)
 [![R](https://img.shields.io/badge/R-%E2%89%A5%204.4.0-blue.svg)](https://www.r-project.org/)
 [![License](https://img.shields.io/badge/License-CC0%201.0-blue.svg)](https://creativecommons.org/publicdomain/zero/1.0/)
 
@@ -100,7 +100,7 @@ geoExposeR directly addresses this need by packaging the complete analytical pip
 1. Integration of probabilistic exposure estimates from multiple data sources
 2. Population-weighted combination of exposure probabilities
 3. Multiple imputation to propagate exposure uncertainty
-4. Mixed-effects regression modeling with proper clustering adjustment
+4. Configurable regression modeling—fixed-, random-, or mixed-effects structures in linear, generalized, or multinomial form—with proper clustering adjustment
 5. Result pooling via Rubin's Rules with appropriate variance estimation
 
 **While designed for drinking water arsenic exposure assessments, the underlying statistical framework is broadly applicable to other environmental contaminants** (nitrate, uranium, manganese, PFAS) and air pollutants (PM2.5, ozone) where probabilistic exposure estimates and health outcome data are available. The package includes worked examples for nitrate (infant methemoglobinemia), uranium (kidney function), and PM2.5 (respiratory outcomes), demonstrating how the framework generalizes to other contaminants and health endpoints. See the [Broader Applicability](#broader-applicability) section and example scripts for guidance on adapting the package to other domains.
@@ -136,7 +136,7 @@ The figure below illustrates the complete analytical workflow implemented in geo
 |----------|----------|
 | **Data Ingestion** | Process GeoTIFF rasters, concentration measurements, health data; geographic subsetting; input validation |
 | **Exposure Modeling** | Probability/concentration data integration; population-weighted averaging; lognormal parameter estimation |
-| **Statistical Analysis** | Multiple imputation (MICE); mixed-effects regression; Rubin's Rules pooling |
+| **Statistical Analysis** | Multiple imputation (MICE); fixed-/random-/mixed-effects regression (linear, generalized, or multinomial); Rubin's Rules pooling |
 | **Quality Assurance** | 100% test coverage; comprehensive input validation; reproducible workflows |
 
 Existing methods from studies like _Bulka and others (2022)_ and _Lombard and others (2021)_ provide robust statistical frameworks but require complex implementation involving:
@@ -329,6 +329,8 @@ The package includes multiple working examples in the `examples/` folder that de
 | `run_geoExposeR_example.R` | Basic example using pre-formatted CSV data |
 | `run_geoExposeR_from_geotiff.R` | Complete GeoTIFF workflow from rasters to analysis |
 | `run_geoExposeR_data_pipeline.R` | Demonstrates all data ingestion functions |
+| `run_geoExposeR_model_variants.R` | Fixed-, random-, and mixed-effects models in linear, non-linear (logistic/Poisson), and multinomial variants |
+| `run_geoExposeR_fixed_multi_target.R` | Fixed-effects models over multiple targets at once, including binary categorical (character and 0/1) outcomes via logistic regression and multi-level categorical outcomes via multinomial regression |
 
 #### Broader Application Examples
 
@@ -354,6 +356,12 @@ Rscript examples/run_geoExposeR_from_geotiff.R
 
 # Data pipeline example (all ingestion functions)
 Rscript examples/run_geoExposeR_data_pipeline.R
+
+# Model variants (fixed/random/mixed, linear and non-linear)
+Rscript examples/run_geoExposeR_model_variants.R
+
+# Fixed-effects models over multiple targets, including categorical outcomes
+Rscript examples/run_geoExposeR_fixed_multi_target.R
 
 # Broader application examples
 Rscript examples/run_geoExposeR_nitrate.R
@@ -485,7 +493,7 @@ geoExposeR/
 │   │   └── Health_pm25.txt             # Sample respiratory health data (dummy*)
 ├── tests/
 │   ├── testthat/
-│   │   └── test-geoExposeR.R           # Comprehensive test suite (476 tests)
+│   │   └── test-geoExposeR.R           # Comprehensive test suite (557 tests)
 │   └── testthat.R                      # Test runner
 ├── vignettes/
 │   └── geoExposeR-vignette.Rmd         # Package tutorial and examples
@@ -531,7 +539,7 @@ This approach provides several advantages:
 
 The package includes comprehensive testing with 100% code coverage:
 
-- **`tests/testthat/test-geoExposeR.R`**: Main test suite with 476 tests (includes helper functions)
+- **`tests/testthat/test-geoExposeR.R`**: Main test suite with 557 tests (includes helper functions)
 - **`tests/testthat.R`**: Standard R package test runner
 - **`.gitlab-ci.yml`**: GitLab CI/CD pipeline with automated testing and coverage reporting
 
@@ -552,7 +560,7 @@ While users primarily interact with `perform_sensitivity_analysis()`, the packag
 - `validate_imputed_datasets()`: Validates imputation results
 
 **Regression Analysis (`regression.R`):**
-- `regression_analysis()`: Performs mixed-effects regression on imputed data
+- `regression_analysis()`: Fits the selected regression model (fixed/random/mixed effects; linear, generalized, or multinomial) on imputed data
 - `pool_estimates_by_term()`: Pools regression estimates using Rubin's Rules
 - `pool_single_estimate()`: Applies Rubin's Rules to individual parameters
 
@@ -579,11 +587,114 @@ While users primarily interact with `perform_sensitivity_analysis()`, the packag
 2. **Probability Integration**: Combines probability and concentration models using weighted averages based on private well usage
 3. **Multiple Imputation**: Creates multiple datasets with probabilistically assigned exposure levels
 4. **Covariate Imputation**: Optionally imputes missing values in additional covariates using MICE
-5. **Statistical Analysis**: Fits mixed-effects regression models to assess exposure-outcome relationships
+5. **Statistical Analysis**: Fits regression models to assess exposure-outcome relationships, with selectable fixed-, random-, or mixed-effects structures in linear or non-linear (generalized) variants (see [Regression Model Options](#regression-model-options))
 6. **Results Pooling**: Applies Rubin's Rules to pool results across imputed datasets
 7. **Output Generation**: Saves results and returns structured analysis output
 
 The function is designed to handle the complex statistical methodology while providing a simple, user-friendly interface that requires minimal statistical programming expertise.
+
+### Regression Model Options
+
+`perform_sensitivity_analysis()` supports flexible regression model structures through two arguments, `model_type` and `model_family`. This lets you fit **fixed-effects**, **random-effects**, or **mixed-effects** models, each in a **linear** (Gaussian) or **non-linear** (generalized) variant.
+
+**`model_type`** selects the effects structure:
+
+| `model_type` | Effects structure | Random terms in formula |
+|--------------|-------------------|--------------------------|
+| `"fixed"` | Fixed effects only (no random effects) | Not allowed |
+| `"random"` | Random intercepts only | Required, intercept-only, e.g. `(1 \| county)` |
+| `"mixed"` (default) | Fixed effects + random effects | Required, slopes allowed, e.g. `(1 \| county)` or `(age \| county)` |
+
+**`model_family`** selects the response distribution:
+
+- `NULL` (default): a **linear** model (Gaussian / identity link), for continuous outcomes.
+- A family name (`"binomial"`, `"poisson"`, ...), a `family` object (e.g. `poisson()`), or a family-generating function: a **non-linear** generalized model, for binary, count, or other outcomes.
+- `"multinomial"`: a **multinomial logistic** model for multi-level categorical outcomes (3+ categories). Fixed-effects fits use `nnet::multinom()`; random- and mixed-effects fits use `mclogit::mblogit()`.
+
+The combination selects the fitting engine automatically:
+
+| `model_type` | linear (`model_family = NULL`) | non-linear (`model_family` set) | multinomial (`model_family = "multinomial"`) |
+|--------------|-------------------------------|----------------------------------|-----------------------------------------------|
+| `"fixed"` | `stats::lm()` | `stats::glm()` | `nnet::multinom()` |
+| `"random"` | `lme4::lmer()` | `lme4::glmer()` | `mclogit::mblogit()` |
+| `"mixed"` | `lme4::lmer()` | `lme4::glmer()` | `mclogit::mblogit()` |
+
+Regardless of engine, coefficients are extracted for the exposure terms and pooled across imputed datasets using Rubin's Rules. For non-linear models the pooled estimate `q.mi` is on the link scale (e.g. a log-odds ratio for `"binomial"`; `exp(q.mi)` gives the odds ratio). Multinomial results include an extra **`y.level`** column identifying the outcome category (relative to the reference level) that each pooled estimate refers to.
+
+```r
+# Linear fixed-effects model (ordinary least squares)
+perform_sensitivity_analysis(
+  ...,
+  regression_formula = "~ as.factor(ExposureLevel) + maternal_age",
+  model_type = "fixed"            # model_family = NULL -> stats::lm()
+)
+
+# Linear random-intercept model
+perform_sensitivity_analysis(
+  ...,
+  regression_formula = "~ as.factor(ExposureLevel) + (1 | county)",
+  model_type = "random"          # -> lme4::lmer()
+)
+
+# Linear mixed-effects model (default)
+perform_sensitivity_analysis(
+  ...,
+  regression_formula = "~ as.factor(ExposureLevel) + maternal_age + (1 | county)",
+  model_type = "mixed"           # -> lme4::lmer()
+)
+
+# Non-linear (logistic) mixed-effects model for a binary outcome
+perform_sensitivity_analysis(
+  ...,
+  targets = "preterm",
+  regression_formula = "~ as.factor(ExposureLevel) + maternal_age + (1 | county)",
+  model_type = "mixed",
+  model_family = "binomial"      # -> lme4::glmer()
+)
+
+# Non-linear (Poisson) fixed-effects model for a count outcome
+perform_sensitivity_analysis(
+  ...,
+  targets = "n_events",
+  regression_formula = "~ as.factor(ExposureLevel) + maternal_age",
+  model_type = "fixed",
+  model_family = poisson()       # -> stats::glm()
+)
+```
+
+See `examples/run_geoExposeR_model_variants.R` for a runnable demonstration of these combinations, including the multinomial fixed-, random-, and mixed-effects variants.
+
+#### Categorical outcomes and multiple targets
+
+A single `perform_sensitivity_analysis()` call applies one `model_family` to every target it is given, so outcomes of different types are best grouped into separate calls:
+
+- **Continuous outcomes** use a linear model (`model_family = NULL`).
+- **Binary categorical outcomes** use a logistic model (`model_family = "binomial"`). They may be supplied as a 0/1 indicator or as a two-level categorical column — a character outcome such as `"high"`/`"normal"` (as read from a text file) is automatically coerced to a factor before fitting, with the first level treated as the reference.
+- **Multi-level categorical outcomes** (3+ categories) use a multinomial model (`model_family = "multinomial"`). Character columns are coerced to factors automatically, and the pooled results gain a `y.level` column for the outcome category.
+
+```r
+# Continuous outcomes -> linear fixed effects
+continuous <- perform_sensitivity_analysis(
+  ..., targets = c("BWT", "gestational_age"),
+  model_type = "fixed", model_family = NULL
+)
+
+# Binary categorical outcomes -> logistic fixed effects
+binary <- perform_sensitivity_analysis(
+  ..., targets = c("preterm", "bp_category"),   # 0/1 or "high"/"normal"
+  model_type = "fixed", model_family = "binomial"
+)
+
+# Multi-level categorical outcome -> multinomial fixed effects
+multilevel <- perform_sensitivity_analysis(
+  ..., targets = "bp_stage",   # e.g. "normal"/"elevated"/"stage2"
+  model_type = "fixed", model_family = "multinomial"
+)
+
+results <- c(continuous, binary, multilevel)
+```
+
+See `examples/run_geoExposeR_fixed_multi_target.R` for a complete fixed-effects example spanning continuous, binary, and multi-level categorical outcomes.
 
 ### Data Ingestion Functions
 
@@ -749,6 +860,8 @@ See the `examples/` folder for complete working examples demonstrating nitrate, 
 - ✅ **Automated workflow**: Single function handles entire analysis pipeline
 - ✅ **Multiple imputation**: Accounts for uncertainty in exposure assignment
 - ✅ **Flexible modeling**: Supports custom regression formulas and multiple outcomes
+- ✅ **Fixed / random / mixed effects**: Selectable effects structure via `model_type`, in linear or non-linear (generalized) variants via `model_family` (`lm`/`glm`/`lmer`/`glmer`)
+- ✅ **Categorical outcomes**: Binary outcomes via logistic regression and multi-level outcomes via multinomial regression (`model_family = "multinomial"`; `nnet::multinom` for fixed effects, `mclogit::mblogit` for random/mixed effects)
 - ✅ **Robust statistics**: Implements Rubin's Rules for proper inference pooling
 - ✅ **Missing data handling**: Optional MICE imputation for covariates
 
@@ -766,7 +879,7 @@ See the `examples/` folder for complete working examples demonstrating nitrate, 
 - ✅ **Population weighting**: Weight exposures by private vs. public well usage
 
 ### Quality & Reproducibility
-- ✅ **Extensive testing**: 100% code coverage with 476 automated tests
+- ✅ **Extensive testing**: 100% code coverage with 557 automated tests
 - ✅ **Reproducible results**: Seed control and comprehensive output saving
 - ✅ **CI/CD pipeline**: Automated testing on multiple platforms (macOS, Linux, Windows)
 - ✅ **Documentation**: Complete pkgdown website with examples and vignettes
@@ -1277,12 +1390,12 @@ $OEGEST
 -----------------------------
 [1] "Checking results for target: BWT"
 [1] "Checking results for target: OEGEST"
-✔ |        476 | Test perform_sensitivity_analysis with comprehensive coverage [11.4s]                                                                                                                           
+✔ |        557 | Test perform_sensitivity_analysis with comprehensive coverage [11.4s]                                                                                                                           
 
 ══ Results ═════════════════════════════════════════════════════════════════════
 Duration: 11.4 s
 
-[ FAIL 0 | WARN 0 | SKIP 0 | PASS 476 ]
+[ FAIL 0 | WARN 0 | SKIP 0 | PASS 557 ]
 ```
 
 ### Continuous Integration
@@ -1498,6 +1611,10 @@ van Buuren, S., and Groothuis-Oudshoorn, K., 2011, mice—Multivariate imputatio
 Honaker, J., King, G., and Blackwell, M., 2011, Amelia II—A program for missing data: Journal of Statistical Software, v. 45, no. 7, p. 1–47, https://doi.org/10.18637/jss.v045.i07.
 
 Bates, D., Mächler, M., Bolker, B., and Walker, S., 2015, Fitting linear mixed-effects models using lme4: Journal of Statistical Software, v. 67, no. 1, p. 1–48, https://doi.org/10.18637/jss.v067.i01.
+
+Venables, W.N., and Ripley, B.D., 2002, Modern applied statistics with S (4th ed.): New York, Springer, https://doi.org/10.1007/978-0-387-21706-2. [multinomial logistic regression via the `nnet` package]
+
+Elff, M., 2024, mclogit—Multinomial logit models, with or without random effects or overdispersion: R package, https://doi.org/10.32614/CRAN.package.mclogit.
 
 ### Data Sources
 

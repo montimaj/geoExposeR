@@ -10,6 +10,8 @@ validate_all_inputs(
   conc_data_csv = NULL,
   ndraws = NULL,
   regression_formula = NULL,
+  model_type = "mixed",
+  model_family = NULL,
   targets = NULL,
   impute_vars = NULL,
   output_dir = NULL,
@@ -46,6 +48,12 @@ validate_all_inputs(
 \item{ndraws}{Number of draws for sensitivity analysis}
 
 \item{regression_formula}{Regression formula for modeling}
+
+\item{model_type}{Effects structure of the regression model: one of
+\code{"mixed"}, \code{"random"}, or \code{"fixed"}}
+
+\item{model_family}{Error distribution / link for non-linear (generalized)
+models, or \code{NULL} for a linear model}
 
 \item{targets}{Target variables for analysis}
 

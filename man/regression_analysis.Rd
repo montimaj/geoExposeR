@@ -10,7 +10,9 @@ regression_analysis(
   cat_label,
   exposure_level_col,
   regression_formula,
-  output_dir
+  output_dir,
+  model_type = "mixed",
+  model_family = NULL
 )
 }
 \arguments{
@@ -29,13 +31,47 @@ name.}
 regression model.}
 
 \item{output_dir}{A character string for the output directory path.}
+
+\item{model_type}{A character string selecting the effects structure. One of
+\code{"mixed"} (default, fixed + random effects), \code{"random"} (random-intercept
+only), or \code{"fixed"} (no random effects).}
+
+\item{model_family}{The error distribution / link for non-linear
+(generalized) models. Accepts \code{NULL} (default, a linear/Gaussian model), a
+family name such as \code{"binomial"} or \code{"poisson"}, the special value
+\code{"multinomial"} (multi-level categorical outcome, fitted with
+\code{\link[nnet:multinom]{nnet::multinom()}} for fixed effects or \code{\link[mclogit:mblogit]{mclogit::mblogit()}} for
+random-/mixed-effects), a \code{\link[stats:family]{stats::family()}} object, or a family-generating
+function. When non-\code{NULL}, generalized models are fitted.}
 }
 \value{
 A named list of data frames with pooled regression results for each
 target.
 }
 \description{
-This function performs regression analysis on multiply imputed data using
-linear mixed-effects models and pools the results using Rubin's Rules.
+This function performs regression analysis on multiply imputed data and pools
+the results using Rubin's Rules. It supports fixed-effects, random-effects,
+and mixed-effects models, each available in a linear variant (Gaussian /
+identity link) or a non-linear variant (generalized models with a \code{family},
+e.g. logistic or Poisson).
+}
+\details{
+The fitting engine is selected from the combination of \code{model_type} and
+\code{model_family}:
+
+\tabular{lll}{
+\strong{model_type} \tab \strong{linear (model_family = NULL)} \tab
+\strong{non-linear (model_family set)} \cr
+\code{"fixed"}  \tab \code{\link[stats:lm]{stats::lm()}}   \tab \code{\link[stats:glm]{stats::glm()}}  \cr
+\code{"random"} \tab \code{\link[lme4:lmer]{lme4::lmer()}}  \tab \code{\link[lme4:glmer]{lme4::glmer()}} \cr
+\code{"mixed"}  \tab \code{\link[lme4:lmer]{lme4::lmer()}}  \tab \code{\link[lme4:glmer]{lme4::glmer()}}
+}
+
+Multi-level categorical outcomes are supported via multinomial logistic
+regression (\code{model_family = "multinomial"}): fixed-effects fits use
+\code{\link[nnet:multinom]{nnet::multinom()}}, while random- and mixed-effects fits use
+\code{\link[mclogit:mblogit]{mclogit::mblogit()}}. Multinomial results include a \code{y.level} column
+identifying the outcome category (relative to the reference level) that each
+pooled estimate refers to.
 }
 \keyword{internal}

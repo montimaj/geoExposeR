@@ -11,6 +11,8 @@ perform_sensitivity_analysis(
   birth_data_txt = NULL,
   regression_formula = NULL,
   output_dir = "sensitivity_results/",
+  model_type = "mixed",
+  model_family = NULL,
   targets = c("OEGEST", "BWT"),
   impute_vars = NULL,
   cat_label = c("<5", "5-10", "10+"),
@@ -50,10 +52,37 @@ lognormal parameters and the percentage of private well users.}
 \item{birth_data_txt}{A file path to the text file containing the birth data.}
 
 \item{regression_formula}{A string or formula object for the regression
-model.}
+model. For fixed-effects models (\code{model_type = "fixed"}) the formula must
+not contain random-effects terms; for random- and mixed-effects models it
+must contain at least one random-effects term such as \code{(1 | group)}.}
 
 \item{output_dir}{A file path to the directory where output files will be
 saved.}
+
+\item{model_type}{A character string selecting the effects structure of the
+regression model. One of:
+\itemize{
+\item \code{"mixed"} (default) - fixed effects plus random effects, fitted
+with \code{\link[lme4:lmer]{lme4::lmer()}} (linear) or \code{\link[lme4:glmer]{lme4::glmer()}} (non-linear).
+\item \code{"random"} - random-intercept-only models, fitted with
+\code{\link[lme4:lmer]{lme4::lmer()}} / \code{\link[lme4:glmer]{lme4::glmer()}}. Every random term must be an
+intercept, e.g. \code{(1 | group)}.
+\item \code{"fixed"} - no random effects, fitted with \code{\link[stats:lm]{stats::lm()}} (linear)
+or \code{\link[stats:glm]{stats::glm()}} (non-linear).
+}}
+
+\item{model_family}{The error distribution and link for non-linear
+(generalized) models. Accepts \code{NULL} (default; a linear/Gaussian model), a
+family name such as \code{"binomial"} or \code{"poisson"}, the special value
+\code{"multinomial"}, a \code{\link[stats:family]{stats::family()}} object, or a family-generating
+function. When non-\code{NULL}, generalized models are fitted (\code{\link[stats:glm]{stats::glm()}}
+for \code{model_type = "fixed"}, otherwise \code{\link[lme4:glmer]{lme4::glmer()}}). Use
+\code{"multinomial"} for multi-level categorical outcomes (fitted with
+\code{\link[nnet:multinom]{nnet::multinom()}} for \code{model_type = "fixed"}, or \code{\link[mclogit:mblogit]{mclogit::mblogit()}} for
+\code{"random"}/\code{"mixed"}); the pooled results gain a \code{y.level} column
+identifying the outcome category. Categorical outcomes supplied as
+character columns are coerced to factors automatically for \code{"binomial"}
+and \code{"multinomial"}.}
 
 \item{targets}{A character vector of the dependent variables (health
 outcomes) for the regression analysis. Defaults to c("OEGEST", "BWT").}
@@ -189,6 +218,41 @@ results <- perform_sensitivity_analysis(
   mice_m = 5,
   mice_maxit = 10,
   seed = 42
+)
+
+# Linear fixed-effects model (ordinary least squares, no random effects)
+results <- perform_sensitivity_analysis(
+  ndraws = 10,
+  model_prob_csv = "data/prob_data.csv",
+  conc_data_csv = "data/conc_data.csv",
+  birth_data_txt = "data/births.txt",
+  regression_formula = "~ as.factor(ExposureLevel) + MAGE_R",
+  output_dir = "results_fixed/",
+  model_type = "fixed"
+)
+
+# Linear random-intercept model
+results <- perform_sensitivity_analysis(
+  ndraws = 10,
+  model_prob_csv = "data/prob_data.csv",
+  conc_data_csv = "data/conc_data.csv",
+  birth_data_txt = "data/births.txt",
+  regression_formula = "~ as.factor(ExposureLevel) + (1 | FIPS)",
+  output_dir = "results_random/",
+  model_type = "random"
+)
+
+# Non-linear (logistic) mixed-effects model for a binary outcome
+results <- perform_sensitivity_analysis(
+  ndraws = 10,
+  model_prob_csv = "data/prob_data.csv",
+  conc_data_csv = "data/conc_data.csv",
+  birth_data_txt = "data/births.txt",
+  regression_formula = "~ as.factor(ExposureLevel) + MAGE_R + (1 | FIPS)",
+  output_dir = "results_logistic/",
+  targets = "preterm",
+  model_type = "mixed",
+  model_family = "binomial"
 )
 }
 

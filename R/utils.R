@@ -3,11 +3,16 @@
 #' @importFrom dplyr `%>%` select mutate group_by do all_of
 #' @importFrom rlang .data
 #' @importFrom stats as.formula na.omit plnorm pt qt update
+#' @importFrom stats lm glm df.residual coef
+#' @importFrom stats gaussian binomial poisson Gamma inverse.gaussian
+#'   quasibinomial quasipoisson quasi
 #' @importFrom terra rast vect extract
 #' @importFrom sf st_centroid st_crs st_transform st_read st_as_sf
 #' @importFrom exactextractr exact_extract
 #' @importFrom Hmisc wtd.mean wtd.var
 #' @import lme4
+#' @importFrom nnet multinom
+#' @importFrom mclogit mblogit
 #' @import rms
 #' @import broom.mixed
 #' @import Amelia
@@ -92,6 +97,10 @@ format_ids_func <- function(data_frame, id_col) {
 #' @param pwell_col Column name for private well percentage
 #' @param mice_covs Covariates for MICE imputation
 #' @param apply_imputation_fallback Whether to apply imputation fallback
+#' @param model_type Effects structure of the regression model: one of
+#'   `"mixed"`, `"random"`, or `"fixed"`
+#' @param model_family Error distribution / link for non-linear (generalized)
+#'   models, or `NULL` for a linear model
 #' @return NULL (throws error if validation fails)
 #' @keywords internal
 validate_all_inputs <- function(
@@ -100,6 +109,8 @@ validate_all_inputs <- function(
   conc_data_csv = NULL,
   ndraws = NULL,
   regression_formula = NULL,
+  model_type = "mixed",
+  model_family = NULL,
   targets = NULL,
   impute_vars = NULL,
   output_dir = NULL,
@@ -185,9 +196,61 @@ validate_all_inputs <- function(
     conc_raw_col, pwell_col
   )
 
-  # Validate regression formula
-  validate_regression_formula(regression_formula, exposure_level_col)
+  # Validate model specification (effects structure and family)
+  validate_model_spec(model_type, model_family)
 
+  # Validate regression formula
+  validate_regression_formula(
+    regression_formula, exposure_level_col, model_type
+  )
+
+  invisible(NULL)
+}
+
+#' Validate Model Specification (effects structure and family)
+#'
+#' Checks that `model_type` is one of the supported effects structures and that
+#' `model_family` is a valid family specification (or `NULL` for linear models).
+#'
+#' @param model_type Effects structure: one of `"mixed"`, `"random"`, `"fixed"`
+#' @param model_family `NULL`, a family name, the special value `"multinomial"`,
+#'   a family object, or a family-generating function
+#' @return NULL (throws error if validation fails)
+#' @keywords internal
+validate_model_spec <- function(model_type, model_family) {
+  valid_types <- c("mixed", "random", "fixed")
+  if (!is.character(model_type) || length(model_type) != 1 ||
+        !(model_type %in% valid_types)) {
+    stop(
+      "model_type must be one of: ",
+      paste(valid_types, collapse = ", ")
+    )
+  }
+  if (!is.null(model_family)) {
+    if (is.character(model_family)) {
+      if (length(model_family) != 1 || nchar(trimws(model_family)) == 0) {
+        stop("model_family must be a single non-empty character string")
+      }
+      if (!is_multinomial_spec(model_family)) {
+        # "multinomial" is a recognized special value (fitted with
+        # nnet::multinom for fixed effects or mclogit::mblogit for
+        # random-/mixed-effects); any other character value must resolve to a
+        # stats family object.
+        tryCatch(
+          resolve_model_family(model_family),
+          error = function(e) {
+            stop("Invalid model_family: ", conditionMessage(e))
+          }
+        )
+      }
+    } else if (!inherits(model_family, "family") &&
+                 !is.function(model_family)) {
+      stop(
+        "model_family must be NULL, a character string, a family object, ",
+        "or a family-generating function"
+      )
+    }
+  }
   invisible(NULL)
 }
 
@@ -283,8 +346,20 @@ validate_numeric_params <- function(ndraws, mice_m, mice_maxit, seed) {
 }
 
 #' Validate Regression Formula
+#'
+#' @param regression_formula Regression formula (character string or formula
+#'   object)
+#' @param exposure_level_col Column name for the exposure level factor
+#' @param model_type Effects structure of the model: one of `"mixed"`,
+#'   `"random"`, or `"fixed"`. Controls whether random-effects terms are
+#'   required or forbidden. Defaults to `"mixed"`.
+#' @return NULL (throws error if validation fails)
 #' @keywords internal
-validate_regression_formula <- function(regression_formula, exposure_level_col) {
+validate_regression_formula <- function(
+  regression_formula,
+  exposure_level_col,
+  model_type = "mixed"
+) {
   if (!is.null(regression_formula)) {
     if (!is.character(regression_formula) &&
           !inherits(regression_formula, "formula")) {
@@ -315,7 +390,70 @@ validate_regression_formula <- function(regression_formula, exposure_level_col) 
              "' as a factor variable")
       }
     }
+
+    # Check random-effects terms against the requested model_type
+    validate_random_effects_terms(regression_formula, model_type)
   }
+}
+
+#' Validate Random-Effects Terms Against Model Type
+#'
+#' Ensures the formula's random-effects structure matches `model_type`:
+#' fixed-effects models must not contain random terms, random- and mixed-effects
+#' models must contain at least one, and random-effects models permit
+#' intercept-only random terms (e.g. `(1 | group)`).
+#'
+#' @param regression_formula Regression formula (character or formula object)
+#' @param model_type One of `"mixed"`, `"random"`, or `"fixed"`
+#' @return NULL (throws error if validation fails)
+#' @keywords internal
+validate_random_effects_terms <- function(regression_formula, model_type) {
+  formula_string <- if (is.character(regression_formula)) {
+    regression_formula
+  } else {
+    paste(deparse(regression_formula), collapse = " ")
+  }
+  # A random-effects term looks like "( ... | ... )"
+  random_term_pattern <- "\\([^|()]*\\|[^()]*\\)"
+  has_random <- grepl(random_term_pattern, formula_string)
+
+  if (model_type == "fixed") {
+    if (has_random) {
+      stop(
+        "model_type = 'fixed' does not support random-effects terms such as ",
+        "'(1 | group)'. Use model_type = 'random' or 'mixed' instead."
+      )
+    }
+    return(invisible(NULL))
+  }
+
+  # model_type is "random" or "mixed": require at least one random-effects term
+  if (!has_random) {
+    stop(
+      "model_type = '", model_type, "' requires at least one random-effects ",
+      "term such as '(1 | group)'. Use model_type = 'fixed' for models ",
+      "without random effects."
+    )
+  }
+
+  if (model_type == "random") {
+    # Random-intercept-only: the term to the left of '|' must be just "1"
+    random_terms <- regmatches(
+      formula_string,
+      gregexpr(random_term_pattern, formula_string)
+    )[[1]]
+    slopes <- vapply(random_terms, function(term) {
+      lhs <- trimws(sub("\\(([^|]*)\\|.*", "\\1", term))
+      lhs != "1"
+    }, logical(1))
+    if (any(slopes)) {
+      stop(
+        "model_type = 'random' supports random intercepts only ",
+        "(e.g. '(1 | group)'). Use model_type = 'mixed' for random slopes."
+      )
+    }
+  }
+  invisible(NULL)
 }
 
 #' Validate Character Vector Parameters

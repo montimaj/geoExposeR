@@ -1,3 +1,31 @@
+# geoExposeR 1.1.0 (development)
+
+## Flexible Regression Model Types
+
+This release adds flexible regression model options to `perform_sensitivity_analysis()`, so users can choose among fixed-effects, random-effects, and mixed-effects models in both linear and non-linear (generalized) variants.
+
+### New Features
+* **`model_type` argument**: Select the effects structure of the regression model:
+  * `"fixed"` - fixed effects only, no random effects (fitted with `stats::lm()` / `stats::glm()`).
+  * `"random"` - random-intercept-only models (fitted with `lme4::lmer()` / `lme4::glmer()`).
+  * `"mixed"` (default) - fixed plus random effects (fitted with `lme4::lmer()` / `lme4::glmer()`). This preserves the previous default behavior, so existing code is unaffected.
+* **`model_family` argument**: Select the response distribution for non-linear (generalized) models. Accepts `NULL` (default, a linear/Gaussian model), a family name such as `"binomial"` or `"poisson"`, a `stats::family()` object, or a family-generating function. When set, generalized models are fitted (`stats::glm()` for fixed effects, otherwise `lme4::glmer()`).
+* **Engine selection** is automatic from the `model_type` × `model_family` combination; exposure-term coefficients are pooled across imputed datasets with Rubin's Rules regardless of the engine used.
+* **Categorical outcomes**: For logistic (`model_family = "binomial"`) models, a two-level *character* target column (e.g. `"high"`/`"normal"`, as read from a text file) is automatically coerced to a factor, so categorical outcomes can be modeled alongside 0/1 indicators without manual preprocessing. Multiple targets of the same type can be analysed in a single call.
+* **Multi-level categorical outcomes**: New `model_family = "multinomial"` fits a multinomial logistic regression for outcomes with three or more categories. Fixed-effects models use `nnet::multinom()`; random- and mixed-effects models use `mclogit::mblogit()`, where the inline `(1 | group)` random terms in `regression_formula` are translated to the engine's random-effects specification automatically. Pooled results gain a `y.level` column identifying the outcome category. Adds `nnet` and `mclogit` to package dependencies.
+
+### Validation
+* `regression_formula` is now validated against `model_type`: fixed-effects models reject random-effects terms, random- and mixed-effects models require at least one random-effects term, and random-effects models require intercept-only random terms.
+* `model_type` and `model_family` are validated up front with clear error messages.
+
+### Documentation and Examples
+* New example script `examples/run_geoExposeR_model_variants.R` demonstrating all six fixed/random/mixed × linear/non-linear combinations.
+* New example script `examples/run_geoExposeR_fixed_multi_target.R` demonstrating fixed-effects models over multiple targets at once, including categorical (character and 0/1) outcomes.
+* New "Regression Model Options" section in the README.
+
+### Quality
+* Maintains **100% test coverage**, with new tests covering every model-fitting and validation branch.
+
 # geoExposeR 1.0.0
 
 ## First Stable Release

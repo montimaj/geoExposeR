@@ -67,7 +67,24 @@ The primary challenge in studying the health effects of arsenic in private wells
 
 2.  **Multiple Imputation**: Because we don't know the true arsenic exposure for each individual, we treat it as missing data. The package uses a multiple imputation framework to create `n` complete datasets (`ndraws`). In each dataset, a plausible arsenic exposure category is assigned to each county based on the probability distribution derived in the previous step. The framework also imputes missing values in any user-specified covariates.
 
-3.  **Regression Analysis and Pooling**: A regression model (typically a linear mixed-effects model) is fitted to each of the `n` imputed datasets. The results (coefficients and standard errors) from these models are then pooled using **Rubin's Rules** to produce a single set of estimates that properly accounts for the uncertainty introduced by the imputation process.
+3.  **Regression Analysis and Pooling**: A regression model is fitted to each of the `n` imputed datasets. The results (coefficients and standard errors) from these models are then pooled using **Rubin's Rules** to produce a single set of estimates that properly accounts for the uncertainty introduced by the imputation process. The model defaults to a linear mixed-effects model, but the effects structure and response distribution are configurable (see *Choosing a Regression Model* below).
+
+### Choosing a Regression Model
+
+Two arguments control the regression model fitted in step 3:
+
+* `model_type` selects the **effects structure**: `"fixed"` (fixed effects only, no random effects), `"random"` (random intercepts only), or `"mixed"` (the default; fixed plus random effects).
+* `model_family` selects the **response distribution**: `NULL` (the default) gives a **linear** Gaussian model for continuous outcomes; a family such as `"binomial"` or `"poisson"` gives a **non-linear** generalized model for binary or count outcomes; and `"multinomial"` gives a multinomial logistic model for multi-level categorical outcomes.
+
+The fitting engine follows automatically from the combination:
+
+| `model_type` | linear (`model_family = NULL`) | non-linear (`model_family` set) | multinomial |
+|--------------|--------------------------------|----------------------------------|-------------|
+| `"fixed"`    | `stats::lm()`                  | `stats::glm()`                   | `nnet::multinom()` |
+| `"random"`   | `lme4::lmer()`                 | `lme4::glmer()`                  | `mclogit::mblogit()` |
+| `"mixed"`    | `lme4::lmer()`                 | `lme4::glmer()`                  | `mclogit::mblogit()` |
+
+Fixed-effects models must not include random-effects terms in `regression_formula`, while random- and mixed-effects models require at least one (e.g. `(1 | county)`). For non-linear models the pooled estimate is on the link scale (for example, a log-odds ratio when `model_family = "binomial"`). Multinomial models (3+ outcome categories) add a `y.level` column to the pooled results identifying the outcome category. The `examples/run_geoExposeR_model_variants.R` and `examples/run_geoExposeR_fixed_multi_target.R` scripts demonstrate these options end to end.
 
 ## Data Requirements
 
@@ -662,6 +679,10 @@ van Buuren, S., and Groothuis-Oudshoorn, K., 2011, mice—Multivariate imputatio
 Honaker, J., King, G., and Blackwell, M., 2011, Amelia II—A program for missing data: Journal of Statistical Software, v. 45, no. 7, p. 1–47, https://doi.org/10.18637/jss.v045.i07.
 
 Bates, D., Mächler, M., Bolker, B., and Walker, S., 2015, Fitting linear mixed-effects models using lme4: Journal of Statistical Software, v. 67, no. 1, p. 1–48, https://doi.org/10.18637/jss.v067.i01.
+
+Venables, W.N., and Ripley, B.D., 2002, Modern applied statistics with S (4th ed.): New York, Springer, https://doi.org/10.1007/978-0-387-21706-2. [multinomial logistic regression via the `nnet` package]
+
+Elff, M., 2024, mclogit—Multinomial logit models, with or without random effects or overdispersion: R package, https://doi.org/10.32614/CRAN.package.mclogit.
 
 ### Data Sources
 

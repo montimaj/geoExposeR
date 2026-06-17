@@ -4,7 +4,24 @@
 \alias{validate_regression_formula}
 \title{Validate Regression Formula}
 \usage{
-validate_regression_formula(regression_formula, exposure_level_col)
+validate_regression_formula(
+  regression_formula,
+  exposure_level_col,
+  model_type = "mixed"
+)
+}
+\arguments{
+\item{regression_formula}{Regression formula (character string or formula
+object)}
+
+\item{exposure_level_col}{Column name for the exposure level factor}
+
+\item{model_type}{Effects structure of the model: one of \code{"mixed"},
+\code{"random"}, or \code{"fixed"}. Controls whether random-effects terms are
+required or forbidden. Defaults to \code{"mixed"}.}
+}
+\value{
+NULL (throws error if validation fails)
 }
 \description{
 Validate Regression Formula

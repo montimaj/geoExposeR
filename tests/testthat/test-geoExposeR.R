@@ -547,7 +547,7 @@ test_that("validate_inputs validates regression_formula parameter", {
       birth_data_txt = birth_file,
       model_prob_csv = prob_file,
       conc_data_csv = conc_file,
-      regression_formula = "~ as.factor(ExposureLevel) + y"
+      regression_formula = "~ as.factor(ExposureLevel) + y + (1 | MRSTATE)"
     )
   )
 
@@ -557,7 +557,7 @@ test_that("validate_inputs validates regression_formula parameter", {
       birth_data_txt = birth_file,
       model_prob_csv = prob_file,
       conc_data_csv = conc_file,
-      regression_formula = as.formula("~ x + y")
+      regression_formula = as.formula("~ x + (1 | y)")
     )
   )
 
@@ -6134,4 +6134,533 @@ test_that("impute_additional_variables warns on insufficient MICE variables", {
   
   # Check the function ran
   expect_true(is.list(result))
+})
+
+# =============================================================================
+# Tests for flexible model types: fixed / random / mixed effects, linear and
+# non-linear (generalized) variants.
+# =============================================================================
+
+# Shared helper to build a clustered data frame with continuous, binary, and
+# count outcomes across two imputed datasets.
+make_model_variant_data <- function(seed = 2024, n = 600) {
+  set.seed(seed)
+  grp <- factor(rep(sprintf("g%02d", 1:20), length.out = n))
+  exposure <- factor(
+    sample(c("<5", "5-10", "10+"), n, replace = TRUE),
+    levels = c("<5", "5-10", "10+")
+  )
+  exposure <- stats::relevel(exposure, ref = "<5")
+  cov <- rnorm(n, 30, 5)
+  lin_pred <- as.integer(exposure) * -25
+  data.frame(
+    .id = rep(1:2, each = n / 2),
+    grp = grp,
+    ExposureLevel = exposure,
+    cov = cov,
+    BWT = 3400 + lin_pred + rnorm(n, 0, 400),
+    is_event = rbinom(n, 1, 0.3),
+    n_events = rpois(n, 2)
+  )
+}
+
+test_that("resolve_model_family normalizes all accepted forms", {
+  expect_null(geoExposeR:::resolve_model_family(NULL))
+  expect_s3_class(geoExposeR:::resolve_model_family("binomial"), "family")
+  expect_s3_class(geoExposeR:::resolve_model_family(poisson()), "family")
+  expect_s3_class(geoExposeR:::resolve_model_family(Gamma), "family")
+  expect_equal(
+    geoExposeR:::resolve_model_family("poisson")$family,
+    "poisson"
+  )
+})
+
+test_that("resolve_model_family errors on unknown family name", {
+  expect_error(
+    geoExposeR:::resolve_model_family("not_a_real_family"),
+    "Unknown model_family"
+  )
+})
+
+test_that("validate_model_spec accepts valid specifications", {
+  expect_silent(geoExposeR:::validate_model_spec("mixed", NULL))
+  expect_silent(geoExposeR:::validate_model_spec("random", "binomial"))
+  expect_silent(geoExposeR:::validate_model_spec("fixed", poisson()))
+  expect_silent(geoExposeR:::validate_model_spec("mixed", Gamma))
+})
+
+test_that("validate_model_spec rejects invalid model_type", {
+  expect_error(
+    geoExposeR:::validate_model_spec("panel", NULL),
+    "model_type must be one of"
+  )
+  expect_error(
+    geoExposeR:::validate_model_spec(c("fixed", "mixed"), NULL),
+    "model_type must be one of"
+  )
+})
+
+test_that("validate_model_spec rejects invalid model_family", {
+  # Empty / whitespace character
+  expect_error(
+    geoExposeR:::validate_model_spec("fixed", ""),
+    "single non-empty character string"
+  )
+  expect_error(
+    geoExposeR:::validate_model_spec("fixed", c("binomial", "poisson")),
+    "single non-empty character string"
+  )
+  # Unknown family name
+  expect_error(
+    geoExposeR:::validate_model_spec("fixed", "not_a_family"),
+    "Invalid model_family"
+  )
+  # Wrong type entirely (numeric)
+  expect_error(
+    geoExposeR:::validate_model_spec("fixed", 42),
+    "model_family must be NULL"
+  )
+})
+
+test_that("validate_random_effects_terms enforces fixed model has no random", {
+  expect_error(
+    geoExposeR:::validate_random_effects_terms(
+      "~ as.factor(ExposureLevel) + (1 | grp)", "fixed"
+    ),
+    "does not support random-effects terms"
+  )
+  expect_silent(
+    geoExposeR:::validate_random_effects_terms(
+      "~ as.factor(ExposureLevel) + cov", "fixed"
+    )
+  )
+})
+
+test_that("validate_random_effects_terms requires random term for random/mixed", {
+  expect_error(
+    geoExposeR:::validate_random_effects_terms(
+      "~ as.factor(ExposureLevel) + cov", "mixed"
+    ),
+    "requires at least one random-effects term"
+  )
+  expect_error(
+    geoExposeR:::validate_random_effects_terms(
+      "~ as.factor(ExposureLevel) + cov", "random"
+    ),
+    "requires at least one random-effects term"
+  )
+})
+
+test_that("validate_random_effects_terms enforces intercept-only for random", {
+  expect_error(
+    geoExposeR:::validate_random_effects_terms(
+      "~ as.factor(ExposureLevel) + (cov | grp)", "random"
+    ),
+    "supports random intercepts only"
+  )
+  expect_silent(
+    geoExposeR:::validate_random_effects_terms(
+      "~ as.factor(ExposureLevel) + (1 | grp)", "random"
+    )
+  )
+  # mixed permits random slopes
+  expect_silent(
+    geoExposeR:::validate_random_effects_terms(
+      "~ as.factor(ExposureLevel) + (cov | grp)", "mixed"
+    )
+  )
+})
+
+test_that("validate_random_effects_terms works on formula objects", {
+  expect_error(
+    geoExposeR:::validate_random_effects_terms(
+      as.formula("~ as.factor(ExposureLevel) + (1 | grp)"), "fixed"
+    ),
+    "does not support random-effects terms"
+  )
+})
+
+test_that("fit_single_model dispatches to the correct engine", {
+  d <- make_model_variant_data()
+  d1 <- d[d$.id == 1, ]
+
+  # Linear fixed -> lm
+  m_lm <- geoExposeR:::fit_single_model(
+    BWT ~ as.factor(ExposureLevel) + cov, d1, "fixed", NULL
+  )
+  expect_s3_class(m_lm, "lm")
+
+  # Non-linear fixed -> glm
+  m_glm <- geoExposeR:::fit_single_model(
+    is_event ~ as.factor(ExposureLevel) + cov, d1, "fixed",
+    stats::binomial()
+  )
+  expect_s3_class(m_glm, "glm")
+
+  # Linear mixed -> lmerMod
+  m_lmer <- geoExposeR:::fit_single_model(
+    BWT ~ as.factor(ExposureLevel) + (1 | grp), d1, "mixed", NULL
+  )
+  expect_s4_class(m_lmer, "lmerMod")
+
+  # Non-linear mixed -> glmerMod
+  m_glmer <- suppressWarnings(geoExposeR:::fit_single_model(
+    is_event ~ as.factor(ExposureLevel) + (1 | grp), d1, "mixed",
+    stats::binomial()
+  ))
+  expect_s4_class(m_glmer, "glmerMod")
+})
+
+test_that("tidy_fixed_effects returns uniform output for lm/glm and lmer", {
+  d <- make_model_variant_data()
+  d1 <- d[d$.id == 1, ]
+
+  m_lm <- stats::lm(BWT ~ as.factor(ExposureLevel) + cov, data = d1)
+  tidy_lm <- geoExposeR:::tidy_fixed_effects(m_lm, "fixed")
+  expect_named(tidy_lm, c("term", "estimate", "std.error"))
+  expect_true("as.factor(ExposureLevel)5-10" %in% tidy_lm$term)
+
+  m_lmer <- lme4::lmer(
+    BWT ~ as.factor(ExposureLevel) + (1 | grp), data = d1
+  )
+  tidy_lmer <- geoExposeR:::tidy_fixed_effects(m_lmer, "mixed")
+  expect_named(tidy_lmer, c("term", "estimate", "std.error"))
+})
+
+test_that("extract_df_residual works for fixed and mixed models", {
+  d <- make_model_variant_data()
+  d1 <- d[d$.id == 1, ]
+
+  m_lm <- stats::lm(BWT ~ as.factor(ExposureLevel) + cov, data = d1)
+  expect_true(is.finite(geoExposeR:::extract_df_residual(m_lm, "fixed")))
+
+  m_lmer <- lme4::lmer(
+    BWT ~ as.factor(ExposureLevel) + (1 | grp), data = d1
+  )
+  expect_silent(geoExposeR:::extract_df_residual(m_lmer, "mixed"))
+})
+
+test_that("extract_df_residual warns and returns Inf on failure", {
+  bad <- structure(list(), class = "not_a_model")
+  expect_warning(
+    df_val <- geoExposeR:::extract_df_residual(bad, "mixed"),
+    "Could not extract degrees of freedom"
+  )
+  expect_true(is.infinite(df_val))
+})
+
+test_that("regression_analysis fits linear fixed-effects (lm) models", {
+  temp_dir <- tempfile(pattern = "test_fe_lm_")
+  dir.create(temp_dir)
+  d <- make_model_variant_data()
+
+  result <- geoExposeR:::regression_analysis(
+    births = d,
+    targets = "BWT",
+    cat_label = c("5-10", "10+"),
+    exposure_level_col = "ExposureLevel",
+    regression_formula = "~ as.factor(ExposureLevel) + cov",
+    output_dir = temp_dir,
+    model_type = "fixed",
+    model_family = NULL
+  )
+  expect_true("BWT" %in% names(result))
+  expect_equal(as.character(result$BWT$term), c("5-10", "10+"))
+  expect_true(file.exists(file.path(temp_dir, "BWT_pooled_results.csv")))
+  unlink(temp_dir, recursive = TRUE)
+})
+
+test_that("regression_analysis fits non-linear fixed-effects (glm) models", {
+  temp_dir <- tempfile(pattern = "test_fe_glm_")
+  dir.create(temp_dir)
+  d <- make_model_variant_data()
+
+  result <- suppressWarnings(geoExposeR:::regression_analysis(
+    births = d,
+    targets = "is_event",
+    cat_label = c("5-10", "10+"),
+    exposure_level_col = "ExposureLevel",
+    regression_formula = "~ as.factor(ExposureLevel) + cov",
+    output_dir = temp_dir,
+    model_type = "fixed",
+    model_family = "binomial"
+  ))
+  expect_true("is_event" %in% names(result))
+  expect_equal(nrow(result$is_event), 2)
+  unlink(temp_dir, recursive = TRUE)
+})
+
+test_that("regression_analysis handles categorical character targets (logistic)", {
+  temp_dir <- tempfile(pattern = "test_fe_glm_char_")
+  dir.create(temp_dir)
+  d <- make_model_variant_data()
+  # A two-level CHARACTER outcome, as it would be read from a text file
+  d$bp_category <- ifelse(d$is_event == 1, "high", "normal")
+
+  result <- suppressWarnings(geoExposeR:::regression_analysis(
+    births = d,
+    targets = "bp_category",
+    cat_label = c("5-10", "10+"),
+    exposure_level_col = "ExposureLevel",
+    regression_formula = "~ as.factor(ExposureLevel) + cov",
+    output_dir = temp_dir,
+    model_type = "fixed",
+    model_family = "binomial"
+  ))
+  expect_true("bp_category" %in% names(result))
+  expect_equal(nrow(result$bp_category), 2)
+  unlink(temp_dir, recursive = TRUE)
+})
+
+test_that("regression_analysis fits multiple targets in a single call", {
+  temp_dir <- tempfile(pattern = "test_fe_multi_")
+  dir.create(temp_dir)
+  d <- make_model_variant_data()
+  d$BWT2 <- d$BWT + rnorm(nrow(d), 0, 50)
+
+  result <- geoExposeR:::regression_analysis(
+    births = d,
+    targets = c("BWT", "BWT2"),
+    cat_label = c("5-10", "10+"),
+    exposure_level_col = "ExposureLevel",
+    regression_formula = "~ as.factor(ExposureLevel) + cov",
+    output_dir = temp_dir,
+    model_type = "fixed",
+    model_family = NULL
+  )
+  expect_setequal(names(result), c("BWT", "BWT2"))
+  expect_true(file.exists(file.path(temp_dir, "BWT2_pooled_results.csv")))
+  unlink(temp_dir, recursive = TRUE)
+})
+
+test_that("regression_analysis fits linear random-effects (lmer) models", {
+  temp_dir <- tempfile(pattern = "test_re_lmer_")
+  dir.create(temp_dir)
+  d <- make_model_variant_data()
+
+  result <- suppressWarnings(geoExposeR:::regression_analysis(
+    births = d,
+    targets = "BWT",
+    cat_label = c("5-10", "10+"),
+    exposure_level_col = "ExposureLevel",
+    regression_formula = "~ as.factor(ExposureLevel) + (1 | grp)",
+    output_dir = temp_dir,
+    model_type = "random",
+    model_family = NULL
+  ))
+  expect_true("BWT" %in% names(result))
+  unlink(temp_dir, recursive = TRUE)
+})
+
+test_that("regression_analysis fits non-linear mixed-effects (glmer) models", {
+  temp_dir <- tempfile(pattern = "test_me_glmer_")
+  dir.create(temp_dir)
+  d <- make_model_variant_data()
+
+  result <- suppressWarnings(geoExposeR:::regression_analysis(
+    births = d,
+    targets = "n_events",
+    cat_label = c("5-10", "10+"),
+    exposure_level_col = "ExposureLevel",
+    regression_formula = "~ as.factor(ExposureLevel) + cov + (1 | grp)",
+    output_dir = temp_dir,
+    model_type = "mixed",
+    model_family = poisson()
+  ))
+  expect_true("n_events" %in% names(result))
+  expect_equal(nrow(result$n_events), 2)
+  unlink(temp_dir, recursive = TRUE)
+})
+
+# -----------------------------------------------------------------------------
+# Multinomial (multi-level categorical outcome) support
+# -----------------------------------------------------------------------------
+
+test_that("is_multinomial_spec detects the multinomial family", {
+  expect_true(geoExposeR:::is_multinomial_spec("multinomial"))
+  expect_true(geoExposeR:::is_multinomial_spec("Multinomial"))
+  expect_false(geoExposeR:::is_multinomial_spec("binomial"))
+  expect_false(geoExposeR:::is_multinomial_spec(NULL))
+  expect_false(geoExposeR:::is_multinomial_spec(poisson()))
+  expect_false(geoExposeR:::is_multinomial_spec(c("multinomial", "binomial")))
+})
+
+test_that("validate_model_spec accepts multinomial for all effect structures", {
+  expect_silent(geoExposeR:::validate_model_spec("fixed", "multinomial"))
+  expect_silent(geoExposeR:::validate_model_spec("random", "multinomial"))
+  expect_silent(geoExposeR:::validate_model_spec("mixed", "multinomial"))
+})
+
+test_that("tidy_multinomial handles multi-level (matrix) coefficients", {
+  d <- make_model_variant_data()
+  d1 <- d[d$.id == 1, ]
+  d1$y3 <- factor(sample(c("a", "b", "c"), nrow(d1), replace = TRUE))
+  m <- nnet::multinom(
+    y3 ~ as.factor(ExposureLevel) + cov, data = d1, trace = FALSE, Hess = TRUE
+  )
+  tidy <- geoExposeR:::tidy_multinomial(m)
+  expect_named(tidy, c("y.level", "term", "estimate", "std.error"))
+  # Two non-reference outcome levels expected
+  expect_equal(length(unique(tidy$y.level)), 2)
+  expect_true("as.factor(ExposureLevel)5-10" %in% tidy$term)
+})
+
+test_that("tidy_multinomial handles two-level (vector) coefficients", {
+  d <- make_model_variant_data()
+  d1 <- d[d$.id == 1, ]
+  d1$y2 <- factor(sample(c("lo", "hi"), nrow(d1), replace = TRUE))
+  m <- nnet::multinom(
+    y2 ~ as.factor(ExposureLevel) + cov, data = d1, trace = FALSE, Hess = TRUE
+  )
+  tidy <- geoExposeR:::tidy_multinomial(m)
+  expect_named(tidy, c("y.level", "term", "estimate", "std.error"))
+  expect_equal(length(unique(tidy$y.level)), 1)
+})
+
+test_that("fit_single_model fits a multinomial model and df is infinite", {
+  d <- make_model_variant_data()
+  d1 <- d[d$.id == 1, ]
+  d1$y3 <- factor(sample(c("a", "b", "c"), nrow(d1), replace = TRUE))
+  m <- geoExposeR:::fit_single_model(
+    y3 ~ as.factor(ExposureLevel) + cov, d1, "fixed", NULL,
+    is_multinomial = TRUE
+  )
+  expect_s3_class(m, "multinom")
+  expect_true(is.infinite(geoExposeR:::extract_df_residual(m, "fixed")))
+})
+
+test_that("pool_estimates_by_term pools within outcome levels (y.level)", {
+  combined <- data.frame(
+    y.level = rep(c("b", "c"), each = 4),
+    term = rep(c("5-10", "5-10", "10+", "10+"), 2),
+    estimate = c(0.1, 0.2, 0.3, 0.4, -0.1, -0.2, -0.3, -0.4),
+    std.error = rep(0.1, 8),
+    stringsAsFactors = FALSE
+  )
+  mock_model <- structure(list(), class = "multinom")
+  result <- geoExposeR:::pool_estimates_by_term(
+    combined_results = combined,
+    exposure_terms = c("5-10", "10+"),
+    reference_model = mock_model,
+    model_type = "fixed"
+  )
+  expect_true("y.level" %in% names(result))
+  expect_equal(nrow(result), 4)
+  expect_setequal(unique(result$y.level), c("b", "c"))
+})
+
+test_that("regression_analysis fits multinomial models with y.level output", {
+  temp_dir <- tempfile(pattern = "test_multinom_")
+  dir.create(temp_dir)
+  d <- make_model_variant_data()
+  # Three-level CHARACTER outcome (as read from a text file)
+  d$bp_stage <- sample(c("normal", "elevated", "stage2"), nrow(d), replace = TRUE)
+
+  result <- suppressWarnings(geoExposeR:::regression_analysis(
+    births = d,
+    targets = "bp_stage",
+    cat_label = c("5-10", "10+"),
+    exposure_level_col = "ExposureLevel",
+    regression_formula = "~ as.factor(ExposureLevel) + cov",
+    output_dir = temp_dir,
+    model_type = "fixed",
+    model_family = "multinomial"
+  ))
+  expect_true("bp_stage" %in% names(result))
+  expect_true("y.level" %in% names(result$bp_stage))
+  # Two non-reference levels x two exposure terms = 4 pooled rows
+  expect_equal(nrow(result$bp_stage), 4)
+  expect_true(file.exists(file.path(temp_dir, "bp_stage_pooled_results.csv")))
+  unlink(temp_dir, recursive = TRUE)
+})
+
+test_that("fit_multinomial_mixed fits an mblogit model from an lme4 formula", {
+  d <- make_model_variant_data()
+  d1 <- d[d$.id == 1, ]
+  d1$y3 <- factor(sample(c("a", "b", "c"), nrow(d1), replace = TRUE))
+  m <- suppressWarnings(geoExposeR:::fit_multinomial_mixed(
+    y3 ~ as.factor(ExposureLevel) + cov + (1 | grp), d1
+  ))
+  expect_s3_class(m, "mblogit")
+  # Inference for mblogit uses the large-sample (z) approximation
+  expect_true(is.infinite(geoExposeR:::extract_df_residual(m, "random")))
+})
+
+test_that("tidy_multinomial handles mblogit (random-effects) coefficients", {
+  d <- make_model_variant_data()
+  d1 <- d[d$.id == 1, ]
+  d1$y3 <- factor(sample(c("a", "b", "c"), nrow(d1), replace = TRUE))
+  m <- suppressWarnings(geoExposeR:::fit_multinomial_mixed(
+    y3 ~ as.factor(ExposureLevel) + (1 | grp), d1
+  ))
+  tidy <- geoExposeR:::tidy_multinomial(m)
+  expect_named(tidy, c("y.level", "term", "estimate", "std.error"))
+  expect_equal(length(unique(tidy$y.level)), 2)
+  expect_true(any(grepl("ExposureLevel", tidy$term)))
+})
+
+test_that("regression_analysis fits random/mixed multinomial models (mblogit)", {
+  d <- make_model_variant_data()
+  d$bp_stage <- sample(c("normal", "elevated", "stage2"), nrow(d), replace = TRUE)
+
+  for (mt in c("random", "mixed")) {
+    temp_dir <- tempfile(pattern = paste0("test_multinom_", mt, "_"))
+    dir.create(temp_dir)
+    formula <- if (mt == "random") {
+      "~ as.factor(ExposureLevel) + (1 | grp)"
+    } else {
+      "~ as.factor(ExposureLevel) + cov + (1 | grp)"
+    }
+    result <- suppressWarnings(geoExposeR:::regression_analysis(
+      births = d,
+      targets = "bp_stage",
+      cat_label = c("5-10", "10+"),
+      exposure_level_col = "ExposureLevel",
+      regression_formula = formula,
+      output_dir = temp_dir,
+      model_type = mt,
+      model_family = "multinomial"
+    ))
+    expect_true("y.level" %in% names(result$bp_stage))
+    expect_equal(nrow(result$bp_stage), 4)
+    unlink(temp_dir, recursive = TRUE)
+  }
+})
+
+test_that("perform_sensitivity_analysis validates model spec early", {
+  temp_dir <- tempfile(pattern = "test_psa_spec_")
+  dir.create(temp_dir)
+  birth_file <- file.path(temp_dir, "birth.txt")
+  prob_file <- file.path(temp_dir, "prob_data.csv")
+  conc_file <- file.path(temp_dir, "conc_data.csv")
+  writeLines("test", birth_file)
+  writeLines("test", prob_file)
+  writeLines("test", conc_file)
+
+  expect_error(
+    geoExposeR:::validate_all_inputs(
+      birth_data_txt = birth_file,
+      model_prob_csv = prob_file,
+      conc_data_csv = conc_file,
+      regression_formula = "~ as.factor(ExposureLevel) + cov",
+      model_type = "fixed",
+      model_family = "binomial",
+      targets = "is_event"
+    ),
+    NA
+  )
+
+  # Fixed model with a random-effects term should be rejected
+  expect_error(
+    geoExposeR:::validate_all_inputs(
+      birth_data_txt = birth_file,
+      model_prob_csv = prob_file,
+      conc_data_csv = conc_file,
+      regression_formula = "~ as.factor(ExposureLevel) + (1 | grp)",
+      model_type = "fixed"
+    ),
+    "does not support random-effects terms"
+  )
+
+  unlink(temp_dir, recursive = TRUE)
 })

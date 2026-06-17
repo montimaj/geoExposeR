@@ -16,9 +16,34 @@
 #'   lognormal parameters and the percentage of private well users.
 #' @param birth_data_txt A file path to the text file containing the birth data.
 #' @param regression_formula A string or formula object for the regression
-#'   model.
+#'   model. For fixed-effects models (`model_type = "fixed"`) the formula must
+#'   not contain random-effects terms; for random- and mixed-effects models it
+#'   must contain at least one random-effects term such as `(1 | group)`.
 #' @param output_dir A file path to the directory where output files will be
 #'   saved.
+#' @param model_type A character string selecting the effects structure of the
+#'   regression model. One of:
+#'   \itemize{
+#'     \item `"mixed"` (default) - fixed effects plus random effects, fitted
+#'       with [lme4::lmer()] (linear) or [lme4::glmer()] (non-linear).
+#'     \item `"random"` - random-intercept-only models, fitted with
+#'       [lme4::lmer()] / [lme4::glmer()]. Every random term must be an
+#'       intercept, e.g. `(1 | group)`.
+#'     \item `"fixed"` - no random effects, fitted with [stats::lm()] (linear)
+#'       or [stats::glm()] (non-linear).
+#'   }
+#' @param model_family The error distribution and link for non-linear
+#'   (generalized) models. Accepts `NULL` (default; a linear/Gaussian model), a
+#'   family name such as `"binomial"` or `"poisson"`, the special value
+#'   `"multinomial"`, a [stats::family()] object, or a family-generating
+#'   function. When non-`NULL`, generalized models are fitted ([stats::glm()]
+#'   for `model_type = "fixed"`, otherwise [lme4::glmer()]). Use
+#'   `"multinomial"` for multi-level categorical outcomes (fitted with
+#'   [nnet::multinom()] for `model_type = "fixed"`, or [mclogit::mblogit()] for
+#'   `"random"`/`"mixed"`); the pooled results gain a `y.level` column
+#'   identifying the outcome category. Categorical outcomes supplied as
+#'   character columns are coerced to factors automatically for `"binomial"`
+#'   and `"multinomial"`.
 #' @param targets A character vector of the dependent variables (health
 #'   outcomes) for the regression analysis. Defaults to c("OEGEST", "BWT").
 #' @param impute_vars A character vector of column names to be imputed using
@@ -122,6 +147,41 @@
 #'   mice_maxit = 10,
 #'   seed = 42
 #' )
+#'
+#' # Linear fixed-effects model (ordinary least squares, no random effects)
+#' results <- perform_sensitivity_analysis(
+#'   ndraws = 10,
+#'   model_prob_csv = "data/prob_data.csv",
+#'   conc_data_csv = "data/conc_data.csv",
+#'   birth_data_txt = "data/births.txt",
+#'   regression_formula = "~ as.factor(ExposureLevel) + MAGE_R",
+#'   output_dir = "results_fixed/",
+#'   model_type = "fixed"
+#' )
+#'
+#' # Linear random-intercept model
+#' results <- perform_sensitivity_analysis(
+#'   ndraws = 10,
+#'   model_prob_csv = "data/prob_data.csv",
+#'   conc_data_csv = "data/conc_data.csv",
+#'   birth_data_txt = "data/births.txt",
+#'   regression_formula = "~ as.factor(ExposureLevel) + (1 | FIPS)",
+#'   output_dir = "results_random/",
+#'   model_type = "random"
+#' )
+#'
+#' # Non-linear (logistic) mixed-effects model for a binary outcome
+#' results <- perform_sensitivity_analysis(
+#'   ndraws = 10,
+#'   model_prob_csv = "data/prob_data.csv",
+#'   conc_data_csv = "data/conc_data.csv",
+#'   birth_data_txt = "data/births.txt",
+#'   regression_formula = "~ as.factor(ExposureLevel) + MAGE_R + (1 | FIPS)",
+#'   output_dir = "results_logistic/",
+#'   targets = "preterm",
+#'   model_type = "mixed",
+#'   model_family = "binomial"
+#' )
 #' }
 #'
 #' @export
@@ -132,6 +192,8 @@ perform_sensitivity_analysis <- function(
   birth_data_txt = NULL,
   regression_formula = NULL,
   output_dir = "sensitivity_results/",
+  model_type = "mixed",
+  model_family = NULL,
   targets = c("OEGEST", "BWT"),
   impute_vars = NULL,
   cat_label = c("<5", "5-10", "10+"),
@@ -165,6 +227,8 @@ perform_sensitivity_analysis <- function(
     conc_data_csv = conc_data_csv,
     ndraws = ndraws,
     regression_formula = regression_formula,
+    model_type = model_type,
+    model_family = model_family,
     targets = targets,
     impute_vars = impute_vars,
     output_dir = output_dir,
@@ -265,7 +329,9 @@ perform_sensitivity_analysis <- function(
     cat_label = filtered_cat_label,
     exposure_level_col = exposure_level_col,
     regression_formula = regression_formula,
-    output_dir = output_dir
+    output_dir = output_dir,
+    model_type = model_type,
+    model_family = model_family
   )
   return(res)
 }

@@ -4,7 +4,12 @@
 \alias{pool_estimates_by_term}
 \title{Pool regression estimates using Rubin's Rules}
 \usage{
-pool_estimates_by_term(combined_results, exposure_terms, reference_model)
+pool_estimates_by_term(
+  combined_results,
+  exposure_terms,
+  reference_model,
+  model_type = "mixed"
+)
 }
 \arguments{
 \item{combined_results}{Data frame with term, estimate, and std.error columns}
@@ -12,9 +17,14 @@ pool_estimates_by_term(combined_results, exposure_terms, reference_model)
 \item{exposure_terms}{Character vector of exposure terms to pool}
 
 \item{reference_model}{A fitted model to extract degrees of freedom}
+
+\item{model_type}{One of \code{"fixed"}, \code{"random"}, or \code{"mixed"}. Used to select
+how residual degrees of freedom are extracted. Defaults to \code{"mixed"}.}
 }
 \value{
-Data frame with pooled estimates and confidence intervals
+Data frame with pooled estimates and confidence intervals. When
+\code{combined_results} contains a \code{y.level} column (multinomial models),
+estimates are pooled per outcome level and the column is retained.
 }
 \description{
 Pool regression estimates using Rubin's Rules

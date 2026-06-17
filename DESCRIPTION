@@ -1,6 +1,6 @@
 Package: geoExposeR
 Title: An R Package for Modeling Health Effects of Environmental Exposures
-Version: 1.0.0
+Version: 1.1.0
 Authors@R: c(
     person(given = "Sayantan",
            family = "Majumdar",
@@ -28,7 +28,7 @@ Authors@R: c(
            email = "matt.gribble@ucsf.edu",
            comment = c(ORCID = "0000-0002-1614-2981"))
     )    
-Description: An analytical workflow that automates integration of probabilistic exposure estimates from multiple data sources, population-weighted combination of exposure probabilities, multiple imputation to propagate exposure uncertainty, mixed-effects regression modeling with proper clustering adjustment, and result pooling via Rubin's Rules with appropriate variance estimation.  Originally designed for drinking water arsenic exposure estimates but broadly applicable to other environmental contaminants. 
+Description: An analytical workflow that automates integration of probabilistic exposure estimates from multiple data sources, population-weighted combination of exposure probabilities, multiple imputation to propagate exposure uncertainty, configurable regression modeling with selectable fixed-, random-, or mixed-effects structures in linear, generalized, or multinomial form and proper clustering adjustment, and result pooling via Rubin's Rules with appropriate variance estimation.  Originally designed for drinking water arsenic exposure estimates but broadly applicable to other environmental contaminants. 
 License: CC0
 Encoding: UTF-8
 Roxygen: list(markdown = TRUE)
@@ -43,7 +43,9 @@ Imports:
     Hmisc,
     lme4,
     broom.mixed,
+    mclogit,
     mice,
+    nnet,
     rlang,
     rms,
     sf,
