@@ -71,33 +71,56 @@ stopifnot(
 # We augment it with:
 #   Continuous outcomes (linear fixed effects):
 #     - SBP            : systolic blood pressure (mmHg), as shipped
-#     - MAP_est        : an estimated mean arterial pressure (mmHg), derived
+#     - DBP            : diastolic blood pressure (mmHg), synthesised from SBP
+#     - MAP_est        : mean arterial pressure (mmHg), MAP = DBP + 1/3(SBP-DBP)
 #   Categorical outcomes (logistic fixed effects):
 #     - bp_category    : a TWO-LEVEL CHARACTER label, "high" vs "normal"
-#                        (high if SBP >= 140). Stored as text on disk to show
-#                        that character categorical outcomes are handled.
-#     - hypertension   : a 0/1 indicator (1 if SBP >= 130), the numeric form.
+#                        (high if SBP >= 140 OR DBP >= 90). Stored as text on
+#                        disk to show that character categorical outcomes work.
+#     - hypertension   : a 0/1 indicator using the ACC/AHA 2017 thresholds
+#                        (1 if SBP >= 130 OR DBP >= 80), the numeric form.
 demographics <- data.table::fread(demographics_data_path)
 
-# Second continuous outcome (illustrative derivation from SBP)
 set.seed(12345)
+
+# Derived diastolic blood pressure (mmHg). The shipped file ships only SBP, so
+# we synthesise a plausible DBP (~half of SBP plus a small offset, giving a
+# realistic pulse pressure of ~40-55 mmHg) purely so the example can use the
+# textbook MAP formula and DBP-aware categories below.
+demographics$DBP <- round(
+  0.5 * demographics$SBP + stats::rnorm(nrow(demographics), 15, 4)
+)
+
+# Estimated mean arterial pressure (mmHg) using the standard formula:
+#   MAP = DBP + (1/3) * (SBP - DBP) = (2 * DBP + SBP) / 3
 demographics$MAP_est <- round(
-  demographics$SBP * (2 / 3) + stats::rnorm(nrow(demographics), 0, 4)
+  demographics$DBP + (1 / 3) * (demographics$SBP - demographics$DBP) +
+    stats::rnorm(nrow(demographics), 0, 4)
 )
 
-# Categorical outcome stored as text ("high"/"normal")
-demographics$bp_category <- ifelse(demographics$SBP >= 140, "high", "normal")
-
-# Categorical outcome stored as a 0/1 indicator
-demographics$hypertension <- as.integer(demographics$SBP >= 130)
-
-# Multi-level (3-category) categorical outcome stored as text
-demographics$bp_stage <- cut(
-  demographics$SBP,
-  breaks = c(-Inf, 120, 140, Inf),
-  labels = c("normal", "elevated", "stage2")
+# Two-level CHARACTER label ("high"/"normal"); "high" follows the stage-2
+# thresholds (SBP >= 140 OR DBP >= 90). Stored as text on disk to show that
+# character categorical outcomes are handled.
+demographics$bp_category <- ifelse(
+  demographics$SBP >= 140 | demographics$DBP >= 90, "high", "normal"
 )
-demographics$bp_stage <- as.character(demographics$bp_stage)
+
+# 0/1 indicator using the ACC/AHA 2017 hypertension thresholds
+#   (SBP >= 130 OR DBP >= 80).
+demographics$hypertension <- as.integer(
+  demographics$SBP >= 130 | demographics$DBP >= 80
+)
+
+# Multi-level (3-category) DBP-aware label stored as text:
+#   stage2   : SBP >= 140 OR DBP >= 90
+#   elevated : SBP >= 120 OR DBP >= 80 (but not stage2)
+#   normal   : otherwise
+demographics$bp_stage <- ifelse(
+  demographics$SBP >= 140 | demographics$DBP >= 90, "stage2",
+  ifelse(
+    demographics$SBP >= 120 | demographics$DBP >= 80, "elevated", "normal"
+  )
+)
 
 augmented_demographics_path <- file.path(
   output_dir, "Demographics_dom_multi_target.txt"
@@ -105,11 +128,15 @@ augmented_demographics_path <- file.path(
 data.table::fwrite(demographics, augmented_demographics_path, sep = "\t")
 
 cat("Outcome columns written:",
-    paste(c("SBP", "MAP_est", "bp_category", "hypertension", "bp_stage"),
-          collapse = ", "),
+    paste(
+      c("SBP", "DBP", "MAP_est", "bp_category", "hypertension", "bp_stage"),
+      collapse = ", "
+    ),
     "\n")
-cat("  bp_category is character ('high'/'normal'); hypertension is 0/1;\n")
-cat("  bp_stage is a 3-level category ('normal'/'elevated'/'stage2').\n\n")
+cat("  DBP/MAP_est are continuous; bp_category is character",
+    "('high'/'normal');\n")
+cat("  hypertension is 0/1; bp_stage is 3-level",
+    "('normal'/'elevated'/'stage2').\n\n")
 
 # ==============================================================================
 # Step 4: Shared Analysis Parameters
@@ -158,13 +185,13 @@ run_fixed <- function(targets, model_family, results_subdir) {
 # ==============================================================================
 cat("=====================================================\n")
 cat("Linear fixed-effects models for CONTINUOUS outcomes\n")
-cat("  targets      = SBP, MAP_est\n")
+cat("  targets      = SBP, DBP, MAP_est\n")
 cat("  model_type   = fixed,  model_family = NULL (Gaussian/lm)\n")
 cat("-----------------------------------------------------\n")
 
 continuous_results <- tryCatch(
   run_fixed(
-    targets = c("SBP", "MAP_est"),
+    targets = c("SBP", "DBP", "MAP_est"),
     model_family = NULL,
     results_subdir = "continuous"
   ),
@@ -225,7 +252,7 @@ cat("\n=====================================================\n")
 cat("Pooled fixed-effects results across all targets\n")
 cat("=====================================================\n")
 for (target in names(all_results)) {
-  scale_note <- if (target %in% c("SBP", "MAP_est")) {
+  scale_note <- if (target %in% c("SBP", "DBP", "MAP_est")) {
     "difference in the outcome vs reference exposure (<5)"
   } else if (target == "bp_stage") {
     paste(
