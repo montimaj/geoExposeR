@@ -69,3 +69,6 @@ joss.txt
 *.docx
 USGS/
 .claude/
+review/
+sensitivity_results/
+examples/run_geoExposeR_fixed_multi_target_NOTES.md

@@ -119,6 +119,8 @@ For a detailed description of the methodology, see Majumdar and others (2026).
 > | `conc_data_csv` | **Measured concentrations** | Point measurements or summary statistics of contaminant concentrations from monitoring stations or laboratory analyses | EPA public water system monitoring, ground-based air quality monitors, field sampling data |
 >
 > Any dataset that provides **modeled probabilities** can serve as the probability input (`model_prob_csv`), and any dataset that provides **measured concentrations** can serve as the concentration input (`conc_data_csv`), regardless of the originating agency.
+>
+> **Both files must contain `id_col` and describe the same set of units.** The two tables are combined element-wise, so row *i* of one must correspond to row *i* of the other. The package verifies this: if the identifiers match but the row order differs, the concentration data is reordered to match and a message is emitted; if the two files cover different units, an error is raised. If `id_col` is missing from either file the check cannot run, and the files are combined by row position with a warning.
 
 ## Workflow
 

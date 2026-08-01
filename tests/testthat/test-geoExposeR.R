@@ -2811,6 +2811,138 @@ test_that("validate_data_alignment errors on row count mismatch", {
   )
 })
 
+test_that("validate_data_alignment returns data unchanged when already aligned", {
+  prob_df <- data.frame(GEOID10 = c("01", "02", "03"))
+  conc_df <- data.frame(GEOID10 = c("01", "02", "03"), conc = c(1, 2, 3))
+
+  expect_silent(
+    result <- geoExposeR:::validate_data_alignment(
+      prob_df, conc_df, "GEOID10"
+    )
+  )
+  expect_identical(result, conc_df)
+})
+
+test_that("validate_data_alignment tolerates repeated ids when already aligned", {
+  # Multiple cells per unit is legitimate; alignment is what matters.
+  prob_df <- data.frame(GEOID10 = c("01", "01", "02"))
+  conc_df <- data.frame(GEOID10 = c("01", "01", "02"), conc = c(1, 2, 3))
+
+  expect_silent(
+    result <- geoExposeR:::validate_data_alignment(
+      prob_df, conc_df, "GEOID10"
+    )
+  )
+  expect_identical(result, conc_df)
+})
+
+test_that("validate_data_alignment reorders concentration rows to match", {
+  prob_df <- data.frame(GEOID10 = c("01", "02", "03"))
+  conc_df <- data.frame(
+    GEOID10 = c("03", "01", "02"),
+    conc = c(300, 100, 200)
+  )
+
+  expect_message(
+    result <- geoExposeR:::validate_data_alignment(
+      prob_df, conc_df, "GEOID10"
+    ),
+    "reordering it to match"
+  )
+  expect_equal(as.character(result$GEOID10), c("01", "02", "03"))
+  # The payload must travel with its identifier, not just the id column.
+  expect_equal(result$conc, c(100, 200, 300))
+})
+
+test_that("validate_data_alignment reorders data.table input", {
+  prob_dt <- data.table::data.table(GEOID10 = c("01", "02", "03"))
+  conc_dt <- data.table::data.table(
+    GEOID10 = c("03", "01", "02"),
+    conc = c(300, 100, 200)
+  )
+
+  result <- suppressMessages(
+    geoExposeR:::validate_data_alignment(prob_dt, conc_dt, "GEOID10")
+  )
+  expect_s3_class(result, "data.table")
+  expect_equal(result$conc, c(100, 200, 300))
+})
+
+test_that("validate_data_alignment keeps single-column input rectangular", {
+  # A one-column data.frame must not be simplified to a vector by reordering.
+  prob_df <- data.frame(GEOID10 = c("01", "02", "03"))
+  conc_df <- data.frame(GEOID10 = c("03", "01", "02"))
+
+  result <- suppressMessages(
+    geoExposeR:::validate_data_alignment(prob_df, conc_df, "GEOID10")
+  )
+  expect_s3_class(result, "data.frame")
+  expect_equal(as.character(result$GEOID10), c("01", "02", "03"))
+})
+
+test_that("validate_data_alignment errors when the id sets differ", {
+  prob_df <- data.frame(GEOID10 = c("01", "02", "03"))
+  conc_df <- data.frame(GEOID10 = c("01", "02", "99"))
+
+  expect_error(
+    geoExposeR:::validate_data_alignment(prob_df, conc_df, "GEOID10"),
+    "cover different units"
+  )
+})
+
+test_that("validate_data_alignment errors on ambiguous repeated ids", {
+  prob_df <- data.frame(GEOID10 = c("01", "01", "02"))
+  conc_df <- data.frame(GEOID10 = c("02", "01", "01"))
+
+  expect_error(
+    geoExposeR:::validate_data_alignment(prob_df, conc_df, "GEOID10"),
+    "cannot be paired unambiguously"
+  )
+})
+
+test_that("validate_data_alignment warns when no id column is supplied", {
+  prob_df <- data.frame(GEOID10 = c("01", "02"))
+  conc_df <- data.frame(GEOID10 = c("02", "01"), conc = c(2, 1))
+
+  expect_warning(
+    result <- geoExposeR:::validate_data_alignment(prob_df, conc_df),
+    "no identifier column was supplied"
+  )
+  expect_identical(result, conc_df)
+})
+
+test_that("validate_data_alignment warns when the id column is absent", {
+  prob_df <- data.frame(GEOID10 = c("01", "02"))
+  conc_df <- data.frame(other = c("a", "b"), conc = c(1, 2))
+
+  expect_warning(
+    result <- geoExposeR:::validate_data_alignment(
+      prob_df, conc_df, "GEOID10"
+    ),
+    "is not present in both files"
+  )
+  expect_identical(result, conc_df)
+
+  # Also absent from the probability side.
+  expect_warning(
+    geoExposeR:::validate_data_alignment(
+      data.frame(other = c("a", "b")), conc_df, "GEOID10"
+    ),
+    "is not present in both files"
+  )
+})
+
+test_that("format_id_sample summarises identifier vectors", {
+  expect_equal(geoExposeR:::format_id_sample(character(0)), "none")
+  expect_equal(geoExposeR:::format_id_sample(c("a", "b")), "a, b")
+  expect_equal(
+    geoExposeR:::format_id_sample(as.character(1:7)),
+    "1, 2, 3, 4, 5, ... (7 total)"
+  )
+  expect_equal(geoExposeR:::format_id_sample(c("a", "b", "c"), n = 2),
+               "a, b, ... (3 total)")
+})
+
 test_that("load_and_process_birth_data handles column selection", {
   temp_dir <- tempfile(pattern = "test_birth_cols_")
   dir.create(temp_dir)

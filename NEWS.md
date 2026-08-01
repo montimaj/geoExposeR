@@ -1,5 +1,18 @@
 # geoExposeR 1.1.0 (development)
 
+## Exposure Input Alignment
+
+The modeled probability data (`model_prob_csv`) and the measured concentration data (`conc_data_csv`) are combined element-wise by row position, so row *i* of one file must describe the same unit as row *i* of the other. Previously the only check was that the two files had the same number of rows; if they were sorted differently, or covered different units with a coincidentally equal row count, every unit silently received another unit's concentration and private-well weight, and the analysis completed without any error or warning.
+
+### Bug Fixes
+* **Row alignment of the two exposure files is now verified** using `id_col`, which is present in both files but was previously read only from the probability data. `validate_data_alignment()` now:
+  * returns the concentration data **reordered to match** the probability data when both contain the same identifiers in a different row order, emitting a `message()` describing the correction;
+  * raises an **error** when the two files cover different sets of identifiers, naming the identifiers unique to each;
+  * raises an **error** when the identifiers match but at least one file repeats them, since the rows cannot then be paired unambiguously;
+  * emits a **warning** and falls back to the previous positional behavior when `id_col` is absent from either file, so existing workflows without a shared identifier continue to run.
+
+Files that are already correctly aligned are unaffected: the output is unchanged, and no message or warning is emitted.
+
 ## Flexible Regression Model Types
 
 This release adds flexible regression model options to `perform_sensitivity_analysis()`, so users can choose among fixed-effects, random-effects, and mixed-effects models in both linear and non-linear (generalized) variants.

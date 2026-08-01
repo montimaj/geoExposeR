@@ -17,3 +17,6 @@
 ^Meta$
 ^\.claude$
 ^REVIEW_RESPONSE\.md$
+^review$
+^sensitivity_results$
+^test_output$

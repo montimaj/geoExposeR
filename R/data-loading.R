@@ -57,8 +57,11 @@ load_and_process_exposure_data <- function(
     default_sdlog = default_sdlog
   )
 
-  # Validate data alignment - use the actual data frames
-  validate_data_alignment(prob_input$datmatx_prob, datmatx_conc)
+  # Validate data alignment - the two tables are combined by row position, so
+  # verify (and if necessary restore) a matching row order before using them.
+  datmatx_conc <- validate_data_alignment(
+    prob_input$datmatx_prob, datmatx_conc, id_col
+  )
   n_prob_categories <- length(prob_cols)
 
   # Auto-generate concentration cutoffs based on probability column count
@@ -295,14 +298,99 @@ calculate_conc_lognormal_params <- function(
 
 #' Validate Data Alignment
 #'
+#' The probability and concentration tables are combined element-wise by row
+#' position (see [create_weighted_prob_matrix()]), so row `i` of one must
+#' describe the same unit as row `i` of the other. When both tables carry
+#' `id_col`, that assumption is verified here rather than assumed: a differing
+#' row order is corrected, and a differing set of identifiers is an error.
+#'
 #' @param datmatx_prob Probability data frame
 #' @param datmatx_conc Concentration data frame
+#' @param id_col Column name of the shared identifier. If `NULL`, or absent from
+#'   either table, alignment cannot be verified and the tables are assumed to be
+#'   in matching row order (the historical behavior), with a warning.
+#' @return `datmatx_conc`, reordered to match the row order of `datmatx_prob`
+#'   when that is possible and necessary; otherwise unchanged.
 #'
 #' @keywords internal
-validate_data_alignment <- function(datmatx_prob, datmatx_conc) {
+validate_data_alignment <- function(datmatx_prob, datmatx_conc, id_col = NULL) {
   if (nrow(datmatx_prob) != nrow(datmatx_conc)) {
     stop("Probability and concentration data files have different numbers of rows.")
   }
+
+  # Without a shared identifier the tables can only be paired positionally.
+  if (is.null(id_col) ||
+        !id_col %in% names(datmatx_prob) ||
+        !id_col %in% names(datmatx_conc)) {
+    warning(
+      "Cannot verify that the probability and concentration data describe the ",
+      "same units in the same order: ",
+      if (is.null(id_col)) {
+        "no identifier column was supplied"
+      } else {
+        paste0("identifier column '", id_col, "' is not present in both files")
+      },
+      ". They will be combined by row position. Add a matching identifier ",
+      "column to both files to have this checked."
+    )
+    return(datmatx_conc)
+  }
+
+  prob_ids <- as.character(datmatx_prob[[id_col]])
+  conc_ids <- as.character(datmatx_conc[[id_col]])
+
+  # Already aligned - the common case, and the only one that tolerates
+  # repeated identifiers (multiple cells per unit).
+  if (identical(prob_ids, conc_ids)) {
+    return(datmatx_conc)
+  }
+
+  if (!setequal(prob_ids, conc_ids)) {
+    only_prob <- setdiff(prob_ids, conc_ids)
+    only_conc <- setdiff(conc_ids, prob_ids)
+    stop(
+      "Probability and concentration data cover different units of '", id_col,
+      "'. Present only in the probability data: ",
+      format_id_sample(only_prob), ". Present only in the concentration data: ",
+      format_id_sample(only_conc), "."
+    )
+  }
+
+  # Same identifiers, different order. Repeated identifiers make the pairing
+  # ambiguous (which cell of a unit belongs to which), so refuse to guess.
+  if (anyDuplicated(prob_ids) || anyDuplicated(conc_ids)) {
+    stop(
+      "Probability and concentration data contain the same '", id_col,
+      "' values in a different row order, and at least one file repeats ",
+      "identifiers, so the rows cannot be paired unambiguously. Sort both ",
+      "files into the same order before calling this function."
+    )
+  }
+
+  message(
+    "Concentration data row order differs from probability data; ",
+    "reordering it to match on '", id_col, "'."
+  )
+  # drop = FALSE so a single-column data.frame is not simplified to a vector.
+  datmatx_conc[match(prob_ids, conc_ids), , drop = FALSE]
+}
+
+#' Format a Sample of Identifiers for an Error Message
+#'
+#' @param ids Character vector of identifiers.
+#' @param n Maximum number to show.
+#' @return A single string.
+#'
+#' @keywords internal
+format_id_sample <- function(ids, n = 5) {
+  if (length(ids) == 0) {
+    return("none")
+  }
+  shown <- paste(ids[seq_len(min(n, length(ids)))], collapse = ", ")
+  if (length(ids) > n) {
+    shown <- paste0(shown, ", ... (", length(ids), " total)")
+  }
+  shown
 }
 
 #' Convert Concentration Lognormal to Multinomial

@@ -4,14 +4,26 @@
 \alias{validate_data_alignment}
 \title{Validate Data Alignment}
 \usage{
-validate_data_alignment(datmatx_prob, datmatx_conc)
+validate_data_alignment(datmatx_prob, datmatx_conc, id_col = NULL)
 }
 \arguments{
 \item{datmatx_prob}{Probability data frame}
 
 \item{datmatx_conc}{Concentration data frame}
+
+\item{id_col}{Column name of the shared identifier. If \code{NULL}, or absent from
+either table, alignment cannot be verified and the tables are assumed to be
+in matching row order (the historical behavior), with a warning.}
+}
+\value{
+\code{datmatx_conc}, reordered to match the row order of \code{datmatx_prob}
+when that is possible and necessary; otherwise unchanged.
 }
 \description{
-Validate Data Alignment
+The probability and concentration tables are combined element-wise by row
+position (see \code{\link[=create_weighted_prob_matrix]{create_weighted_prob_matrix()}}), so row \code{i} of one must
+describe the same unit as row \code{i} of the other. When both tables carry
+\code{id_col}, that assumption is verified here rather than assumed: a differing
+row order is corrected, and a differing set of identifiers is an error.
 }
 \keyword{internal}
