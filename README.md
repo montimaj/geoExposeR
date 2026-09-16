@@ -23,7 +23,7 @@ An R package for modeling health effects of environmental exposures, with a prim
 
 <!-- Code Quality -->
 [![Code style: tidyverse](https://img.shields.io/badge/code%20style-tidyverse-blue.svg)](https://style.tidyverse.org)
-[![Dependencies](https://img.shields.io/badge/dependencies-12-blue.svg)](https://code.usgs.gov/envirohealth/geoExposeR/blob/main/DESCRIPTION)
+[![Dependencies](https://img.shields.io/badge/dependencies-14-blue.svg)](https://code.usgs.gov/envirohealth/geoExposeR/blob/main/DESCRIPTION)
 
 <!-- Academic -->
 [![DOI](https://img.shields.io/badge/DOI-10.5066%2FP1JGUKMD-blue.svg)](https://doi.org/10.5066/P1JGUKMD)
@@ -79,6 +79,8 @@ And the accompanying paper (under review at JOSS):
 - [Examples](#examples)
 - [Package Structure](#package-structure)
 - [Core Functions](#core-functions)
+- [Regression Model Options](#regression-model-options)
+- [Broader Applicability](#broader-applicability)
 - [Key Features](#key-features)
 - [Documentation](#documentation)
 - [Data Requirements](#data-requirements)
@@ -176,7 +178,7 @@ If you do not have Pandoc, you can download and install it from the official web
 if (!require("pak")) install.packages("pak")
 
 # Install geoExposeR from USGS GitLab (specific tag or branch)
-pak::pak("git::https://code.usgs.gov/envirohealth/geoExposeR.git@v1.0.0")  # Replace with desired tag or branch (e.g. @main)
+pak::pak("git::https://code.usgs.gov/envirohealth/geoExposeR.git@1.1.0")  # Replace with desired tag or branch (e.g. @main)
 
 # Load the package
 library(geoExposeR)
@@ -188,7 +190,7 @@ library(geoExposeR)
 # install.packages("remotes")
 remotes::install_git(
   "https://code.usgs.gov/envirohealth/geoExposeR.git",
-  ref = "v1.0.0",  # Replace with desired tag or branch (e.g. "main")
+  ref = "1.1.0",  # Replace with desired tag or branch (e.g. "main")
   build_vignettes = TRUE
 )
 ```
@@ -199,7 +201,7 @@ remotes::install_git(
 install.packages(c("pak", "testthat", "covr", "DT", "htmltools"))
 
 # Install geoExposeR from USGS GitLab (specific tag or branch)
-pak::pak("git::https://code.usgs.gov/envirohealth/geoExposeR.git@main")  # Or use a specific tag like @v1.0.0
+pak::pak("git::https://code.usgs.gov/envirohealth/geoExposeR.git@main")  # Or use a specific tag like @1.1.0
 ```
 
 **Verify installation:**
@@ -404,7 +406,8 @@ The examples use data files from the `examples/input_data/` folder:
 |------|-------------|
 | `prob_dom.csv` | Modeled multinomial probabilities of arsenic levels (50 rows) |
 | `conc_dom.csv` | Measured arsenic concentration data (50 rows) |
-| `Demographics_dom.txt` | Demographics data with health outcomes - SBP (50 rows) |
+| `Demographics_dom.txt` | Individual-level demographics with health outcome - SBP (396 rows, nested within the 50 counties) |
+| `generate_demographics.R` | Reproducible generator for `Demographics_dom.txt` |
 
 #### Broader Application Data
 
@@ -501,7 +504,7 @@ geoExposeR/
 │   │   └── Health_pm25.txt             # Sample respiratory health data (dummy*)
 ├── tests/
 │   ├── testthat/
-│   │   └── test-geoExposeR.R           # Comprehensive test suite (557 tests)
+│   │   └── test-geoExposeR.R           # Comprehensive test suite (579 tests)
 │   └── testthat.R                      # Test runner
 ├── vignettes/
 │   └── geoExposeR-vignette.Rmd         # Package tutorial and examples
@@ -534,7 +537,7 @@ The package uses a **modular architecture** with functionality organized across 
 - **`data-loading.R`**: Data loading and probability matrix processing
 - **`data-ingestion.R`**: Functions to prepare data from raw sources (GeoTIFFs, concentration measurements, health data)
 - **`imputation.R`**: Multiple imputation using MICE framework
-- **`regression.R`**: Mixed-effects regression and Rubin's Rules pooling
+- **`regression.R`**: Fixed-, random-, and mixed-effects regression (linear, generalized, or multinomial) and Rubin's Rules pooling
 - **`utils.R`**: Input validation and utility functions
 
 This approach provides several advantages:
@@ -547,7 +550,7 @@ This approach provides several advantages:
 
 The package includes comprehensive testing with 100% code coverage:
 
-- **`tests/testthat/test-geoExposeR.R`**: Main test suite with 557 tests (includes helper functions)
+- **`tests/testthat/test-geoExposeR.R`**: Main test suite with 579 tests (includes helper functions)
 - **`tests/testthat.R`**: Standard R package test runner
 - **`.gitlab-ci.yml`**: GitLab CI/CD pipeline with automated testing and coverage reporting
 
@@ -558,6 +561,7 @@ While users primarily interact with `perform_sensitivity_analysis()`, the packag
 **Data Loading (`data-loading.R`):**
 - `load_and_process_exposure_data()`: Orchestrates modeled probability and measured concentration data loading
 - `load_prob_data()`: Loads modeled probability data
+- `validate_data_alignment()`: Verifies that the probability and concentration files describe the same units, reordering the concentration rows by `id_col` when needed
 - `convert_conc_to_multinomial()`: Converts concentration lognormal parameters to multinomial probabilities
 - `create_weighted_prob_matrix()`: Creates weighted combined probability matrix
 - `load_and_process_birth_data()`: Loads and processes birth/health outcome data
@@ -887,7 +891,7 @@ See the `examples/` folder for complete working examples demonstrating nitrate, 
 - ✅ **Population weighting**: Weight exposures by private vs. public well usage
 
 ### Quality & Reproducibility
-- ✅ **Extensive testing**: 100% code coverage with 557 automated tests
+- ✅ **Extensive testing**: 100% code coverage with 579 automated tests
 - ✅ **Reproducible results**: Seed control and comprehensive output saving
 - ✅ **CI/CD pipeline**: Automated testing on multiple platforms (macOS, Linux, Windows)
 - ✅ **Documentation**: Complete pkgdown website with examples and vignettes
@@ -1398,12 +1402,12 @@ $OEGEST
 -----------------------------
 [1] "Checking results for target: BWT"
 [1] "Checking results for target: OEGEST"
-✔ |        557 | Test perform_sensitivity_analysis with comprehensive coverage [11.4s]                                                                                                                           
+✔ |        579 | Test perform_sensitivity_analysis with comprehensive coverage [11.4s]                                                                                                                           
 
 ══ Results ═════════════════════════════════════════════════════════════════════
 Duration: 11.4 s
 
-[ FAIL 0 | WARN 0 | SKIP 0 | PASS 557 ]
+[ FAIL 0 | WARN 0 | SKIP 0 | PASS 579 ]
 ```
 
 ### Continuous Integration
@@ -1538,7 +1542,7 @@ Install these core dependencies manually before installing geoExposeR:
 install.packages(c("R6", "digest", "purrr", "vctrs", "glue"))
 
 # Then install geoExposeR from USGS GitLab
-pak::pak("git::https://code.usgs.gov/envirohealth/geoExposeR.git@v1.0.0")
+pak::pak("git::https://code.usgs.gov/envirohealth/geoExposeR.git@1.1.0")
 ```
 
 **Why this happens:**
@@ -1571,7 +1575,7 @@ This issue typically occurs when:
    
    # Reinstall dependencies and package
    install.packages(c("pak", "R6", "digest", "purrr", "vctrs", "glue"))
-   pak::pak("git::https://code.usgs.gov/envirohealth/geoExposeR.git@v1.0.0")
+   pak::pak("git::https://code.usgs.gov/envirohealth/geoExposeR.git@1.1.0")
    ```
 
 4. **Check R version compatibility:**
