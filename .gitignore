@@ -63,11 +63,11 @@ misc/
 test_data
 examples/output*
 *.pdf
-joss.txt
 /doc/
 /Meta/
 *.docx
 USGS/
+paper/
 .claude/
 review/
 sensitivity_results/

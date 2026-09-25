@@ -683,8 +683,6 @@ Rubin, D.B., 1987, Multiple imputation for nonresponse in surveys: New York, Joh
 
 van Buuren, S., and Groothuis-Oudshoorn, K., 2011, mice—Multivariate imputation by chained equations in R: Journal of Statistical Software, v. 45, no. 3, p. 1–67, https://doi.org/10.18637/jss.v045.i03.
 
-Honaker, J., King, G., and Blackwell, M., 2011, Amelia II—A program for missing data: Journal of Statistical Software, v. 45, no. 7, p. 1–47, https://doi.org/10.18637/jss.v045.i07.
-
 Bates, D., Mächler, M., Bolker, B., and Walker, S., 2015, Fitting linear mixed-effects models using lme4: Journal of Statistical Software, v. 67, no. 1, p. 1–48, https://doi.org/10.18637/jss.v067.i01.
 
 Venables, W.N., and Ripley, B.D., 2002, Modern applied statistics with S (4th ed.): New York, Springer, https://doi.org/10.1007/978-0-387-21706-2. [multinomial logistic regression via the `nnet` package]

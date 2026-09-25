@@ -36,7 +36,6 @@ RoxygenNote: 7.3.3
 URL: https://envirohealth.code-pages.usgs.gov/geoExposeR/
 BugReports: https://code.usgs.gov/envirohealth/geoExposeR/-/issues
 Imports:
-    Amelia,
     data.table,
     dplyr,
     exactextractr,
@@ -47,7 +46,6 @@ Imports:
     mice,
     nnet,
     rlang,
-    rms,
     sf,
     terra
 Suggests: 

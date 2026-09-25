@@ -40,6 +40,9 @@ This release adds flexible regression model options to `perform_sensitivity_anal
 ### Quality
 * Maintains **100% test coverage** (579 tests, up from 476), with new tests covering every model-fitting and validation branch.
 
+### Dependencies
+* Removed `Amelia` and `rms` from Imports. Neither package was called (Rubin's Rules pooling is implemented in the package itself), so installing geoExposeR no longer pulls them in. `nnet` and `mclogit` are added for the new model types.
+
 # geoExposeR 1.0.0
 
 ## First Stable Release
@@ -187,6 +190,6 @@ Software release:
 
 Majumdar, S., Bartell, S. M., Lombard, M. A., Smith, R. G., and Gribble, M. O., 2026, geoExposeR: An R package for modeling health effects of environmental exposures: U.S. Geological Survey software release, https://doi.org/10.5066/P1JGUKMD
 
-Accompanying paper (under review at JOSS):
+Accompanying paper (in preparation for SoftwareX):
 
-Majumdar, S., Bartell, S. M., Lombard, M. A., Smith, R. G., and Gribble, M. O., 2026, geoExposeR: An R package for modeling health effects of environmental exposures, Journal of Open Source Software* (under review).
+Majumdar, S., Bartell, S. M., Lombard, M. A., Smith, R. G., and Gribble, M. O., 2026, geoExposeR: An R package for modeling health effects of environmental exposures, SoftwareX (in preparation).

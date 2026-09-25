@@ -23,11 +23,11 @@ An R package for modeling health effects of environmental exposures, with a prim
 
 <!-- Code Quality -->
 [![Code style: tidyverse](https://img.shields.io/badge/code%20style-tidyverse-blue.svg)](https://style.tidyverse.org)
-[![Dependencies](https://img.shields.io/badge/dependencies-14-blue.svg)](https://code.usgs.gov/envirohealth/geoExposeR/blob/main/DESCRIPTION)
+[![Dependencies](https://img.shields.io/badge/dependencies-12-blue.svg)](https://code.usgs.gov/envirohealth/geoExposeR/blob/main/DESCRIPTION)
 
 <!-- Academic -->
 [![DOI](https://img.shields.io/badge/DOI-10.5066%2FP1JGUKMD-blue.svg)](https://doi.org/10.5066/P1JGUKMD)
-[![JOSS](https://img.shields.io/badge/JOSS-pending-orange.svg)](https://joss.theoj.org/)
+[![SoftwareX](https://img.shields.io/badge/SoftwareX-pending-orange.svg)](https://www.sciencedirect.com/journal/softwarex)
 
 <!-- USGS Software Release -->
 **USGS IPDS Record Number:** IP-180903
@@ -53,20 +53,20 @@ If you use geoExposeR in your research, please cite the software release:
 }
 ```
 
-And the accompanying paper (under review at JOSS):
+And the accompanying paper (in preparation for SoftwareX):
 
 > Majumdar, S., Bartell, S. M., Lombard, M. A., Smith, R. G., and Gribble, M. O., 2026,
 > geoExposeR: An R package for modeling health effects of environmental exposures, 
-> Journal of Open Source Software (under review).
+> SoftwareX (in preparation).
 
 **BibTeX:**
 ```bibtex
 @article{majumdar2026geoExposeRpaper,
   title={geoExposeR: An R package for modeling health effects of environmental exposures},
   author={Majumdar, Sayantan and Bartell, Scott M and Lombard, Melissa A and Smith, Ryan G and Gribble, Matthew O},
-  journal={Journal of Open Source Software},
+  journal={SoftwareX},
   year={2026},
-  note={Under review},
+  note={In preparation},
   url={https://code.usgs.gov/envirohealth/geoExposeR}
 }
 ```
@@ -479,6 +479,8 @@ geoExposeR/
 │   ├── regression.R                    # Regression analysis and pooling
 │   └── utils.R                         # Validation and utility functions
 ├── man/                                # Generated documentation (.Rd files)
+│   └── figures/
+│       └── workflow.png                # Workflow diagram shown in this README
 ├── examples/
 │   ├── run_geoExposeR_example.R        # Basic CSV workflow example
 │   ├── run_geoExposeR_from_geotiff.R   # GeoTIFF raster workflow
@@ -489,6 +491,7 @@ geoExposeR/
 │   ├── run_geoExposeR_uranium.R        # Uranium exposure example
 │   ├── run_geoExposeR_pm25.R           # PM2.5 air quality example
 │   ├── input_data/                     # Example input data files (all dummy data*)
+│   │   ├── README.md                   # Column-by-column description of the example data
 │   │   ├── generate_demographics.R     # Reproducible generator for Demographics_dom.txt
 │   │   ├── prob_dom.csv                # Sample arsenic probability data (dummy*)
 │   │   ├── conc_dom.csv                # Sample arsenic concentration data (dummy*)
@@ -508,12 +511,6 @@ geoExposeR/
 │   └── testthat.R                      # Test runner
 ├── vignettes/
 │   └── geoExposeR-vignette.Rmd         # Package tutorial and examples
-├── paper/                              # JOSS paper files
-│   ├── paper.md                        # Paper manuscript
-│   ├── paper.bib                       # References
-│   ├── generate_workflow_figure.R      # Script to generate workflow diagram
-│   ├── workflow.png                    # Workflow diagram (600 DPI)
-├── docs/                               # pkgdown generated website
 ├── .gitlab-ci.yml                      # GitLab CI/CD pipeline configuration
 ├── .gitignore                          # Git ignore patterns
 ├── .Rbuildignore                       # R build ignore patterns
@@ -893,7 +890,7 @@ See the `examples/` folder for complete working examples demonstrating nitrate, 
 ### Quality & Reproducibility
 - ✅ **Extensive testing**: 100% code coverage with 579 automated tests
 - ✅ **Reproducible results**: Seed control and comprehensive output saving
-- ✅ **CI/CD pipeline**: Automated testing on multiple platforms (macOS, Linux, Windows)
+- ✅ **CI/CD pipeline**: Automated testing and coverage analysis on Linux (GitLab CI, rocker/geospatial container)
 - ✅ **Documentation**: Complete pkgdown website with examples and vignettes
 
 ## Documentation
@@ -1613,8 +1610,6 @@ Angley, M., Zhang, Y., Nigra, A. E., Lombard, M. A., Gribble, M. O., Lu, L., Unv
 Rubin, D.B., 1987, Multiple imputation for nonresponse in surveys: New York, John Wiley & Sons, https://doi.org/10.1002/9780470316696.
 
 van Buuren, S., and Groothuis-Oudshoorn, K., 2011, mice—Multivariate imputation by chained equations in R: Journal of Statistical Software, v. 45, no. 3, p. 1–67, https://doi.org/10.18637/jss.v045.i03.
-
-Honaker, J., King, G., and Blackwell, M., 2011, Amelia II—A program for missing data: Journal of Statistical Software, v. 45, no. 7, p. 1–47, https://doi.org/10.18637/jss.v045.i07.
 
 Bates, D., Mächler, M., Bolker, B., and Walker, S., 2015, Fitting linear mixed-effects models using lme4: Journal of Statistical Software, v. 67, no. 1, p. 1–48, https://doi.org/10.18637/jss.v067.i01.
 

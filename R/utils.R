@@ -13,9 +13,7 @@
 #' @import lme4
 #' @importFrom nnet multinom
 #' @importFrom mclogit mblogit
-#' @import rms
 #' @import broom.mixed
-#' @import Amelia
 #' @import mice
 #' @keywords internal
 "_PACKAGE"

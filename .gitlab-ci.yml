@@ -25,7 +25,7 @@ variables:
   <<: *r_base
   stage: test
   script:
-    - R -e "install.packages(c('Amelia', 'data.table', 'dplyr', 'Hmisc', 'lme4', 'broom.mixed', 'mice', 'rlang', 'rms', 'testthat', 'rcmdcheck', 'rmarkdown', 'knitr'), Ncpus = 4)"
+    - R -e "install.packages(c('data.table', 'dplyr', 'Hmisc', 'lme4', 'broom.mixed', 'mice', 'rlang', 'testthat', 'rcmdcheck', 'rmarkdown', 'knitr'), Ncpus = 4)"
     - R -e "remotes::install_deps(dependencies = TRUE)"
     - R -e "devtools::load_all(); devtools::test()"
   timeout: 45m
@@ -52,7 +52,7 @@ coverage:
   script:
     - mkdir -p coverage
     - R -e "install.packages(c('devtools', 'covr', 'testthat', 'DT', 'htmltools'), Ncpus = 4)"
-    - R -e "install.packages(c('Amelia', 'data.table', 'dplyr', 'Hmisc', 'lme4', 'broom.mixed', 'mice', 'rlang', 'rms'), Ncpus = 4)"
+    - R -e "install.packages(c('data.table', 'dplyr', 'Hmisc', 'lme4', 'broom.mixed', 'mice', 'rlang'), Ncpus = 4)"
     - R -e "remotes::install_deps(dependencies = TRUE)"
     - |
       R -e '
@@ -122,7 +122,7 @@ pages:
   script:
     - apt-get update && apt-get install -qq -y texlive-latex-base texlive-fonts-recommended texlive-latex-extra
     - R -e "install.packages(c('pkgdown', 'devtools', 'rmarkdown', 'knitr', 'markdown', 'htmltools'), Ncpus = 4)"
-    - R -e "install.packages(c('Amelia', 'data.table', 'dplyr', 'Hmisc', 'lme4', 'broom.mixed', 'mice', 'rlang', 'rms'), Ncpus = 4)"
+    - R -e "install.packages(c('data.table', 'dplyr', 'Hmisc', 'lme4', 'broom.mixed', 'mice', 'rlang'), Ncpus = 4)"
     - R -e "remotes::install_deps(dependencies = TRUE)"
     - R -e "pkgdown::build_site()"
     - mv docs public
