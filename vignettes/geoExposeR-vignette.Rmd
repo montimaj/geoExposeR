@@ -131,7 +131,7 @@ Alternatively, if your concentration data contains raw arsenic concentrations in
     * A geographic or participant identifier matching the probability data
 
 The conversion uses the formula:
-* `meanlog = log(concentration + 0.1)` (offset avoids log(0))
+* `meanlog = log(concentration + 0.1)` for positive concentrations; zero, negative, or missing concentrations are set to `NA`, and those units use the modeled probabilities alone
 * `sdlog = default_sdlog` (defaults to 1.0 if not specified)
 
 ```{r, eval=FALSE}
@@ -439,7 +439,7 @@ results <- perform_sensitivity_analysis(
 
 ### Step 5: Interpret the Results
 
-The `results` object is a list where each element is a `mipo` object from the `mice` package. To view a publication-ready table of the pooled results, use `summary()`.
+The `results` object is a named list with one data frame of pooled estimates per target (also written to `<target>_pooled_results.csv` in `output_dir`); pooling uses the package's built-in implementation of Rubin's Rules.
 
 Let's examine the results for Systolic Blood Pressure (`SBP`).
 
@@ -460,7 +460,7 @@ The summary table includes:
 * **conf.high**: The upper bound of the 95% confidence interval.
 * **p.value**: The p-value for the term.
 
-From this table, you can assess the magnitude, direction, and statistical significance of the association between different levels of arsenic exposure and the health outcome, while accounting for uncertainty from both exposure and covariate imputation.
+From this table, you can assess the magnitude, direction, and statistical significance of the association between different levels of arsenic exposure and the health outcome, while accounting for uncertainty in exposure assignment. (This example imputes no covariates; when `impute_vars` is used, covariate imputation uncertainty is generally not propagated.)
 
 ### Step 6: Cleanup (Optional)
 

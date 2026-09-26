@@ -76,6 +76,32 @@ regression_analysis <- function(
   family_obj <- if (is_multinomial) NULL else resolve_model_family(model_family)
   # Pre-compute exposure factor terms to avoid repeated string operations
   exposure_terms <- paste0("as.factor(", exposure_level_col, ")", cat_label)
+  # Exposure coefficients are contrasts with the reference (first) category.
+  # In an imputed dataset where that category was drawn for no record, the
+  # model uses a different baseline, so its coefficients are not comparable.
+  exposure_values <- births[[exposure_level_col]]
+  if (!is.null(exposure_values)) {
+    ref_level <- if (is.factor(exposure_values)) {
+      levels(exposure_values)[1]
+    } else {
+      sort(unique(stats::na.omit(as.character(exposure_values))))[1]
+    }
+    has_ref <- tapply(
+      as.character(exposure_values) == ref_level, births$.id,
+      function(x) any(x, na.rm = TRUE)
+    )
+    if (!all(has_ref)) {
+      warning(
+        "The reference exposure category '", ref_level, "' was drawn for no ",
+        "record in ", sum(!has_ref), " of ", length(has_ref), " imputed ",
+        "datasets. Their exposure coefficients are contrasts with a different ",
+        "category, so the pooled estimates mix contrasts. Choose a more ",
+        "common reference category (drop_cat_label_ref) or merge rare ",
+        "categories.",
+        call. = FALSE
+      )
+    }
+  }
   # Initialize results list
   results <- vector("list", length(targets))
   names(results) <- targets
@@ -137,7 +163,9 @@ regression_analysis <- function(
       combined_results,
       exposure_terms,
       model_fits$fitmodel[[1]],
-      model_type
+      model_type,
+      n_imputations = length(model_fits$fitmodel),
+      target = var
     )
     # Save results
     output_file <- file.path(output_dir, paste0(var, "_pooled_results.csv"))
@@ -220,8 +248,12 @@ fit_single_model <- function(formula, data, model_type, family_obj,
     if (model_type == "fixed") {
       # Fixed effects only: nnet::multinom. Hess = TRUE stores the Hessian so
       # that standard errors can be computed without re-evaluating the
-      # (grouped) data frame at summary() time.
-      return(nnet::multinom(formula, data = data, trace = FALSE, Hess = TRUE))
+      # (grouped) data frame at summary() time. Unlike the other engines,
+      # multinom keeps unused factor levels and reports a zero estimate for an
+      # exposure category drawn for no record, so drop them first.
+      return(nnet::multinom(
+        formula, data = droplevels(data), trace = FALSE, Hess = TRUE
+      ))
     }
     # Random- or mixed-effects multinomial: mclogit::mblogit, which takes the
     # random-effects structure through a separate `random` argument.
@@ -256,8 +288,9 @@ fit_single_model <- function(formula, data, model_type, family_obj,
 #' Fit a random-/mixed-effects multinomial model
 #'
 #' Splits an `lme4`-style formula (with inline random-effects terms such as
-#' `(1 | group)`) into a fixed-effects formula plus a `random` specification, and
-#' fits a baseline-category multinomial logistic model with [mclogit::mblogit()].
+#' `(1 | group)`) into a fixed-effects formula plus a `random` specification
+#' (using [reformulas::nobars()] and [reformulas::findbars()]), and fits a
+#' baseline-category multinomial logistic model with [mclogit::mblogit()].
 #'
 #' @param formula A model formula containing at least one random-effects term.
 #' @param data A data frame for a single imputed dataset.
@@ -266,8 +299,8 @@ fit_single_model <- function(formula, data, model_type, family_obj,
 #' @keywords internal
 fit_multinomial_mixed <- function(formula, data) {
   # Separate the fixed-effects part from the random-effects terms.
-  fixed_formula <- lme4::nobars(formula)
-  random_bars <- lme4::findbars(formula)
+  fixed_formula <- reformulas::nobars(formula)
+  random_bars <- reformulas::findbars(formula)
   random_spec <- lapply(random_bars, function(bar) {
     stats::as.formula(paste0("~ ", deparse(bar)))
   })
@@ -383,7 +416,8 @@ tidy_multinomial <- function(model) {
 #' @keywords internal
 extract_df_residual <- function(model, model_type) {
   if (inherits(model, c("multinom", "mblogit", "mclogit"))) {
-    # Multinomial inference uses large-sample (z) approximation.
+    # Multinomial fits have no residual df: use Inf as the complete-data df.
+    # pool_single_estimate() still applies Rubin's df when B > 0.
     return(Inf)
   }
   tryCatch({
@@ -394,7 +428,8 @@ extract_df_residual <- function(model, model_type) {
     }
   }, error = function(e) {
     warning(
-      "Could not extract degrees of freedom, using large sample approximation"
+      "Could not extract degrees of freedom; using Rubin's degrees of ",
+      "freedom without a complete-data cap"
     )
     Inf
   })
@@ -407,6 +442,12 @@ extract_df_residual <- function(model, model_type) {
 #' @param reference_model A fitted model to extract degrees of freedom
 #' @param model_type One of `"fixed"`, `"random"`, or `"mixed"`. Used to select
 #'   how residual degrees of freedom are extracted. Defaults to `"mixed"`.
+#' @param n_imputations Number of imputed datasets to which a model was fitted,
+#'   or `NULL` to skip the check. When supplied, a warning lists every exposure
+#'   term (per outcome level for multinomial models) that could be estimated in
+#'   fewer datasets, because such terms are pooled over fewer imputations, or
+#'   omitted when no dataset estimates them.
+#' @param target Optional name of the outcome, used in that warning.
 #' @return Data frame with pooled estimates and confidence intervals. When
 #'   `combined_results` contains a `y.level` column (multinomial models),
 #'   estimates are pooled per outcome level and the column is retained.
@@ -416,7 +457,9 @@ pool_estimates_by_term <- function(
   combined_results,
   exposure_terms,
   reference_model,
-  model_type = "mixed"
+  model_type = "mixed",
+  n_imputations = NULL,
+  target = NULL
 ) {
   # Get degrees of freedom from reference model
   deg_freedom <- extract_df_residual(reference_model, model_type)
@@ -428,6 +471,9 @@ pool_estimates_by_term <- function(
     NA_character_
   }
   pooled_list <- list()
+  # Terms estimable in fewer than all imputed datasets (e.g. a category drawn
+  # for no record in some datasets)
+  shortfalls <- character(0)
   for (lev in outcome_levels) {
     for (term in exposure_terms) {
       term_data <- if (has_levels) {
@@ -436,6 +482,12 @@ pool_estimates_by_term <- function(
         ]
       } else {
         combined_results[combined_results$term == term, ]
+      }
+      if (!is.null(n_imputations) && nrow(term_data) < n_imputations) {
+        shortfalls <- c(shortfalls, paste0(
+          if (has_levels) paste0(lev, ": ") else "",
+          term, " (", nrow(term_data), " of ", n_imputations, ")"
+        ))
       }
       if (nrow(term_data) == 0) {
         next
@@ -453,6 +505,18 @@ pool_estimates_by_term <- function(
       }
       pooled_list[[length(pooled_list) + 1]] <- pooled_estimate
     }
+  }
+  if (length(shortfalls) > 0) {
+    warning(
+      if (!is.null(target)) paste0("For target '", target, "', some") else "Some",
+      " exposure terms could not be estimated in every imputed dataset ",
+      "(for example, because a category was drawn for no record), so they ",
+      "are pooled over fewer imputations: ",
+      paste(shortfalls, collapse = "; "),
+      ". Terms estimable in no dataset are omitted from the results. ",
+      "Check category counts across imputations or merge rare categories.",
+      call. = FALSE
+    )
   }
   # Combine results
   if (length(pooled_list) == 0) {
@@ -475,7 +539,10 @@ pool_estimates_by_term <- function(
 #'
 #' @param estimates Numeric vector of parameter estimates across imputations
 #' @param std_errors Numeric vector of standard errors across imputations
-#' @param df Degrees of freedom for t-distribution
+#' @param df Complete-data (residual) degrees of freedom; `Inf` for
+#'   large-sample models such as multinomial fits. With between-imputation
+#'   variance, inference uses Rubin's (1987) degrees of freedom
+#'   \eqn{(m - 1)(1 + 1/r)^2}, capped at `df`.
 #' @return Data frame with pooled estimate and inference
 #'
 #' @keywords internal
@@ -506,8 +573,10 @@ pool_single_estimate <- function(estimates, std_errors, df) {
   se_pooled <- sqrt(t_var)
   # Test statistic
   t_stat <- q_bar / se_pooled
-  # Degrees of freedom for t-distribution (if finite)
-  if (is.finite(df) && b > 0) {
+  # Rubin's (1987) degrees of freedom, capped at the complete-data value. This
+  # also applies when df is infinite (multinomial models), where it is the
+  # only small-m correction.
+  if (b > 0) {
     r <- (1 + 1 / m) * b / u_bar
     df_adjusted <- (m - 1) * (1 + 1 / r)^2
     df_final <- min(df, df_adjusted)

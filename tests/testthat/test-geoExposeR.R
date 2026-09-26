@@ -2370,17 +2370,20 @@ test_that("impute_exposure removes rows when fallback disabled", {
     stringsAsFactors = FALSE
   )
 
-  result <- geoExposeR:::impute_exposure(
-    datmatx_prob = datmatx_prob,
-    rasterprob_combined = rasterprob_combined,
-    cellpop = cellpop,
-    births = births,
-    ndraws = ndraws,
-    cat_label = cat_label,
-    id_col = "GEOID10",
-    record_id_col = "FIPS",
-    exposure_level_col = "ExposureLevel",
-    apply_imputation_fallback = FALSE  # Disable fallback
+  expect_warning(
+    result <- geoExposeR:::impute_exposure(
+      datmatx_prob = datmatx_prob,
+      rasterprob_combined = rasterprob_combined,
+      cellpop = cellpop,
+      births = births,
+      ndraws = ndraws,
+      cat_label = cat_label,
+      id_col = "GEOID10",
+      record_id_col = "FIPS",
+      exposure_level_col = "ExposureLevel",
+      apply_imputation_fallback = FALSE  # Disable fallback
+    ),
+    "2 of 7 health records \\(28\\.6%\\) have no imputed exposure.*dropped"
   )
 
   # Rows with missing exposure levels should be removed
@@ -2642,21 +2645,25 @@ test_that("impute_exposure applies fallback with message for unmatched counties"
     stringsAsFactors = FALSE
   )
 
-  # Should print message about filling NAs with most common category
-  expect_message(
-    geoExposeR:::impute_exposure(
-      datmatx_prob = datmatx_prob,
-      rasterprob_combined = rasterprob_combined,
-      cellpop = cellpop,
-      births = births,
-      ndraws = ndraws,
-      cat_label = cat_label,
-      id_col = "GEOID10",
-      record_id_col = "FIPS",
-      exposure_level_col = "ExposureLevel",
-      apply_imputation_fallback = TRUE
+  # Should warn with the number of unmatched records and print the message
+  # about filling NAs with the most common category
+  expect_warning(
+    expect_message(
+      geoExposeR:::impute_exposure(
+        datmatx_prob = datmatx_prob,
+        rasterprob_combined = rasterprob_combined,
+        cellpop = cellpop,
+        births = births,
+        ndraws = ndraws,
+        cat_label = cat_label,
+        id_col = "GEOID10",
+        record_id_col = "FIPS",
+        exposure_level_col = "ExposureLevel",
+        apply_imputation_fallback = TRUE
+      ),
+      "filling with most common category"
     ),
-    "filling with most common category"
+    "2 of 5 health records .*2 with a 'FIPS' value absent.*most common category"
   )
 })
 
@@ -5993,17 +6000,20 @@ test_that("impute_exposure skips counties not in lookup", {
   
   # Run imputation - the 01003 county should be skipped
   # but since county_id_list comes from datmatx_prob, this won't trigger the next
-  result <- geoExposeR:::impute_exposure(
-    datmatx_prob = datmatx_prob,
-    rasterprob_combined = rasterprob_combined,
-    cellpop = cellpop,
-    births = births,
-    ndraws = 2,
-    cat_label = c("Low", "High"),
-    id_col = "GEOID10",
-    record_id_col = "FIPS",
-    exposure_level_col = "ExposureLevel",
-    apply_imputation_fallback = TRUE
+  expect_warning(
+    result <- geoExposeR:::impute_exposure(
+      datmatx_prob = datmatx_prob,
+      rasterprob_combined = rasterprob_combined,
+      cellpop = cellpop,
+      births = births,
+      ndraws = 2,
+      cat_label = c("Low", "High"),
+      id_col = "GEOID10",
+      record_id_col = "FIPS",
+      exposure_level_col = "ExposureLevel",
+      apply_imputation_fallback = TRUE
+    ),
+    "1 of 2 health records"
   )
   
   expect_true(is.list(result))
@@ -6714,7 +6724,7 @@ test_that("fit_multinomial_mixed fits an mblogit model from an lme4 formula", {
     y3 ~ as.factor(ExposureLevel) + cov + (1 | grp), d1
   ))
   expect_s3_class(m, "mblogit")
-  # Inference for mblogit uses the large-sample (z) approximation
+  # mblogit has no residual df (complete-data df treated as infinite)
   expect_true(is.infinite(geoExposeR:::extract_df_residual(m, "random")))
 })
 
@@ -6794,5 +6804,255 @@ test_that("perform_sensitivity_analysis validates model spec early", {
     "does not support random-effects terms"
   )
 
+  unlink(temp_dir, recursive = TRUE)
+})
+
+# ---------------------------------------------------------------------------
+# Unmatched health records, partially estimable exposure terms, and Rubin's
+# degrees of freedom
+# ---------------------------------------------------------------------------
+
+test_that("impute_exposure counts records in units without valid probabilities", {
+  set.seed(12345)
+  datmatx_prob <- data.frame(GEOID10 = c("00001", "00002", "00003"))
+  # Unit 00003 has no valid probability vector
+  rasterprob_combined <- rbind(c(0.2, 0.3, 0.5), c(0.6, 0.3, 0.1), rep(NA, 3))
+  births <- data.frame(
+    FIPS = c("00001", "00002", "00003", "00003"),
+    BWT = rnorm(4, 3400, 450),
+    stringsAsFactors = FALSE
+  )
+  expect_warning(
+    result <- geoExposeR:::impute_exposure(
+      datmatx_prob = datmatx_prob,
+      rasterprob_combined = rasterprob_combined,
+      cellpop = c(100, 100, 100),
+      births = births,
+      ndraws = 2,
+      cat_label = c("<5", "5-10", "10+"),
+      id_col = "GEOID10",
+      record_id_col = "FIPS",
+      exposure_level_col = "ExposureLevel",
+      apply_imputation_fallback = FALSE
+    ),
+    paste0("2 of 4 health records \\(50\\.0%\\).*0 with a 'FIPS' value ",
+           "absent.*2 in units without a valid probability vector.*dropped")
+  )
+  for (j in seq_along(result)) {
+    expect_equal(nrow(result[[j]]), 2)
+  }
+})
+
+test_that("impute_exposure is silent when every record has an exposure", {
+  set.seed(12345)
+  datmatx_prob <- data.frame(GEOID10 = c("00001", "00002"))
+  births <- data.frame(FIPS = c("00001", "00002", "00002"), BWT = 1:3)
+  expect_no_warning(
+    geoExposeR:::impute_exposure(
+      datmatx_prob = datmatx_prob,
+      rasterprob_combined = rbind(c(0.5, 0.5), c(0.1, 0.9)),
+      cellpop = c(1, 1),
+      births = births,
+      ndraws = 2,
+      cat_label = c("Low", "High"),
+      id_col = "GEOID10",
+      record_id_col = "FIPS",
+      exposure_level_col = "ExposureLevel",
+      apply_imputation_fallback = TRUE
+    )
+  )
+})
+
+test_that("pool_estimates_by_term warns about terms missing from imputations", {
+  combined <- data.frame(
+    term = c("5-10", "5-10", "5-10", "10+", "10+"),
+    estimate = c(0.1, 0.2, 0.15, 0.3, 0.4),
+    std.error = rep(0.1, 5),
+    stringsAsFactors = FALSE
+  )
+  mock_model <- structure(list(), class = "multinom")
+  expect_warning(
+    result <- geoExposeR:::pool_estimates_by_term(
+      combined_results = combined,
+      exposure_terms = c("5-10", "10+", "20+"),
+      reference_model = mock_model,
+      model_type = "fixed",
+      n_imputations = 3
+    ),
+    "pooled over fewer imputations: 10\\+ \\(2 of 3\\); 20\\+ \\(0 of 3\\)"
+  )
+  # 5-10 is complete, 10+ is pooled over two datasets, 20+ is omitted
+  expect_equal(result$term, c("5-10", "10+"))
+  expect_equal(result$q.mi[2], 0.35)
+  # No warning when every term is estimable in every dataset
+  expect_no_warning(
+    geoExposeR:::pool_estimates_by_term(
+      combined_results = combined[1:3, ],
+      exposure_terms = "5-10",
+      reference_model = mock_model,
+      model_type = "fixed",
+      n_imputations = 3
+    )
+  )
+})
+
+test_that("pool_estimates_by_term names the outcome level in the warning", {
+  combined <- data.frame(
+    y.level = c("b", "b", "c"),
+    term = c("5-10", "5-10", "5-10"),
+    estimate = c(0.1, 0.2, -0.1),
+    std.error = rep(0.1, 3),
+    stringsAsFactors = FALSE
+  )
+  expect_warning(
+    geoExposeR:::pool_estimates_by_term(
+      combined_results = combined,
+      exposure_terms = "5-10",
+      reference_model = structure(list(), class = "multinom"),
+      model_type = "fixed",
+      n_imputations = 2
+    ),
+    "c: 5-10 \\(1 of 2\\)"
+  )
+})
+
+test_that("regression_analysis warns when a category is absent from an imputed dataset", {
+  set.seed(12345)
+  temp_dir <- tempfile(pattern = "test_absent_cat_")
+  dir.create(temp_dir)
+  levels_all <- c("<5", "5-10", "10+")
+  births <- do.call(rbind, lapply(1:3, function(k) {
+    # The third imputed dataset draws no "10+" record
+    lv <- if (k == 3) c("<5", "5-10") else levels_all
+    data.frame(
+      .id = k,
+      ExposureLevel = factor(rep(lv, length.out = 60), levels = levels_all),
+      y = rnorm(60)
+    )
+  }))
+  expect_warning(
+    result <- geoExposeR:::regression_analysis(
+      births = births,
+      targets = "y",
+      cat_label = c("5-10", "10+"),
+      exposure_level_col = "ExposureLevel",
+      regression_formula = "~ as.factor(ExposureLevel)",
+      output_dir = temp_dir,
+      model_type = "fixed"
+    ),
+    "For target 'y', some.*as.factor\\(ExposureLevel\\)10\\+ \\(2 of 3\\)"
+  )
+  expect_equal(as.character(result$y$term), c("5-10", "10+"))
+  unlink(temp_dir, recursive = TRUE)
+})
+
+test_that("pool_single_estimate matches mice::pool.scalar (Rubin 1987)", {
+  q <- c(1.0, 1.2, 0.8, 1.1, 0.9)
+  se <- c(0.3, 0.35, 0.28, 0.32, 0.31)
+  ref <- mice::pool.scalar(Q = q, U = se^2, n = Inf, rule = "rubin1987")
+  # Infinite complete-data df (as for multinomial models): Rubin's df apply
+  result <- geoExposeR:::pool_single_estimate(q, se, df = Inf)
+  half_width <- qt(0.975, ref$df) * sqrt(ref$t)
+  expect_equal(result$q.mi, ref$qbar)
+  expect_equal(result$se.mi, sqrt(ref$t))
+  expect_equal(result$statistic, ref$qbar / sqrt(ref$t))
+  expect_equal(result$conf.low, ref$qbar - half_width)
+  expect_equal(result$conf.high, ref$qbar + half_width)
+  expect_equal(
+    result$p.value,
+    2 * pt(abs(ref$qbar / sqrt(ref$t)), ref$df, lower.tail = FALSE)
+  )
+  # Rubin's df are finite, so the interval is wider than a normal one
+  expect_gt(result$conf.high, ref$qbar + qnorm(0.975) * sqrt(ref$t))
+})
+
+test_that("pool_single_estimate caps Rubin's df at the complete-data df", {
+  q <- c(1.0, 1.2, 0.8, 1.1, 0.9)
+  se <- c(0.3, 0.35, 0.28, 0.32, 0.31)
+  ref <- mice::pool.scalar(Q = q, U = se^2, n = Inf, rule = "rubin1987")
+  df_com <- floor(ref$df / 2)
+  result <- geoExposeR:::pool_single_estimate(q, se, df = df_com)
+  expect_equal(result$conf.high, ref$qbar + qt(0.975, df_com) * sqrt(ref$t))
+  # A complete-data df above Rubin's df does not change the result
+  result_uncapped <- geoExposeR:::pool_single_estimate(q, se, df = 1e6)
+  expect_equal(
+    result_uncapped$conf.high,
+    ref$qbar + qt(0.975, ref$df) * sqrt(ref$t)
+  )
+})
+
+test_that("fixed-effects multinomial fits drop a category absent from a dataset", {
+  set.seed(12345)
+  temp_dir <- tempfile(pattern = "test_absent_cat_multinom_")
+  dir.create(temp_dir)
+  levels_all <- c("<5", "5-10", "10+")
+  births <- do.call(rbind, lapply(1:3, function(k) {
+    lv <- if (k == 3) c("<5", "5-10") else levels_all
+    data.frame(
+      .id = k,
+      ExposureLevel = factor(rep(lv, length.out = 90), levels = levels_all),
+      y = factor(sample(c("a", "b", "c"), 90, replace = TRUE))
+    )
+  }))
+  expect_warning(
+    result <- geoExposeR:::regression_analysis(
+      births = births,
+      targets = "y",
+      cat_label = c("5-10", "10+"),
+      exposure_level_col = "ExposureLevel",
+      regression_formula = "~ as.factor(ExposureLevel)",
+      output_dir = temp_dir,
+      model_type = "fixed",
+      model_family = "multinomial"
+    ),
+    paste0("b: as.factor\\(ExposureLevel\\)10\\+ \\(2 of 3\\); ",
+           "c: as.factor\\(ExposureLevel\\)10\\+ \\(2 of 3\\)")
+  )
+  # Every pooled estimate is finite: no zero-SE placeholder was pooled
+  expect_true(all(is.finite(result$y$se.mi)))
+  expect_true(all(result$y$se.mi > 0))
+  unlink(temp_dir, recursive = TRUE)
+})
+
+test_that("regression_analysis warns when the reference category is absent", {
+  set.seed(12345)
+  temp_dir <- tempfile(pattern = "test_absent_ref_")
+  dir.create(temp_dir)
+  make_births <- function(levels_all, missing_in_2) {
+    do.call(rbind, lapply(1:3, function(k) {
+      lv <- if (k == 2) setdiff(levels_all, missing_in_2) else levels_all
+      data.frame(
+        .id = k,
+        ExposureLevel = factor(rep(lv, length.out = 60), levels = levels_all),
+        y = rnorm(60)
+      )
+    }))
+  }
+  run <- function(births, cat_label) {
+    capture_warnings(geoExposeR:::regression_analysis(
+      births = births,
+      targets = "y",
+      cat_label = cat_label,
+      exposure_level_col = "ExposureLevel",
+      regression_formula = "~ as.factor(ExposureLevel)",
+      output_dir = temp_dir,
+      model_type = "fixed"
+    ))
+  }
+  # Factor exposure: the reference is the first level
+  w <- run(make_births(c("<5", "5-10", "10+"), "<5"), c("5-10", "10+"))
+  expect_true(any(grepl(
+    "reference exposure category '<5' was drawn for no record in 1 of 3", w
+  )))
+  # Character exposure: the reference is the first value in sorted order
+  births_chr <- make_births(c("a", "b", "c"), "a")
+  births_chr$ExposureLevel <- as.character(births_chr$ExposureLevel)
+  w <- run(births_chr, c("b", "c"))
+  expect_true(any(grepl(
+    "reference exposure category 'a' was drawn for no record in 1 of 3", w
+  )))
+  # No reference warning when every dataset contains the reference
+  w <- run(make_births(c("a", "b", "c"), character(0)), c("b", "c"))
+  expect_false(any(grepl("reference exposure category", w)))
   unlink(temp_dir, recursive = TRUE)
 })

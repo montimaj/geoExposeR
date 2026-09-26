@@ -11,7 +11,10 @@ pool_single_estimate(estimates, std_errors, df)
 
 \item{std_errors}{Numeric vector of standard errors across imputations}
 
-\item{df}{Degrees of freedom for t-distribution}
+\item{df}{Complete-data (residual) degrees of freedom; \code{Inf} for
+large-sample models such as multinomial fits. With between-imputation
+variance, inference uses Rubin's (1987) degrees of freedom
+\eqn{(m - 1)(1 + 1/r)^2}, capped at \code{df}.}
 }
 \value{
 Data frame with pooled estimate and inference

@@ -8,7 +8,9 @@ pool_estimates_by_term(
   combined_results,
   exposure_terms,
   reference_model,
-  model_type = "mixed"
+  model_type = "mixed",
+  n_imputations = NULL,
+  target = NULL
 )
 }
 \arguments{
@@ -20,6 +22,14 @@ pool_estimates_by_term(
 
 \item{model_type}{One of \code{"fixed"}, \code{"random"}, or \code{"mixed"}. Used to select
 how residual degrees of freedom are extracted. Defaults to \code{"mixed"}.}
+
+\item{n_imputations}{Number of imputed datasets to which a model was fitted,
+or \code{NULL} to skip the check. When supplied, a warning lists every exposure
+term (per outcome level for multinomial models) that could be estimated in
+fewer datasets, because such terms are pooled over fewer imputations, or
+omitted when no dataset estimates them.}
+
+\item{target}{Optional name of the outcome, used in that warning.}
 }
 \value{
 Data frame with pooled estimates and confidence intervals. When

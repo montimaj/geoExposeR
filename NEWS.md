@@ -8,8 +8,8 @@ The modeled probability data (`model_prob_csv`) and the measured concentration d
 * **Row alignment of the two exposure files is now verified** using `id_col`, which is present in both files but was previously read only from the probability data. `validate_data_alignment()` now:
   * returns the concentration data **reordered to match** the probability data when both contain the same identifiers in a different row order, emitting a `message()` describing the correction;
   * raises an **error** when the two files cover different sets of identifiers, naming the identifiers unique to each;
-  * raises an **error** when the identifiers match but at least one file repeats them, since the rows cannot then be paired unambiguously;
-  * emits a **warning** and falls back to the previous positional behavior when `id_col` is absent from either file, so existing workflows without a shared identifier continue to run.
+  * raises an **error** when the identifiers match but at least one file repeats them in a different order, since the rows cannot then be paired unambiguously.
+* `id_col` was already a required column of both exposure files in 1.0.0, so no additional input is needed.
 
 Files that are already correctly aligned are unaffected: the output is unchanged, and no message or warning is emitted.
 
@@ -27,21 +27,29 @@ This release adds flexible regression model options to `perform_sensitivity_anal
 * **Categorical outcomes**: For logistic (`model_family = "binomial"`) models, a two-level *character* target column (e.g. `"high"`/`"normal"`, as read from a text file) is automatically coerced to a factor, so categorical outcomes can be modeled alongside 0/1 indicators without manual preprocessing. Multiple targets of the same type can be analysed in a single call.
 * **Multi-level categorical outcomes**: New `model_family = "multinomial"` fits a multinomial logistic regression for outcomes with three or more categories. Fixed-effects models use `nnet::multinom()`; random- and mixed-effects models use `mclogit::mblogit()`, where the inline `(1 | group)` random terms in `regression_formula` are translated to the engine's random-effects specification automatically. Pooled results gain a `y.level` column identifying the outcome category. Adds `nnet` and `mclogit` to package dependencies.
 
+### Pooling and Diagnostics
+* **Rubin's degrees of freedom for every model type.** Pooled intervals and p-values use a *t* distribution with Rubin's (1987) degrees of freedom, capped at the model's residual degrees of freedom. Multinomial fits have no residual degrees of freedom, so they use Rubin's value uncapped rather than the standard normal distribution, and their intervals are not too narrow when `ndraws` is small.
+* **New warning for health records without an exposure.** `impute_exposure()` warns with the number and share of health records whose identifier is absent from the exposure data or whose unit has no valid probability vector, and says whether they were assigned the most common category (`apply_imputation_fallback = TRUE`) or dropped. Previously only a message was printed when the fallback applied.
+* **New warning for partially estimable exposure terms.** When a category is drawn for no record in some imputed datasets, its coefficient is pooled over the remaining datasets. `pool_estimates_by_term()` warns which terms (and outcome levels) are affected for each target and in how many datasets they were estimated. Fixed-effects multinomial fits (`nnet::multinom`) now drop unused factor levels like the other engines, so such a category is omitted and reported instead of being pooled as a zero estimate with a zero or undefined standard error.
+* **New warning for an absent reference category.** If the reference exposure category (`drop_cat_label_ref`) was drawn for no record in some imputed datasets, the models there use a different baseline, so their coefficients are different contrasts. `regression_analysis()` warns with the number of affected datasets.
+* Random-effects terms for `mclogit::mblogit()` are split with `reformulas::nobars()` / `reformulas::findbars()`; the `lme4` versions are deprecated in `lme4` 2.x and emit a deprecation warning.
+
 ### Validation
 * `regression_formula` is now validated against `model_type`: fixed-effects models reject random-effects terms, random- and mixed-effects models require at least one random-effects term, and random-effects models require intercept-only random terms.
 * `model_type` and `model_family` are validated up front with clear error messages.
 
 ### Documentation and Examples
-* New example script `examples/run_geoExposeR_model_variants.R` demonstrating all six fixed/random/mixed × linear/non-linear combinations.
+* New example script `examples/run_geoExposeR_model_variants.R` demonstrating all nine `model_type` × `model_family` combinations: fixed, random, and mixed effects with linear, generalized (logistic, Poisson), and multinomial models.
 * New example script `examples/run_geoExposeR_fixed_multi_target.R` demonstrating fixed-effects models over multiple targets at once, including categorical (character and 0/1) outcomes.
 * New "Regression Model Options" section in the README.
 * **Corrected random-effects interpretation in the examples.** The example health data (`examples/input_data/Demographics_dom.txt`) is now individual-level with multiple participants nested within each county (~400 records across 50 counties), generated reproducibly by the new `examples/input_data/generate_demographics.R`. The main example and vignette now use a geographic random intercept `(1 | id)` instead of `(1 | age_decade)`; documentation clarifies that grouping on `age_decade` is a *contextual* random intercept (no random slope) over only a handful of levels, and that a fixed effect (`+ as.factor(age_decade)`) is preferred for simply adjusting for age.
 
 ### Quality
-* Maintains **100% test coverage** (579 tests, up from 476), with new tests covering every model-fitting and validation branch.
+* Maintains **100% test coverage** (608 expectations in 228 tests, up from 476 expectations in 179 tests), with new tests covering every model-fitting and validation branch.
+* Pooled estimates, standard errors, and degrees of freedom are tested against `mice::pool.scalar()`.
 
 ### Dependencies
-* Removed `Amelia` and `rms` from Imports. Neither package was called (Rubin's Rules pooling is implemented in the package itself), so installing geoExposeR no longer pulls them in. `nnet` and `mclogit` are added for the new model types.
+* Removed `Amelia` and `rms` from Imports. Neither package was called (Rubin's Rules pooling is implemented in the package itself), so installing geoExposeR no longer pulls them in. `nnet` and `mclogit` are added for the new model types, and `reformulas` (already a dependency of `lme4` 2.x) for random-effects formula handling.
 
 # geoExposeR 1.0.0
 
@@ -50,7 +58,7 @@ This release adds flexible regression model options to `perform_sensitivity_anal
 This is the first stable release of geoExposeR, a feature-complete R package for modeling health effects of environmental exposures. Originally designed for drinking water contaminants but broadly applicable to other environmental exposures.
 
 ### Highlights
-* **100% test coverage** with 476 comprehensive tests
+* **100% test coverage** with 476 expectations in 179 tests
 * **12 required dependencies** for robust functionality
 * **7 exported functions** for data ingestion, analysis, and validation
 * **Complete documentation** including vignettes and pkgdown site
@@ -75,7 +83,7 @@ This is the first stable release of geoExposeR, a feature-complete R package for
 * **Input Validation**: `validate_prepared_inputs()` for comprehensive pre-analysis data checks
 
 #### Spatial Data Support
-* **Raster Extraction**: Extract well water usage percentages from raster data using `add_well_percentages()`
+* **Well-percentage join**: Merge private-well population percentages into probability or concentration tables by identifier using `add_well_percentages()`
 * **Geographic Subsetting**: `subset_by_geography()` for filtering data by spatial boundaries
 * **Coordinate Handling**: CRS transformation and centroid computation via sf and terra
 
@@ -97,7 +105,7 @@ This is the first stable release of geoExposeR, a feature-complete R package for
 #### Testing and Quality Assurance
 * **Comprehensive Test Suite**: 100% code coverage with automated testing
 * **Synthetic Data Testing**: All tests use generated dummy data for reproducibility
-* **GitLab CI/CD**: Automated testing across multiple R versions and operating systems
+* **GitLab CI/CD**: Automated testing and coverage analysis in a Linux container (rocker/geospatial, current R release)
 * **Performance Optimization**: Fast execution with `ndraws = 2` for development testing
 
 #### Documentation and Usability

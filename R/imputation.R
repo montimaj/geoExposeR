@@ -82,7 +82,34 @@ impute_exposure <- function(
       )
     }
   }
-  # Create county reference data frame
+  # Report health records that cannot receive an imputed exposure: those whose
+  # identifier has no exposure unit, and those in units without a valid
+  # probability vector
+  record_ids <- as.character(births[[record_id_col]])
+  valid_units <- as.character(
+    county_id_list[rowSums(!is.na(exposure_temp)) > 0]
+  )
+  no_unit <- !record_ids %in% as.character(county_id_list)
+  no_prob <- !no_unit & !record_ids %in% valid_units
+  n_missing <- sum(no_unit | no_prob)
+  if (n_missing > 0) {
+    warning(
+      n_missing, " of ", length(record_ids), " health records (",
+      sprintf("%.1f%%", 100 * n_missing / length(record_ids)),
+      ") have no imputed exposure: ", sum(no_unit), " with a '",
+      record_id_col, "' value absent from the exposure data and ",
+      sum(no_prob), " in units without a valid probability vector. ",
+      if (apply_imputation_fallback) {
+        paste0(
+          "They are assigned the most common category of each imputed ",
+          "dataset (apply_imputation_fallback = TRUE)."
+        )
+      } else {
+        "They are dropped (apply_imputation_fallback = FALSE)."
+      },
+      call. = FALSE
+    )
+  }
   # Pre-allocate results list
   imputed_datasets <- vector("list", ndraws)
   # Create imputed datasets efficiently

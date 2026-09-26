@@ -16,7 +16,8 @@ A fitted \code{\link[mclogit:mblogit]{mclogit::mblogit()}} model object.
 }
 \description{
 Splits an \code{lme4}-style formula (with inline random-effects terms such as
-\code{(1 | group)}) into a fixed-effects formula plus a \code{random} specification, and
-fits a baseline-category multinomial logistic model with \code{\link[mclogit:mblogit]{mclogit::mblogit()}}.
+\code{(1 | group)}) into a fixed-effects formula plus a \code{random} specification
+(using \code{\link[reformulas:nobars]{reformulas::nobars()}} and \code{\link[reformulas:formfuns]{reformulas::findbars()}}), and fits a
+baseline-category multinomial logistic model with \code{\link[mclogit:mblogit]{mclogit::mblogit()}}.
 }
 \keyword{internal}

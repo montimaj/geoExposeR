@@ -23,7 +23,7 @@ An R package for modeling health effects of environmental exposures, with a prim
 
 <!-- Code Quality -->
 [![Code style: tidyverse](https://img.shields.io/badge/code%20style-tidyverse-blue.svg)](https://style.tidyverse.org)
-[![Dependencies](https://img.shields.io/badge/dependencies-12-blue.svg)](https://code.usgs.gov/envirohealth/geoExposeR/blob/main/DESCRIPTION)
+[![Dependencies](https://img.shields.io/badge/dependencies-13-blue.svg)](https://code.usgs.gov/envirohealth/geoExposeR/blob/main/DESCRIPTION)
 
 <!-- Academic -->
 [![DOI](https://img.shields.io/badge/DOI-10.5066%2FP1JGUKMD-blue.svg)](https://doi.org/10.5066/P1JGUKMD)
@@ -95,7 +95,7 @@ And the accompanying paper (in preparation for SoftwareX):
 
 Environmental epidemiologists face a fundamental challenge: exposure to environmental contaminants is rarely measured directly for study participants. Instead, researchers must estimate exposures using predictive models, monitoring data, or biomarkers—each with inherent uncertainty. Failing to account for this uncertainty can lead to biased effect estimates and misleading conclusions about health risks (Majumdar and others, 2026).
 
-This challenge is particularly acute for drinking water contaminants like arsenic, where an estimated 40 million Americans rely on unregulated private wells. Foundational studies developed sophisticated methods to address exposure uncertainty by combining U.S. Geological Survey (USGS) machine learning predictions with U.S. Environmental Protection Agency (EPA) monitoring data through population-weighted integration and multiple imputation. However, implementing these methods requires specialized expertise in geospatial analysis, statistical modeling, and R programming—presenting a significant barrier for many researchers.
+This challenge is particularly acute for drinking water contaminants like arsenic, where about 43 million U.S. residents (about 15 percent of the population) rely on private domestic wells that most States do not require to be tested or treated (DeSimone and others, 2014). Foundational studies developed sophisticated methods to address exposure uncertainty by combining U.S. Geological Survey (USGS) machine learning predictions with U.S. Environmental Protection Agency (EPA) monitoring data through population-weighted integration and multiple imputation. However, implementing these methods requires specialized expertise in geospatial analysis, statistical modeling, and R programming—presenting a significant barrier for many researchers.
 
 geoExposeR directly addresses this need by packaging the complete analytical pipeline into accessible R functions. The package automates:
 
@@ -122,7 +122,7 @@ For a detailed description of the methodology, see Majumdar and others (2026).
 >
 > Any dataset that provides **modeled probabilities** can serve as the probability input (`model_prob_csv`), and any dataset that provides **measured concentrations** can serve as the concentration input (`conc_data_csv`), regardless of the originating agency.
 >
-> **Both files must contain `id_col` and describe the same set of units.** The two tables are combined element-wise, so row *i* of one must correspond to row *i* of the other. The package verifies this: if the identifiers match but the row order differs, the concentration data is reordered to match and a message is emitted; if the two files cover different units, an error is raised. If `id_col` is missing from either file the check cannot run, and the files are combined by row position with a warning.
+> **Both files must contain `id_col` and describe the same set of units.** The two tables are combined element-wise, so row *i* of one must correspond to row *i* of the other. The package verifies this: if the identifiers match but the row order differs, the concentration data is reordered to match and a message is emitted; if the two files cover different units, or repeat identifiers in a different order, an error is raised. `id_col` is a required column of both files and is checked before any data are loaded.
 
 ## Workflow
 
@@ -507,7 +507,7 @@ geoExposeR/
 │   │   └── Health_pm25.txt             # Sample respiratory health data (dummy*)
 ├── tests/
 │   ├── testthat/
-│   │   └── test-geoExposeR.R           # Comprehensive test suite (579 tests)
+│   │   └── test-geoExposeR.R           # Test suite (608 expectations in 228 tests)
 │   └── testthat.R                      # Test runner
 ├── vignettes/
 │   └── geoExposeR-vignette.Rmd         # Package tutorial and examples
@@ -547,7 +547,7 @@ This approach provides several advantages:
 
 The package includes comprehensive testing with 100% code coverage:
 
-- **`tests/testthat/test-geoExposeR.R`**: Main test suite with 579 tests (includes helper functions)
+- **`tests/testthat/test-geoExposeR.R`**: Main test suite with 608 expectations in 228 tests (includes helper functions)
 - **`tests/testthat.R`**: Standard R package test runner
 - **`.gitlab-ci.yml`**: GitLab CI/CD pipeline with automated testing and coverage reporting
 
@@ -628,7 +628,7 @@ The combination selects the fitting engine automatically:
 | `"random"` | `lme4::lmer()` | `lme4::glmer()` | `mclogit::mblogit()` |
 | `"mixed"` | `lme4::lmer()` | `lme4::glmer()` | `mclogit::mblogit()` |
 
-Regardless of engine, coefficients are extracted for the exposure terms and pooled across imputed datasets using Rubin's Rules. For non-linear models the pooled estimate `q.mi` is on the link scale (e.g. a log-odds ratio for `"binomial"`; `exp(q.mi)` gives the odds ratio). Multinomial results include an extra **`y.level`** column identifying the outcome category (relative to the reference level) that each pooled estimate refers to.
+Regardless of engine, coefficients are extracted for the exposure terms and pooled across imputed datasets using Rubin's Rules, with Rubin's degrees of freedom capped at the model's residual degrees of freedom (multinomial models, which have no residual degrees of freedom, use Rubin's value). Warnings report any exposure term that could be estimated in fewer than all imputed datasets (for example, a category drawn for no record), any imputed dataset in which the reference category was drawn for no record (its coefficients would then use a different baseline), and health records that received no imputed exposure. For non-linear models the pooled estimate `q.mi` is on the link scale (e.g. a log-odds ratio for `"binomial"`; `exp(q.mi)` gives the odds ratio). Multinomial results include an extra **`y.level`** column identifying the outcome category (relative to the reference level) that each pooled estimate refers to.
 
 ```r
 # Linear fixed-effects model (ordinary least squares)
@@ -888,7 +888,7 @@ See the `examples/` folder for complete working examples demonstrating nitrate, 
 - ✅ **Population weighting**: Weight exposures by private vs. public well usage
 
 ### Quality & Reproducibility
-- ✅ **Extensive testing**: 100% code coverage with 579 automated tests
+- ✅ **Extensive testing**: 100% code coverage with 608 expectations in 228 automated tests
 - ✅ **Reproducible results**: Seed control and comprehensive output saving
 - ✅ **CI/CD pipeline**: Automated testing and coverage analysis on Linux (GitLab CI, rocker/geospatial container)
 - ✅ **Documentation**: Complete pkgdown website with examples and vignettes
@@ -1139,7 +1139,7 @@ results <- perform_sensitivity_analysis(
 ```
 
 The package automatically calculates:
-- `meanlog = log(concentration + 0.1)` (offset avoids log(0))
+- `meanlog = log(concentration + 0.1)` for positive concentrations; zero, negative, or missing concentrations are set to `NA`, and those units use the modeled probabilities alone
 - `sdlog` = `default_sdlog` (or from `conc_sd_col` if that column exists)
 
 ### Step 3: Preparing Health Outcome Data
@@ -1399,21 +1399,21 @@ $OEGEST
 -----------------------------
 [1] "Checking results for target: BWT"
 [1] "Checking results for target: OEGEST"
-✔ |        579 | Test perform_sensitivity_analysis with comprehensive coverage [11.4s]                                                                                                                           
+✔ |        608 | Test perform_sensitivity_analysis with comprehensive coverage [14.9s]
 
 ══ Results ═════════════════════════════════════════════════════════════════════
-Duration: 11.4 s
+Duration: 14.9 s
 
-[ FAIL 0 | WARN 0 | SKIP 0 | PASS 579 ]
+[ FAIL 0 | WARN 0 | SKIP 0 | PASS 608 ]
 ```
 
 ### Continuous Integration
 
-The package includes automated testing via GitLab CI/CD:
-- **R CMD check**: Validates package structure and dependencies
-- **Multiple R versions**: Tests on R 4.4+ across different operating systems
-- **Dependency validation**: Ensures all required packages are properly declared
-- **Documentation checks**: Validates roxygen2 documentation completeness
+The package includes automated testing via GitLab CI/CD (`.gitlab-ci.yml`):
+- **Unit tests**: `devtools::test()` in a Linux container (`rocker/geospatial:latest`, current R release)
+- **Coverage**: `covr::package_coverage()` on `main`, with a coverage report artifact
+- **Documentation**: `devtools::document()` to regenerate roxygen2 documentation
+- **Website**: pkgdown site build and GitLab Pages deployment on `main`
 
 [![Pipeline Status](https://code.usgs.gov/envirohealth/geoExposeR/badges/main/pipeline.svg)](https://code.usgs.gov/envirohealth/geoExposeR/-/pipelines)
 

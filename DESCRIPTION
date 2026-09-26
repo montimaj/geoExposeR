@@ -45,6 +45,7 @@ Imports:
     mclogit,
     mice,
     nnet,
+    reformulas,
     rlang,
     sf,
     terra
