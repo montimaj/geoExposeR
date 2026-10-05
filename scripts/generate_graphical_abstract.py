@@ -42,7 +42,7 @@ SCALE = 4           # the TIFF is SCALE times the minimum size
 
 INK, INK2, MUTED = "#0b0b0b", "#52514e", "#898781"
 HAIRLINE, PANEL, PANEL_EDGE = "#c3c2b7", "#f6f5f2", "#e1e0d9"
-# Exposure categories low, middle and high: ordinal steps of one blue ramp
+# Exposure categories low, medium and high: ordinal steps of one blue ramp
 RAMP = ("#86b6ef", "#2a78d6", "#104281")
 FONT = "Arial, Helvetica, sans-serif"
 FONT_FILES = {
@@ -256,13 +256,13 @@ def panel_pool(x, pw):
     left = x + PAD
     inner = pw - 2 * PAD
     text(left, 112, "Effect vs low exposure", fill=INK2, max_width=inner)
-    zero = x + 186
+    zero = x + 198
     svg.append(
         f'<line x1="{zero}" y1="124" x2="{zero}" y2="250" stroke="{HAIRLINE}" '
         f'stroke-width="2.5" stroke-dasharray="6 6"/>'
     )
     text(zero, 276, "0", anchor="middle", fill=INK2)
-    rows = (("Middle", 152, (-38, 86, 24), (-64, 114, 26)),
+    rows = (("Medium", 152, (-38, 86, 24), (-64, 114, 26)),
             ("High", 218, (12, 126, 68), (-12, 154, 71)))
     for label, cy, one, pooled in rows:
         text(left, cy + 9, label, size=27)
@@ -282,7 +282,7 @@ def footer():
     x = PX[0] + 6
     text(x, y, "Exposure", fill=INK2)
     x += text_width("Exposure", 26) + 22
-    for color, label in zip(RAMP, ("Low", "Middle", "High")):
+    for color, label in zip(RAMP, ("Low", "Medium", "High")):
         svg.append(f'<rect x="{n(x)}" y="{y - 21}" width="24" height="24" rx="4" fill="{color}"/>')
         text(x + 32, y, label, fill=INK2)
         x += 32 + text_width(label, 26) + 24
