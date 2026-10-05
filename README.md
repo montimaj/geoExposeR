@@ -32,6 +32,12 @@ An R package for modeling health effects of environmental exposures, with a prim
 <!-- USGS Software Release -->
 **USGS IPDS Record Number:** IP-180903
 
+<p align="center">
+  <img src="man/figures/graphical_abstract.png" alt="geoExposeR at a glance: modeled and measured exposure probabilities are combined with population weights, each unit's exposure is imputed and a regression model is fit to every imputed dataset, and the exposure effects are pooled with Rubin's rules" width="800">
+</p>
+
+<p align="center"><em>geoExposeR at a glance: modeled and measured exposure probabilities are combined with population weights, each unit's exposure is imputed and a regression model is fit to every imputed dataset, and the exposure effects are pooled with Rubin's rules. Graphical abstract from the SoftwareX paper by Majumdar and others (2026).</em></p>
+
 ## Citation
 
 If you use geoExposeR in your research, please cite the software release:
@@ -95,7 +101,7 @@ And the accompanying paper (in preparation for SoftwareX):
 
 Environmental epidemiologists face a fundamental challenge: exposure to environmental contaminants is rarely measured directly for study participants. Instead, researchers must estimate exposures using predictive models, monitoring data, or biomarkers—each with inherent uncertainty. Failing to account for this uncertainty can lead to biased effect estimates and misleading conclusions about health risks (Majumdar and others, 2026).
 
-This challenge is particularly acute for drinking water contaminants like arsenic, where about 43 million U.S. residents (about 15 percent of the population) rely on private domestic wells that most States do not require to be tested or treated (DeSimone and others, 2014). Foundational studies developed sophisticated methods to address exposure uncertainty by combining U.S. Geological Survey (USGS) machine learning predictions with U.S. Environmental Protection Agency (EPA) monitoring data through population-weighted integration and multiple imputation. However, implementing these methods requires specialized expertise in geospatial analysis, statistical modeling, and R programming—presenting a significant barrier for many researchers.
+This challenge is particularly acute for drinking water contaminants like arsenic, where about 43 million U.S. residents (about 15 percent of the population) rely on private domestic wells that most States do not require to be tested or treated (DeSimone and others, 2014). Foundational studies developed methods to address this exposure uncertainty: U.S. Geological Survey (USGS) machine learning models predict the probability that private-well arsenic falls in each concentration category, and these predictions, weighted by the population using private wells, were carried into analyses of birth outcomes through multiple imputation. geoExposeR extends this approach by also combining the predictions with U.S. Environmental Protection Agency (EPA) monitoring data for public water systems. However, implementing these methods requires specialized expertise in geospatial analysis, statistical modeling, and R programming—presenting a significant barrier for many researchers.
 
 geoExposeR directly addresses this need by packaging the complete analytical pipeline into accessible R functions. The package automates:
 
@@ -171,7 +177,7 @@ If you do not have Pandoc, you can download and install it from the official web
 
 **Install from USGS GitLab:**
 
-> **Note:** These commands will work once the repository is approved and publicly available, with the tag/branch suffix pointing to a tagged release version. The `devtools::install_*()` helpers were deprecated in devtools 2.5.0 in favor of [pak](https://pak.r-lib.org/), so the examples below use `pak`.
+> **Note:** The `devtools::install_*()` helpers were deprecated in devtools 2.5.0 in favor of [pak](https://pak.r-lib.org/), so the examples below use `pak`.
 
 ```r
 # Install pak if not already installed

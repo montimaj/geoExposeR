@@ -33,6 +33,7 @@ This release adds flexible regression model options to `perform_sensitivity_anal
 * **New warning for partially estimable exposure terms.** When a category is drawn for no record in some imputed datasets, its coefficient is pooled over the remaining datasets. `pool_estimates_by_term()` warns which terms (and outcome levels) are affected for each target and in how many datasets they were estimated. Fixed-effects multinomial fits (`nnet::multinom`) now drop unused factor levels like the other engines, so such a category is omitted and reported instead of being pooled as a zero estimate with a zero or undefined standard error.
 * **New warning for an absent reference category.** If the reference exposure category (`drop_cat_label_ref`) was drawn for no record in some imputed datasets, the models there use a different baseline, so their coefficients are different contrasts. `regression_analysis()` warns with the number of affected datasets.
 * Random-effects terms for `mclogit::mblogit()` are split with `reformulas::nobars()` / `reformulas::findbars()`; the `lme4` versions are deprecated in `lme4` 2.x and emit a deprecation warning.
+* The message reporting the concentration cutoffs now separates them with commas (`Using user-provided cutoffs: 5, 10`); previously the values ran together (`510`).
 
 ### Validation
 * `regression_formula` is now validated against `model_type`: fixed-effects models reject random-effects terms, random- and mixed-effects models require at least one random-effects term, and random-effects models require intercept-only random terms.
@@ -43,6 +44,9 @@ This release adds flexible regression model options to `perform_sensitivity_anal
 * New example script `examples/run_geoExposeR_fixed_multi_target.R` demonstrating fixed-effects models over multiple targets at once, including categorical (character and 0/1) outcomes.
 * New "Regression Model Options" section in the README.
 * **Corrected random-effects interpretation in the examples.** The example health data (`examples/input_data/Demographics_dom.txt`) is now individual-level with multiple participants nested within each county (~400 records across 50 counties), generated reproducibly by the new `examples/input_data/generate_demographics.R`. The main example and vignette now use a geographic random intercept `(1 | id)` instead of `(1 | age_decade)`; documentation clarifies that grouping on `age_decade` is a *contextual* random intercept (no random slope) over only a handful of levels, and that a fixed effect (`+ as.factor(age_decade)`) is preferred for simply adjusting for age.
+* The graphical abstract from the SoftwareX paper is shown at the top of the README and the pkgdown home page (`man/figures/graphical_abstract.png`).
+* The README's Statement of Need no longer credits the foundational studies with combining USGS predictions and EPA public-water data: they propagated the uncertainty in the private-well predictions alone, and geoExposeR adds the combination.
+* Removed the outdated README note that the installation commands would work only after the repository was approved.
 
 ### Quality
 * Maintains **100% test coverage** (608 expectations in 228 tests, up from 476 expectations in 179 tests), with new tests covering every model-fitting and validation branch.

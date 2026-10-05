@@ -75,16 +75,16 @@ load_and_process_exposure_data <- function(
     cutoff_config <- validate_conc_cutoffs(conc_cutoffs)
 
     message("Detected ", n_prob_categories, " exposure categories\n")
-    message("Using auto-generated cutoffs:",
-            paste(cutoff_config$cutoffs), "\n")
+    message("Using auto-generated cutoffs: ",
+            paste(cutoff_config$cutoffs, collapse = ", "), "\n")
   } else {
     # User provided cutoffs are already validated and aligned
     cutoff_config <- validate_conc_cutoffs(
       conc_cutoffs, validate_cutoffs = FALSE
     )
     message("Detected ", n_prob_categories, " exposure categories\n")
-    message("Using user-provided cutoffs:",
-            paste(cutoff_config$cutoffs), "\n")
+    message("Using user-provided cutoffs: ",
+            paste(cutoff_config$cutoffs, collapse = ", "), "\n")
   }
 
   # Convert concentration lognormal to multinomial
