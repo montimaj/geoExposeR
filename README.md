@@ -486,6 +486,7 @@ geoExposeR/
 │   └── utils.R                         # Validation and utility functions
 ├── man/                                # Generated documentation (.Rd files)
 │   └── figures/
+│       ├── graphical_abstract.png      # Graphical abstract shown in this README
 │       └── workflow.png                # Workflow diagram shown in this README
 ├── examples/
 │   ├── run_geoExposeR_example.R        # Basic CSV workflow example
