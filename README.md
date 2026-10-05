@@ -512,6 +512,9 @@ geoExposeR/
 │   │   ├── prob_pm25.csv              # Sample PM2.5 probability data (dummy*)
 │   │   ├── conc_pm25.csv              # Sample PM2.5 concentration data (dummy*)
 │   │   └── Health_pm25.txt             # Sample respiratory health data (dummy*)
+├── scripts/                            # Figure scripts (excluded from the package build)
+│   ├── generate_graphical_abstract.py  # Draws man/figures/graphical_abstract.png
+│   └── generate_workflow_figure.R      # Draws man/figures/workflow.png
 ├── tests/
 │   ├── testthat/
 │   │   └── test-geoExposeR.R           # Test suite (608 expectations in 228 tests)
@@ -532,6 +535,8 @@ geoExposeR/
 └── README.md                           # This file
 ```
 *\*Dummy data for demonstration; actual research data cannot be shared.*
+
+The two README figures are drawn by the scripts in `scripts/`. From the package root, run `Rscript scripts/generate_workflow_figure.R` (requires DiagrammeR, DiagrammeRsvg, rsvg, and png) and `python3 scripts/generate_graphical_abstract.py` (requires Python with Pillow and R with rsvg).
 
 ### R/ Directory Structure
 
